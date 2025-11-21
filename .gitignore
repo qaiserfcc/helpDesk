@@ -1,0 +1,65 @@
+# macOS cruft
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editor settings and IDE metadata
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node / TypeScript build artifacts
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+build/
+**/build/
+.tmp/
+**/.tmp/
+coverage/
+**/coverage/
+.next/
+
+# Logs and diagnostics
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+apps/*/.env
+apps/*/.env.*
+
+# Prisma / database artifacts
+prisma/dev.db
+prisma/dev.db-journal
+*.sqlite
+*.sqlite-journal
+
+# Expo / React Native
+.expo/
+.expo-shared/
+*.expo^
+*.expo
+*.xcworkspace
+*.xcuserstate
+
+# Cache directories
+.npm/
+.pnpm-store/
+.cache/
+**/.cache/
+
+# Generated files
+*.tsbuildinfo
+*.tgz
+
+# Local assets not meant for git
+*.local
+**/storage.db

@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "HelpDesk",
+    "slug": "helpdesk",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "helpdesk",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#0F172A"
+    },
+    "updates": {
+      "fallbackToCacheTimeout": 0
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0F172A"
+      }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "CHANGE_ME"
+      }
+    }
+  }
+}
