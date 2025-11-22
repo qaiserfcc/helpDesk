@@ -20,7 +20,7 @@
 ## Doing
 
 - **Milestone 3 kick-off (Unit tests are mandatory for every code change in this milestone.)**
-- [ ] **Milestone 3 – Ticketing (7–10 days)**
+- [x] **Milestone 3 – Ticketing (7–10 days)**
   - [x] Ticket CRUD endpoints + workflow states
   - [x] Assignment/resolve actions + attachment upload API
   - [x] Offline sync helper endpoints (diff/merge)
