@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import {
   ActivityIndicator,
+  Animated,
   FlatList,
   LayoutChangeEvent,
   Pressable,
@@ -52,6 +53,13 @@ const statusFilters: Array<{ label: string; value?: TicketStatus }> = [
 const formatStatus = formatTicketStatus;
 
 type Navigation = NativeStackNavigationProp<RootStackParamList, "Dashboard">;
+type DrawerNavItem = {
+  key: string;
+  title: string;
+  subtitle: string;
+  glyph: string;
+  onPress: () => void;
+};
 
 export function DashboardScreen() {
   const navigation = useNavigation<Navigation>();
@@ -60,8 +68,10 @@ export function DashboardScreen() {
   const [statusFilter, setStatusFilter] = useState<TicketStatus | undefined>();
   const [assignedOnly, setAssignedOnly] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [navDrawerOpen, setNavDrawerOpen] = useState(false);
   const listRef = useRef<FlatList<Ticket> | null>(null);
   const headerHeightRef = useRef(0);
+  const navDrawerProgress = useRef(new Animated.Value(0)).current;
   const canCreate = user?.role === "user" || user?.role === "admin";
   const notifications = useNotificationStore((state) => state.notifications);
   const unreadCount = useNotificationStore((state) => state.unreadCount);
@@ -143,6 +153,14 @@ export function DashboardScreen() {
     seedNotifications(payload);
   }, [recentActivity, seedNotifications]);
 
+  useEffect(() => {
+    Animated.timing(navDrawerProgress, {
+      toValue: navDrawerOpen ? 1 : 0,
+      duration: 240,
+      useNativeDriver: true,
+    }).start();
+  }, [navDrawerOpen, navDrawerProgress]);
+
   const counters = useMemo(() => {
     return tickets.reduce(
       (acc, ticket) => {
@@ -182,6 +200,12 @@ export function DashboardScreen() {
     statusBuckets.find((bucket) => bucket.status === "resolved")?.count ?? 0;
   const assignmentPreview = statusSummary?.assignments.slice(0, 3) ?? [];
   const totalAssignments = statusSummary?.assignments.length ?? 0;
+  const summaryTotals = {
+    total: statusSummary ? totalTickets : tickets.length,
+    open: statusSummary ? openTotal : counters.open,
+    inProgress: statusSummary ? inProgressTotal : counters.in_progress,
+    resolved: statusSummary ? resolvedTotal : counters.resolved,
+  };
 
   const handleHeaderLayout = useCallback((event: LayoutChangeEvent) => {
     headerHeightRef.current = event.nativeEvent.layout.height;
@@ -201,6 +225,22 @@ export function DashboardScreen() {
     setNotificationsOpen(false);
   };
 
+  const toggleNavDrawer = () => {
+    setNavDrawerOpen((open) => !open);
+  };
+
+  const closeNavDrawer = useCallback(() => {
+    setNavDrawerOpen(false);
+  }, []);
+
+  const createDrawerHandler = useCallback(
+    (callback: () => void) => () => {
+      closeNavDrawer();
+      callback();
+    },
+    [closeNavDrawer],
+  );
+
   const handleNotificationSelect = (entry: NotificationEntry) => {
     markRead(entry.id);
     setNotificationsOpen(false);
@@ -215,39 +255,67 @@ export function DashboardScreen() {
     listRef.current.scrollToOffset({ offset, animated: true });
   }, []);
 
-  const adminNavItems = useMemo(
-    () => [
+  const drawerNavItems = useMemo<DrawerNavItem[]>(() => {
+    const items: DrawerNavItem[] = [
       {
         key: "dashboard",
-        title: "Dashboard",
-        subtitle: "Live overview",
+        title: "Dashboard overview",
+        subtitle: "Scroll to activity",
         glyph: "🏠",
-        onPress: scrollToTicketsList,
+        onPress: createDrawerHandler(scrollToTicketsList),
       },
       {
-        key: "user-management",
-        title: "User management",
-        subtitle: "Manage members",
-        glyph: "👥",
-        onPress: () => navigation.navigate("UserManagement"),
+        key: "user-report",
+        title: "My report",
+        subtitle: "Personal ticket stats",
+        glyph: "🧾",
+        onPress: createDrawerHandler(() => navigation.navigate("UserReport")),
       },
       {
-        key: "org-summary",
-        title: "Org summary",
-        subtitle: "Status & escalations",
-        glyph: "🏢",
-        onPress: () => navigation.navigate("StatusSummary"),
-      },
-      {
-        key: "reporting",
-        title: "Reporting",
-        subtitle: "Exports & tables",
+        key: "reports-table",
+        title: "Reports table",
+        subtitle: "Filter + export",
         glyph: "📊",
-        onPress: () => navigation.navigate("ReportsTable"),
+        onPress: createDrawerHandler(() => navigation.navigate("ReportsTable")),
       },
-    ],
-    [navigation, scrollToTicketsList],
-  );
+    ];
+
+    if (user?.role !== "user") {
+      items.push({
+        key: "agent-workload",
+        title: "Agent workload",
+        subtitle: "Assignments heatmap",
+        glyph: "📈",
+        onPress: createDrawerHandler(() => navigation.navigate("AgentWorkload")),
+      });
+    }
+
+    if (user?.role === "admin") {
+      items.push(
+        {
+          key: "status-summary",
+          title: "Org snapshot",
+          subtitle: "Status & escalations",
+          glyph: "🏢",
+          onPress: createDrawerHandler(() => navigation.navigate("StatusSummary")),
+        },
+        {
+          key: "user-management",
+          title: "User management",
+          subtitle: "Manage members",
+          glyph: "👥",
+          onPress: createDrawerHandler(() => navigation.navigate("UserManagement")),
+        },
+      );
+    }
+
+    return items;
+  }, [
+    createDrawerHandler,
+    navigation,
+    scrollToTicketsList,
+    user?.role,
+  ]);
 
   const renderTicket = ({ item }: { item: Ticket }) => (
     <Pressable
@@ -275,87 +343,60 @@ export function DashboardScreen() {
 
   const renderDashboardHeader = () => (
     <View style={styles.dashboardHeader} onLayout={handleHeaderLayout}>
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.title}>Help Desk</Text>
-          <Text style={styles.subtitle}>
-            {user ? `Welcome, ${user.name}` : "Tickets overview"}
-          </Text>
-        </View>
-        <View style={styles.headerActions}>
-          <Pressable
-            style={styles.iconButton}
-            onPress={handleNotificationPress}
-          >
-            <Text style={styles.iconGlyph}>🔔</Text>
-            {unreadCount > 0 && (
-              <View style={styles.iconBadge}>
-                <Text style={styles.iconBadgeText}>
-                  {unreadCount > 9 ? "9+" : unreadCount}
-                </Text>
-              </View>
-            )}
+      <View style={styles.heroCard}>
+        <View style={styles.heroTopRow}>
+          <Pressable style={styles.menuButton} onPress={toggleNavDrawer}>
+            <Text style={styles.menuGlyph}>☰</Text>
           </Pressable>
-          <Pressable style={styles.signOut} onPress={signOut}>
-            <Text style={styles.signOutText}>Sign out</Text>
-          </Pressable>
-        </View>
-      </View>
-
-      {user?.role === "admin" && (
-        <View style={styles.navMenu}>
-          <Text style={styles.navMenuLabel}>Navigation</Text>
-          <View style={styles.navMenuRow}>
-            {adminNavItems.map((item) => (
-              <Pressable
-                key={item.key}
-                style={styles.navMenuCard}
-                onPress={item.onPress}
-              >
-                <Text style={styles.navMenuGlyph}>{item.glyph}</Text>
-                <View>
-                  <Text style={styles.navMenuTitle}>{item.title}</Text>
-                  <Text style={styles.navMenuSubtitle}>{item.subtitle}</Text>
+          <View style={styles.heroCopy}>
+            <Text style={styles.heroEyebrow}>Command center</Text>
+            <Text style={styles.title}>
+              {user ? `Hi, ${user.name.split(" ")[0]}` : "Help Desk"}
+            </Text>
+          </View>
+          <View style={styles.headerActions}>
+            <Pressable
+              style={styles.iconButton}
+              onPress={handleNotificationPress}
+            >
+              <Text style={styles.iconGlyph}>🔔</Text>
+              {unreadCount > 0 && (
+                <View style={styles.iconBadge}>
+                  <Text style={styles.iconBadgeText}>
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </Text>
                 </View>
-              </Pressable>
-            ))}
+              )}
+            </Pressable>
+            <Pressable style={styles.signOut} onPress={signOut}>
+              <Text style={styles.signOutText}>Sign out</Text>
+            </Pressable>
           </View>
         </View>
-      )}
-
-      {user?.role === "user" && (
-        <Pressable
-          style={styles.reportShortcut}
-          onPress={() => navigation.navigate("ReportsTable")}
-        >
-          <View>
-            <Text style={styles.reportShortcutTitle}>Reporting</Text>
-            <Text style={styles.reportShortcutSubtitle}>
-              View table layout + export
-            </Text>
-          </View>
-          <Text style={styles.reportShortcutGlyph}>📊</Text>
-        </Pressable>
-      )}
-
-      <View style={styles.cardsRow}>
-        {["open", "in_progress", "resolved"].map((statusKey) => (
-          <View key={statusKey} style={styles.card}>
-            <Text style={styles.cardLabel}>
-              {formatStatus(statusKey as TicketStatus)}
-            </Text>
-            <Text style={styles.cardValue}>
-              {statusKey === "open"
-                ? counters.open
-                : statusKey === "in_progress"
-                  ? counters.in_progress
-                  : counters.resolved}
-            </Text>
-          </View>
-        ))}
+        <Text style={styles.subtitle}>
+          Monitor tickets, workload, and signals in one sleek view.
+        </Text>
+        <View style={styles.heroStatsRow}>
+          {[
+            { label: "Open", value: summaryTotals.open, hint: "Active queue" },
+            {
+              label: "In progress",
+              value: summaryTotals.inProgress,
+              hint: "Being handled",
+            },
+            { label: "Resolved", value: summaryTotals.resolved, hint: "Closed" },
+            { label: "Total", value: summaryTotals.total, hint: "Tracked" },
+          ].map((stat) => (
+            <View key={stat.label} style={styles.heroStatCard}>
+              <Text style={styles.heroStatLabel}>{stat.label}</Text>
+              <Text style={styles.heroStatValue}>{stat.value}</Text>
+              <Text style={styles.heroStatHint}>{stat.hint}</Text>
+            </View>
+          ))}
+        </View>
       </View>
 
-      <View style={styles.filterRow}>
+      <View style={styles.controlPanel}>
         <View style={styles.filterTabs}>
           {statusFilters.map((filter) => {
             const isActive = statusFilter === filter.value;
@@ -390,7 +431,7 @@ export function DashboardScreen() {
       </View>
 
       {queuedCount > 0 && (
-        <View style={styles.queueBanner}>
+        <View style={styles.syncBanner}>
           <View>
             <Text style={styles.queueTitle}>
               {queuedCount} offline ticket(s)
@@ -415,6 +456,88 @@ export function DashboardScreen() {
           </Pressable>
         </View>
       )}
+
+      <View style={styles.snapshotRow}>
+        <View style={styles.snapshotCard}>
+          <View style={styles.snapshotHeader}>
+            <View>
+              <Text style={styles.sectionHeading}>Status snapshot</Text>
+              <Text style={styles.snapshotMeta}>
+                {statusSummary ? "Organization" : "Personal"} view
+              </Text>
+            </View>
+            <Pressable
+              style={styles.textLink}
+              onPress={() => navigation.navigate("ReportsTable")}
+            >
+              <Text style={styles.textLinkLabel}>Open reports</Text>
+            </Pressable>
+          </View>
+          <View style={styles.snapshotMetrics}>
+            {[
+              { label: "Total", value: summaryTotals.total },
+              { label: "Open", value: summaryTotals.open },
+              { label: "In progress", value: summaryTotals.inProgress },
+              { label: "Resolved", value: summaryTotals.resolved },
+            ].map((metric) => (
+              <View key={metric.label} style={styles.summaryChip}>
+                <Text style={styles.summaryChipLabel}>{metric.label}</Text>
+                <Text style={styles.summaryChipValue}>{metric.value}</Text>
+              </View>
+            ))}
+          </View>
+          {user?.role === "admin" && assignmentPreview.length > 0 && (
+            <View style={styles.assignmentList}>
+              {assignmentPreview.map((assignment, index) => {
+                const agent = assignment.agent;
+                if (!agent) {
+                  return null;
+                }
+                return (
+                  <View key={agent.id ?? index} style={styles.assignmentRow}>
+                    <Text style={styles.assignmentName}>{agent.name}</Text>
+                    <Text style={styles.assignmentCount}>{assignment.count}</Text>
+                  </View>
+                );
+              })}
+              {totalAssignments > assignmentPreview.length && (
+                <Text style={styles.assignmentMore}>
+                  +{totalAssignments - assignmentPreview.length} more agents
+                </Text>
+              )}
+            </View>
+          )}
+        </View>
+
+        <View style={styles.activityPanel}>
+          <View style={styles.snapshotHeader}>
+            <View>
+              <Text style={styles.sectionHeading}>Live activity</Text>
+              <Text style={styles.snapshotMeta}>Latest updates</Text>
+            </View>
+            <Pressable style={styles.textLink} onPress={handleNotificationPress}>
+              <Text style={styles.textLinkLabel}>Inbox</Text>
+            </Pressable>
+          </View>
+          {recentActivity.length === 0 ? (
+            <Text style={styles.activityEmpty}>
+              Real-time updates will appear as tickets evolve.
+            </Text>
+          ) : (
+            recentActivity.slice(0, 3).map((entry) => (
+              <View key={entry.id} style={styles.activityItem}>
+                <Text style={styles.activityActor}>{entry.actor.name}</Text>
+                <Text style={styles.activityCopy}>
+                  {describeTicketActivity(entry)}
+                </Text>
+                <Text style={styles.activityMeta}>
+                  {new Date(entry.createdAt).toLocaleTimeString()}
+                </Text>
+              </View>
+            ))
+          )}
+        </View>
+      </View>
 
       <Text style={styles.sectionHeading}>Tickets</Text>
     </View>
@@ -451,6 +574,61 @@ export function DashboardScreen() {
         ListEmptyComponent={renderEmptyState}
         showsVerticalScrollIndicator={false}
       />
+
+      {navDrawerOpen && (
+        <View style={styles.navDrawerOverlay} pointerEvents="box-none">
+          <Animated.View
+            style={[
+              styles.navDrawerPanel,
+              {
+                transform: [
+                  {
+                    translateX: navDrawerProgress.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [-280, 0],
+                    }),
+                  },
+                ],
+                opacity: navDrawerProgress.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0.5, 1],
+                }),
+              },
+            ]}
+          >
+            <View style={styles.navDrawerHeader}>
+              <Pressable
+                accessibilityLabel="Close quick sections"
+                style={styles.navDrawerBackButton}
+                onPress={closeNavDrawer}
+              >
+                <Text style={styles.navDrawerBackGlyph}>←</Text>
+              </Pressable>
+              <View style={styles.navDrawerHeaderCopy}>
+                <Text style={styles.navDrawerTitle}>Quick sections</Text>
+                <Text style={styles.navDrawerSubtitle}>Navigate rapidly</Text>
+              </View>
+            </View>
+            {drawerNavItems.map((item) => (
+              <Pressable
+                key={item.key}
+                style={styles.navDrawerItem}
+                onPress={item.onPress}
+              >
+                <Text style={styles.navDrawerGlyph}>{item.glyph}</Text>
+                <View style={styles.navDrawerCopy}>
+                  <Text style={styles.navDrawerItemTitle}>{item.title}</Text>
+                  <Text style={styles.navDrawerItemSubtitle}>{item.subtitle}</Text>
+                </View>
+              </Pressable>
+            ))}
+          </Animated.View>
+          <Pressable
+            style={styles.navDrawerBackdrop}
+            onPress={closeNavDrawer}
+          />
+        </View>
+      )}
 
       {notificationsOpen && (
         <View style={styles.drawerOverlay} pointerEvents="box-none">
@@ -537,15 +715,93 @@ const styles = StyleSheet.create({
   dashboardHeader: {
     gap: 16,
   },
+  heroCard: {
+    padding: 20,
+    borderRadius: 26,
+    backgroundColor: "rgba(15, 23, 42, 0.85)",
+    borderWidth: 1,
+    borderColor: "rgba(59, 130, 246, 0.18)",
+    shadowColor: "#0F172A",
+    shadowOpacity: 0.35,
+    shadowRadius: 14,
+    gap: 14,
+  },
+  heroTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
+  menuButton: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(59, 130, 246, 0.4)",
+    backgroundColor: "rgba(15, 23, 42, 0.8)",
+  },
+  menuGlyph: {
+    fontSize: 20,
+    color: "#F8FAFC",
+  },
+  heroCopy: {
+    flex: 1,
+    gap: 4,
+  },
+  heroEyebrow: {
+    fontSize: 13,
+    color: "#94A3B8",
+    textTransform: "uppercase",
+    letterSpacing: 1.2,
+  },
   headerActions: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+  },
+  heroStatsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+  },
+  heroStatCard: {
+    flexBasis: "47%",
+    flexGrow: 1,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "rgba(59, 130, 246, 0.2)",
+    backgroundColor: "rgba(15, 23, 42, 0.9)",
+    padding: 14,
+    gap: 6,
+  },
+  heroStatLabel: {
+    color: "#94A3B8",
+    fontSize: 12,
+    textTransform: "uppercase",
+  },
+  heroStatValue: {
+    color: "#F8FAFC",
+    fontSize: 28,
+    fontWeight: "700",
+  },
+  heroStatHint: {
+    color: "#38BDF8",
+    fontSize: 12,
+  },
+  controlPanel: {
+    padding: 16,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: "rgba(148, 163, 184, 0.2)",
+    backgroundColor: "rgba(2, 6, 23, 0.8)",
+    gap: 16,
   },
   navMenu: {
     padding: 16,
@@ -722,6 +978,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginRight: 8,
   },
+  syncBanner: {
+    padding: 18,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(59, 130, 246, 0.25)",
+    backgroundColor: "rgba(8, 47, 73, 0.55)",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 12,
+  },
   queueBanner: {
     padding: 16,
     borderRadius: 16,
@@ -759,6 +1026,46 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#1E293B",
     gap: 8,
+  },
+  snapshotRow: {
+    flexDirection: "column",
+    gap: 16,
+  },
+  snapshotCard: {
+    flex: 1,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: "rgba(59, 130, 246, 0.25)",
+    backgroundColor: "rgba(15, 23, 42, 0.82)",
+    padding: 18,
+    gap: 14,
+  },
+  snapshotHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  snapshotMeta: {
+    color: "#94A3B8",
+    fontSize: 12,
+  },
+  textLink: {
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(56, 189, 248, 0.4)",
+    backgroundColor: "rgba(15, 118, 110, 0.15)",
+  },
+  textLinkLabel: {
+    color: "#38BDF8",
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  snapshotMetrics: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
   },
   reportHeader: {
     flexDirection: "row",
@@ -867,6 +1174,38 @@ const styles = StyleSheet.create({
     borderColor: "#1E293B",
     gap: 10,
   },
+  activityPanel: {
+    flex: 1,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: "rgba(59, 130, 246, 0.2)",
+    backgroundColor: "rgba(2, 6, 23, 0.75)",
+    padding: 18,
+    gap: 10,
+  },
+  activityEmpty: {
+    color: "#94A3B8",
+    fontSize: 13,
+  },
+  activityItem: {
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(148, 163, 184, 0.12)",
+    paddingBottom: 10,
+    marginBottom: 10,
+    gap: 4,
+  },
+  activityActor: {
+    color: "#F8FAFC",
+    fontWeight: "600",
+  },
+  activityCopy: {
+    color: "#CBD5F5",
+    fontSize: 13,
+  },
+  activityMeta: {
+    color: "#64748B",
+    fontSize: 11,
+  },
   notificationsTitle: {
     color: "#F8FAFC",
     fontSize: 16,
@@ -929,6 +1268,86 @@ const styles = StyleSheet.create({
   drawerBackdrop: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(2, 6, 23, 0.75)",
+  },
+  navDrawerOverlay: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    zIndex: 30,
+    flexDirection: "row",
+  },
+  navDrawerBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(2, 6, 23, 0.7)",
+  },
+  navDrawerPanel: {
+    width: 280,
+    paddingHorizontal: 20,
+    paddingBottom: 24,
+    paddingTop: 48,
+    borderTopRightRadius: 28,
+    borderBottomRightRadius: 28,
+    backgroundColor: "rgba(15, 23, 42, 0.95)",
+    borderWidth: 1,
+    borderColor: "rgba(59, 130, 246, 0.3)",
+    gap: 12,
+  },
+  navDrawerHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 12,
+  },
+  navDrawerBackButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "rgba(56, 189, 248, 0.4)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  navDrawerBackGlyph: {
+    color: "#F8FAFC",
+    fontSize: 18,
+  },
+  navDrawerHeaderCopy: {
+    flex: 1,
+    gap: 2,
+  },
+  navDrawerTitle: {
+    color: "#F8FAFC",
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  navDrawerSubtitle: {
+    color: "#94A3B8",
+    fontSize: 12,
+  },
+  navDrawerItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(51, 65, 85, 0.6)",
+  },
+  navDrawerGlyph: {
+    fontSize: 20,
+  },
+  navDrawerCopy: {
+    flex: 1,
+  },
+  navDrawerItemTitle: {
+    color: "#E2E8F0",
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  navDrawerItemSubtitle: {
+    color: "#94A3B8",
+    fontSize: 12,
   },
   notificationsDrawer: {
     marginTop: 40,
