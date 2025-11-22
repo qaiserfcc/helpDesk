@@ -103,6 +103,11 @@ const swaggerDocument = {
             allOf: [{ $ref: "#/components/schemas/User" }],
             nullable: true,
           },
+          assignmentRequest: {
+            allOf: [{ $ref: "#/components/schemas/User" }],
+            nullable: true,
+            description: "Pending agent request awaiting admin approval",
+          },
           createdAt: { type: "string", format: "date-time" },
           updatedAt: { type: "string", format: "date-time" },
           resolvedAt: { type: "string", format: "date-time", nullable: true },
@@ -198,6 +203,8 @@ const swaggerDocument = {
         properties: {
           assigneeId: { type: "string", format: "uuid" },
         },
+        description:
+          "Optional when approving a pending request; required to assign a specific agent directly.",
       },
       AttachmentResponse: {
         allOf: [
@@ -649,7 +656,7 @@ const swaggerDocument = {
         tags: ["Tickets"],
         summary: "Assign a ticket",
         description:
-          "Agents/admins can assign tickets to themselves or another agent.",
+          "Admins approve assignment requests or assign tickets directly to agents.",
         security: [{ bearerAuth: [] }],
         parameters: [
           {
@@ -680,6 +687,38 @@ const swaggerDocument = {
           401: { description: "Authentication required" },
           403: { description: "Insufficient permissions" },
           404: { description: "Ticket or assignee not found" },
+        },
+      },
+    },
+    "/api/tickets/{ticketId}/request-assignment": {
+      post: {
+        tags: ["Tickets"],
+        summary: "Request ticket assignment",
+        description:
+          "Agents request ownership of a ticket. Admin approval is required before assignment is finalized.",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "ticketId",
+            in: "path",
+            required: true,
+            schema: { type: "string", format: "uuid" },
+          },
+        ],
+        responses: {
+          200: {
+            description: "Request recorded",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/TicketResponse" },
+              },
+            },
+          },
+          400: { description: "Ticket cannot accept requests" },
+          401: { description: "Authentication required" },
+          403: { description: "Only agents may request assignments" },
+          404: { description: "Ticket not found" },
+          409: { description: "Ticket already requested by another agent" },
         },
       },
     },

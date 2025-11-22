@@ -7,6 +7,7 @@ import {
   getTicket,
   ingestQueuedTickets,
   listTickets,
+  requestAssignment,
   resolveTicket,
   updateTicket,
 } from "./ticketService.js";
@@ -41,6 +42,12 @@ const agentUser: Express.AuthenticatedUser = {
   role: Role.agent,
 };
 
+const adminUser: Express.AuthenticatedUser = {
+  ...baseUser,
+  id: "admin-1",
+  role: Role.admin,
+};
+
 const ticketRecord = {
   id: "ticket-1",
   description: "Printer is jammed",
@@ -50,6 +57,7 @@ const ticketRecord = {
   attachments: [] as string[],
   createdBy: baseUser.id,
   assignedTo: null as string | null,
+  assignmentRequestId: null as string | null,
   resolvedAt: null as Date | null,
   createdAt: new Date(),
   updatedAt: new Date(),
@@ -59,6 +67,7 @@ const ticketWithRelations = {
   ...ticketRecord,
   creator: { id: baseUser.id, name: baseUser.name, email: baseUser.email },
   assignee: null,
+  assignmentRequest: null,
 };
 
 beforeEach(() => {
@@ -104,6 +113,19 @@ describe("createTicket", () => {
     );
     expect(ticket.id).toBe(ticketRecord.id);
   });
+
+  it("rejects ticket creation for agents", async () => {
+    await expect(
+      createTicket(
+        {
+          description: ticketRecord.description,
+          priority: ticketRecord.priority,
+          issueType: ticketRecord.issueType,
+        },
+        agentUser,
+      ),
+    ).rejects.toMatchObject({ status: 403 });
+  });
 });
 
 describe("updateTicket", () => {
@@ -121,9 +143,12 @@ describe("updateTicket", () => {
 });
 
 describe("assignTicket", () => {
-  it("assigns to the requesting agent by default", async () => {
-    prismaTicket.findUnique.mockResolvedValue(ticketRecord);
-    prismaUser.findUnique.mockResolvedValue({ id: agentUser.id });
+  it("assigns pending request when admin approves without payload", async () => {
+    prismaTicket.findUnique.mockResolvedValue({
+      ...ticketRecord,
+      assignmentRequestId: agentUser.id,
+    });
+    prismaUser.findUnique.mockResolvedValue({ id: agentUser.id, role: Role.agent });
     prismaTicket.update.mockResolvedValue({
       ...ticketWithRelations,
       assignedTo: agentUser.id,
@@ -134,7 +159,11 @@ describe("assignTicket", () => {
       },
     });
 
-    const ticket = await assignTicket(ticketRecord.id, undefined, agentUser);
+    const ticket = (await assignTicket(
+      ticketRecord.id,
+      undefined,
+      adminUser,
+    )) as any;
 
     expect(prismaTicket.update).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -142,6 +171,46 @@ describe("assignTicket", () => {
       }),
     );
     expect(ticket.assignee?.id).toBe(agentUser.id);
+  });
+
+  it("requires admin role", async () => {
+    prismaTicket.findUnique.mockResolvedValue(ticketRecord);
+
+    await expect(
+      assignTicket(ticketRecord.id, agentUser.id, agentUser),
+    ).rejects.toMatchObject({ status: 403 });
+  });
+});
+
+describe("requestAssignment", () => {
+  it("stores pending request for agent", async () => {
+    prismaTicket.findUnique.mockResolvedValue(ticketRecord);
+    prismaTicket.update.mockResolvedValue({
+      ...ticketWithRelations,
+      assignmentRequest: {
+        id: agentUser.id,
+        name: agentUser.name,
+        email: agentUser.email,
+      },
+    });
+
+    const ticket = (await requestAssignment(
+      ticketRecord.id,
+      agentUser,
+    )) as any;
+
+    expect(prismaTicket.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ assignmentRequestId: agentUser.id }),
+      }),
+    );
+    expect(ticket.assignmentRequest?.id).toBe(agentUser.id);
+  });
+
+  it("rejects non-agent request", async () => {
+    await expect(
+      requestAssignment(ticketRecord.id, baseUser),
+    ).rejects.toMatchObject({ status: 403 });
   });
 });
 

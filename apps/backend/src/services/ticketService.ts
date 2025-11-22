@@ -11,6 +11,9 @@ import { prisma } from "../lib/prisma.js";
 const ticketInclude = {
   creator: { select: { id: true, name: true, email: true } },
   assignee: { select: { id: true, name: true, email: true } },
+  assignmentRequest: {
+    select: { id: true, name: true, email: true },
+  },
 } as const;
 
 type TicketWithRelations = Prisma.TicketGetPayload<{
@@ -84,6 +87,10 @@ export async function createTicket(
   input: CreateTicketInput,
   user: RequestUser,
 ) {
+  if (user.role !== Role.user && user.role !== Role.admin) {
+    throw createError(403, "Only end-users or admins can create tickets");
+  }
+
   return prisma.ticket.create({
     data: {
       description: input.description,
@@ -113,12 +120,21 @@ export async function updateTicket(
     throw createError(404, "Ticket not found");
   }
 
-  if (user.role === Role.user && ticket.createdBy !== user.id) {
-    throw createError(403, "You cannot modify this ticket");
+  const isAdmin = user.role === Role.admin;
+  const isOwner = ticket.createdBy === user.id;
+
+  if (!isAdmin) {
+    if (user.role === Role.user) {
+      if (!isOwner) {
+        throw createError(403, "You cannot modify this ticket");
+      }
+    } else {
+      throw createError(403, "Only admins or the ticket owner may edit");
+    }
   }
 
-  if (updates.status && user.role === Role.user) {
-    throw createError(403, "Only agents can change ticket status");
+  if (updates.status && !isAdmin) {
+    throw createError(403, "Only admins can change ticket status");
   }
 
   const nextStatus = updates.status ?? ticket.status;
@@ -145,8 +161,8 @@ export async function assignTicket(
   assigneeId: string | undefined,
   user: RequestUser,
 ) {
-  if (user.role === Role.user) {
-    throw createError(403, "Only agents or admins can assign tickets");
+  if (user.role !== Role.admin) {
+    throw createError(403, "Only admins can assign tickets");
   }
 
   const ticket = await prisma.ticket.findUnique({ where: { id: ticketId } });
@@ -154,19 +170,28 @@ export async function assignTicket(
     throw createError(404, "Ticket not found");
   }
 
-  const targetAssignee = assigneeId ?? user.id;
+  const targetAssignee = assigneeId ?? ticket.assignmentRequestId;
+  if (!targetAssignee) {
+    throw createError(400, "Provide an agent id or approve a pending request");
+  }
+
   const assignee = await prisma.user.findUnique({
     where: { id: targetAssignee },
-    select: { id: true },
+    select: { id: true, role: true },
   });
   if (!assignee) {
     throw createError(404, "Assignee not found");
+  }
+
+  if (assignee.role !== Role.agent) {
+    throw createError(400, "Assignee must be an agent");
   }
 
   return prisma.ticket.update({
     where: { id: ticketId },
     data: {
       assignedTo: assignee.id,
+      assignmentRequestId: null,
       status:
         ticket.status === TicketStatus.open
           ? TicketStatus.in_progress
@@ -189,14 +214,60 @@ export async function resolveTicket(ticketId: string, user: RequestUser) {
   if (ticket.status === TicketStatus.resolved) {
     return prisma.ticket.update({
       where: { id: ticketId },
-      data: { resolvedAt: ticket.resolvedAt ?? new Date() },
+      data: {
+        resolvedAt: ticket.resolvedAt ?? new Date(),
+        assignmentRequestId: null,
+      },
       include: ticketInclude,
     });
   }
 
   return prisma.ticket.update({
     where: { id: ticketId },
-    data: { status: TicketStatus.resolved, resolvedAt: new Date() },
+    data: {
+      status: TicketStatus.resolved,
+      resolvedAt: new Date(),
+      assignmentRequestId: null,
+    },
+    include: ticketInclude,
+  });
+}
+
+export async function requestAssignment(ticketId: string, user: RequestUser) {
+  if (user.role !== Role.agent) {
+    throw createError(403, "Only agents can request assignments");
+  }
+
+  const ticket = await prisma.ticket.findUnique({ where: { id: ticketId } });
+  if (!ticket) {
+    throw createError(404, "Ticket not found");
+  }
+
+  if (ticket.status === TicketStatus.resolved) {
+    throw createError(400, "Cannot request a resolved ticket");
+  }
+
+  if (ticket.assignedTo) {
+    throw createError(400, "Ticket already assigned");
+  }
+
+  if (
+    ticket.assignmentRequestId &&
+    ticket.assignmentRequestId !== user.id
+  ) {
+    throw createError(409, "Ticket already requested by another agent");
+  }
+
+  if (ticket.assignmentRequestId === user.id) {
+    return prisma.ticket.findUniqueOrThrow({
+      where: { id: ticketId },
+      include: ticketInclude,
+    });
+  }
+
+  return prisma.ticket.update({
+    where: { id: ticketId },
+    data: { assignmentRequestId: user.id },
     include: ticketInclude,
   });
 }
@@ -241,6 +312,10 @@ export async function ingestQueuedTickets(
 ) {
   if (!tickets.length) {
     return [] as const;
+  }
+
+  if (user.role !== Role.user && user.role !== Role.admin) {
+    throw createError(403, "Only end-users or admins can sync tickets");
   }
 
   const results: Array<{ tempId: string; ticket: TicketWithRelations }> = [];

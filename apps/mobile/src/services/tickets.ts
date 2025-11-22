@@ -27,6 +27,7 @@ export type Ticket = {
   resolvedAt: string | null;
   creator: TicketUser;
   assignee: TicketUser | null;
+  assignmentRequest: TicketUser | null;
 };
 
 export type TicketFilters = {
@@ -91,6 +92,13 @@ export async function assignTicket(ticketId: string, assigneeId?: string) {
 export async function resolveTicket(ticketId: string) {
   const response = await apiClient.post<{ ticket: Ticket }>(
     `/tickets/${ticketId}/resolve`,
+  );
+  return response.data.ticket;
+}
+
+export async function requestAssignment(ticketId: string) {
+  const response = await apiClient.post<{ ticket: Ticket }>(
+    `/tickets/${ticketId}/request-assignment`,
   );
   return response.data.ticket;
 }

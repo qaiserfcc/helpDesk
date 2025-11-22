@@ -16,6 +16,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import {
   assignTicket,
   fetchTicket,
+  requestAssignment,
   resolveTicket,
   TicketStatus,
 } from "@/services/tickets";
@@ -55,8 +56,21 @@ export function TicketDetailScreen({ route, navigation }: Props) {
     queryFn: () => fetchTicket(ticketId),
   });
 
-  const canAssign = authUser?.role === "agent" || authUser?.role === "admin";
-  const canEdit = authUser?.id && ticket?.creator.id === authUser.id;
+  const isAdmin = authUser?.role === "admin";
+  const isAgent = authUser?.role === "agent";
+  const isCreator = authUser?.id && ticket?.creator.id === authUser.id;
+  const canAssign = isAdmin;
+  const canEdit = Boolean(
+    ticket &&
+      ((isAdmin && authUser?.id) ||
+        (authUser?.role === "user" && ticket.creator.id === authUser.id)),
+  );
+  const pendingRequest = ticket?.assignmentRequest;
+  const agentHasPendingRequest =
+    isAgent && pendingRequest?.id === authUser?.id;
+  const otherAgentRequested =
+    isAgent && !!pendingRequest && pendingRequest.id !== authUser?.id;
+  const canResolve = isAdmin || isAgent;
 
   const invalidateTickets = async () => {
     await queryClient.invalidateQueries({
@@ -67,8 +81,16 @@ export function TicketDetailScreen({ route, navigation }: Props) {
   };
 
   const handleAssign = async () => {
+    if (!ticket) return;
+    if (!ticket.assignmentRequest) {
+      Alert.alert(
+        "No pending request",
+        "This ticket has no agent request to approve yet.",
+      );
+      return;
+    }
     try {
-      await assignTicket(ticketId);
+      await assignTicket(ticketId, ticket.assignmentRequest.id);
       await invalidateTickets();
     } catch (error) {
       console.error("assign ticket failed", error);
@@ -88,6 +110,19 @@ export function TicketDetailScreen({ route, navigation }: Props) {
 
   const handleEdit = () => {
     navigation.navigate("TicketForm", { ticketId });
+  };
+
+  const handleRequestAssignment = async () => {
+    try {
+      await requestAssignment(ticketId);
+      await invalidateTickets();
+    } catch (error) {
+      console.error("request assignment failed", error);
+      Alert.alert(
+        "Request failed",
+        "Unable to request this ticket right now.",
+      );
+    }
   };
 
   const handleOpenAttachment = async (attachment: string) => {
@@ -143,6 +178,11 @@ export function TicketDetailScreen({ route, navigation }: Props) {
         <Text style={styles.sectionValue}>
           {ticket.assignee ? ticket.assignee.name : "Unassigned"}
         </Text>
+        {ticket.assignmentRequest && !ticket.assignee && (
+          <Text style={styles.assignmentNote}>
+            Requested by {ticket.assignmentRequest.name}
+          </Text>
+        )}
       </View>
 
       {ticket.attachments.length > 0 && (
@@ -170,13 +210,38 @@ export function TicketDetailScreen({ route, navigation }: Props) {
           </Pressable>
         )}
         {canAssign && ticket.status !== "resolved" && (
-          <Pressable style={styles.primaryBtn} onPress={handleAssign}>
+          <Pressable
+            style={[styles.primaryBtn, !pendingRequest && styles.disabledBtn]}
+            onPress={handleAssign}
+            disabled={!pendingRequest}
+          >
             <Text style={styles.primaryText}>
-              {ticket.assignee ? "Reassign to me" : "Assign to me"}
+              {pendingRequest
+                ? `Assign to ${pendingRequest.name}`
+                : "Awaiting agent request"}
             </Text>
           </Pressable>
         )}
-        {canAssign && ticket.status !== "resolved" && (
+        {isAgent && !ticket.assignee && ticket.status !== "resolved" && (
+          <Pressable
+            style={[
+              styles.secondaryBtn,
+              (agentHasPendingRequest || otherAgentRequested) &&
+                styles.disabledBtn,
+            ]}
+            onPress={handleRequestAssignment}
+            disabled={agentHasPendingRequest || otherAgentRequested}
+          >
+            <Text style={styles.secondaryText}>
+              {agentHasPendingRequest
+                ? "Request pending approval"
+                : otherAgentRequested
+                  ? "Another agent requested"
+                  : "Request assignment"}
+            </Text>
+          </Pressable>
+        )}
+        {canResolve && ticket.status !== "resolved" && (
           <Pressable
             style={[styles.primaryBtn, styles.resolveBtn]}
             onPress={handleResolve}
@@ -278,6 +343,9 @@ const styles = StyleSheet.create({
   resolveBtn: {
     backgroundColor: "#0EA5E9",
   },
+  disabledBtn: {
+    opacity: 0.5,
+  },
   primaryText: {
     color: "#0B1120",
     fontWeight: "700",
@@ -292,5 +360,10 @@ const styles = StyleSheet.create({
   secondaryText: {
     color: "#E2E8F0",
     fontWeight: "600",
+  },
+  assignmentNote: {
+    marginTop: 4,
+    color: "#FACC15",
+    fontSize: 13,
   },
 });

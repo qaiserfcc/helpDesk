@@ -47,6 +47,7 @@ export function DashboardScreen() {
   const signOut = useAuthStore((state) => state.signOut);
   const [statusFilter, setStatusFilter] = useState<TicketStatus | undefined>();
   const [assignedOnly, setAssignedOnly] = useState(false);
+  const canCreate = user?.role === "user" || user?.role === "admin";
 
   const {
     data: tickets = [],
@@ -231,15 +232,19 @@ export function DashboardScreen() {
             <View style={styles.emptyState}>
               <Text style={styles.emptyTitle}>No tickets found</Text>
               <Text style={styles.emptySubtitle}>
-                Try a different filter or create a new ticket below.
+                {canCreate
+                  ? "Try a different filter or create a new ticket below."
+                  : "Try a different filter or request access from an admin."}
               </Text>
             </View>
           )}
         />
 
-        <Pressable style={styles.primaryCta} onPress={onCreateTicket}>
-          <Text style={styles.primaryText}>Create Ticket</Text>
-        </Pressable>
+        {canCreate && (
+          <Pressable style={styles.primaryCta} onPress={onCreateTicket}>
+            <Text style={styles.primaryText}>Create Ticket</Text>
+          </Pressable>
+        )}
       </View>
     </SafeAreaView>
   );

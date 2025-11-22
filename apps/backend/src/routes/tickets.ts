@@ -13,6 +13,7 @@ import {
   getTicketDiff,
   ingestQueuedTickets,
   listTickets,
+  requestAssignment,
   resolveTicket,
   updateTicket,
 } from "../services/ticketService.js";
@@ -219,8 +220,8 @@ router.post("/:ticketId/assign", async (req, res, next) => {
     return;
   }
 
-  if (req.user.role === Role.user) {
-    next(createError(403, "Only agents can assign tickets"));
+  if (req.user.role !== Role.admin) {
+    next(createError(403, "Only admins can assign tickets"));
     return;
   }
 
@@ -236,6 +237,25 @@ router.post("/:ticketId/assign", async (req, res, next) => {
       parsed.data.assigneeId,
       req.user,
     );
+    res.json({ ticket });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/:ticketId/request-assignment", async (req, res, next) => {
+  if (!req.user) {
+    next(createError(401, "Authentication required"));
+    return;
+  }
+
+  if (req.user.role !== Role.agent) {
+    next(createError(403, "Only agents can request assignments"));
+    return;
+  }
+
+  try {
+    const ticket = await requestAssignment(req.params.ticketId, req.user);
     res.json({ ticket });
   } catch (error) {
     next(error);
