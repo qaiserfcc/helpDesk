@@ -38,7 +38,7 @@
 - [ ] **Milestone 5 – Admin Features (3–4 days)**
   - [x] Backend: admin user CRUD + role assignment APIs
   - [x] Backend: allocation/reporting endpoints for dashboards
-  - [ ] In-app user management screens
+  - [x] In-app user management screens
   - [ ] Ticket allocation dashboard + reporting views
   - [ ] Shared: permission hooks, components, and tests
   - [ ] Role-aware UI guards/components
