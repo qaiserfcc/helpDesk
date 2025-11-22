@@ -13,6 +13,6 @@
     "outDir": "dist",
     "rootDir": "."
   },
-  "include": ["src", "api"],
+  "include": ["src", "api", "scripts"],
   "exclude": ["node_modules", "dist"]
 }

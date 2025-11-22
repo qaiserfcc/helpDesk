@@ -1,12 +1,14 @@
-import React from 'react';
-import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { DashboardScreen } from '@/screens/DashboardScreen';
-import { LoadingScreen } from '@/screens/LoadingScreen';
-import { useAuthStore } from '@/store/useAuthStore';
+import React from "react";
+import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { DashboardScreen } from "@/screens/DashboardScreen";
+import { LoadingScreen } from "@/screens/LoadingScreen";
+import { LoginScreen } from "@/screens/LoginScreen";
+import { useAuthStore } from "@/store/useAuthStore";
 
 export type RootStackParamList = {
   Loading: undefined;
+  Login: undefined;
   Dashboard: undefined;
 };
 
@@ -16,18 +18,21 @@ const navTheme = {
   ...DefaultTheme,
   colors: {
     ...DefaultTheme.colors,
-    background: '#0B1120'
-  }
+    background: "#0B1120",
+  },
 };
 
 export function AppNavigator() {
   const initialized = useAuthStore((state) => state.initialized);
+  const session = useAuthStore((state) => state.session);
 
   return (
     <NavigationContainer theme={navTheme}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!initialized ? (
           <Stack.Screen name="Loading" component={LoadingScreen} />
+        ) : !session ? (
+          <Stack.Screen name="Login" component={LoginScreen} />
         ) : (
           <Stack.Screen name="Dashboard" component={DashboardScreen} />
         )}

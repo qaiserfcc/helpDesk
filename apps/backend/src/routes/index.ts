@@ -1,9 +1,13 @@
 import { Router } from 'express';
 import authRouter from './auth.js';
+import usersRouter from './users.js';
+import ticketsRouter from './tickets.js';
 
 const router = Router();
 
 router.use('/auth', authRouter);
+router.use('/users', usersRouter);
+router.use('/tickets', ticketsRouter);
 
 router.get('/version', (_req, res) => {
   res.json({

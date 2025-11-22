@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
-import { ActivityIndicator, View, StyleSheet } from 'react-native';
-import { useAuthStore } from '@/store/useAuthStore';
+import React, { useEffect } from "react";
+import { ActivityIndicator, View, StyleSheet } from "react-native";
+import { useAuthStore } from "@/store/useAuthStore";
 
 export function LoadingScreen() {
   const bootstrap = useAuthStore((state) => state.bootstrap);
@@ -19,8 +19,8 @@ export function LoadingScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#020617'
-  }
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#020617",
+  },
 });

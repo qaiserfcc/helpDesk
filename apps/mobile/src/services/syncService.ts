@@ -1,6 +1,6 @@
-import * as Network from 'expo-network';
-import { listQueuedTickets, markTicketSynced } from '@/storage/offline-db';
-import { apiClient } from '@/services/apiClient';
+import * as Network from "expo-network";
+import { listQueuedTickets, markTicketSynced } from "@/storage/offline-db";
+import { apiClient } from "@/services/apiClient";
 
 let syncInterval: ReturnType<typeof setInterval> | undefined;
 
@@ -17,10 +17,10 @@ export async function syncQueuedTickets() {
 
   for (const row of queued) {
     try {
-      await apiClient.post('/tickets/sync', JSON.parse(row.payload));
+      await apiClient.post("/tickets/sync", JSON.parse(row.payload));
       await markTicketSynced(row.id);
     } catch (error) {
-      console.warn('Sync failed', row.id, error);
+      console.warn("Sync failed", row.id, error);
       break;
     }
   }
@@ -31,7 +31,9 @@ export function startSyncLoop(intervalMs = 30_000) {
     return;
   }
   syncInterval = setInterval(() => {
-    syncQueuedTickets().catch((error) => console.error('sync loop error', error));
+    syncQueuedTickets().catch((error) =>
+      console.error("sync loop error", error),
+    );
   }, intervalMs);
 }
 

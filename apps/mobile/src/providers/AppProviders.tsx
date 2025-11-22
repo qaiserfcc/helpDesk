@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { startSyncLoop, stopSyncLoop } from '@/services/syncService';
+import React, { useEffect } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { startSyncLoop, stopSyncLoop } from "@/services/syncService";
 
 const queryClient = new QueryClient();
 
@@ -14,5 +14,7 @@ export function AppProviders({ children }: Props) {
     return () => stopSyncLoop();
   }, []);
 
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+  return (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  );
 }
