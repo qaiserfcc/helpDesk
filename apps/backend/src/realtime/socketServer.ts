@@ -130,11 +130,22 @@ export function initRealtimeServer(server: HttpServer) {
       await authenticateSocket(socket);
       next();
     } catch (error) {
+      console.error(
+        "[socket] authentication error",
+        error instanceof Error ? error.message : error,
+      );
       next(error instanceof Error ? error : new Error("Socket auth failed"));
     }
   });
 
   io.on("connection", (socket) => {
+    socket.on("error", (error) => {
+      console.error(
+        "[socket] runtime error",
+        error instanceof Error ? error.message : error,
+      );
+    });
+
     const user = socket.data.user;
     socket.join(userRoom(user.id));
     socket.join(roleRoom(user.role));

@@ -30,7 +30,11 @@ export type Ticket = {
   assignmentRequest: TicketUser | null;
 };
 
-export type TicketActivityType = "status_change" | "assignment_change";
+export type TicketActivityType =
+  | "status_change"
+  | "assignment_change"
+  | "assignment_request"
+  | "ticket_update";
 
 export type TicketActivityEntry = {
   id: string;

@@ -1,6 +1,8 @@
+import axios from "axios";
 import { io, type Socket } from "socket.io-client";
 import { env } from "@/config/env";
 import { queryClient } from "@/lib/queryClient";
+import { useAuthStore, type AuthSession } from "@/store/useAuthStore";
 import type { Ticket, TicketActivityEntry } from "@/services/tickets";
 
 type ServerToClientEvents = {
@@ -14,6 +16,83 @@ type ServerToClientEvents = {
 
 let socket: Socket<ServerToClientEvents> | null = null;
 let currentToken: string | null = null;
+let socketRefreshPromise: Promise<boolean> | null = null;
+
+type RefreshResponse = {
+  user: AuthSession["user"];
+  tokens: { accessToken: string; refreshToken: string };
+};
+
+function getErrorMessage(error: unknown) {
+  if (!error) {
+    return "";
+  }
+  if (typeof error === "string") {
+    return error;
+  }
+  if (
+    typeof error === "object" &&
+    error &&
+    "message" in error &&
+    typeof (error as { message?: unknown }).message === "string"
+  ) {
+    return (error as { message?: string }).message ?? "";
+  }
+  return "";
+}
+
+function isAuthRelatedError(message: string) {
+  if (!message) {
+    return false;
+  }
+  const normalized = message.toLowerCase();
+  return (
+    normalized.includes("invalid socket token") ||
+    normalized.includes("socket token missing") ||
+    normalized.includes("jwt expired") ||
+    normalized.includes("invalid token")
+  );
+}
+
+async function refreshSocketSession() {
+  if (socketRefreshPromise) {
+    return socketRefreshPromise;
+  }
+
+  const store = useAuthStore.getState();
+  const refreshToken = store.session?.refreshToken;
+  if (!refreshToken) {
+    return false;
+  }
+
+  socketRefreshPromise = (async () => {
+    try {
+      const { data } = await axios.post<RefreshResponse>(
+        `${env.apiUrl}/auth/refresh`,
+        { refreshToken },
+        { timeout: 10000 },
+      );
+
+      await store.applySession({
+        user: data.user,
+        accessToken: data.tokens.accessToken,
+        refreshToken: data.tokens.refreshToken,
+      });
+      return true;
+    } catch (error) {
+      console.warn(
+        "Socket session refresh failed",
+        getErrorMessage(error) || error,
+      );
+      await store.signOut();
+      return false;
+    } finally {
+      socketRefreshPromise = null;
+    }
+  })();
+
+  return socketRefreshPromise;
+}
 
 function invalidateTicketLists(ticketId: string) {
   void queryClient.invalidateQueries({ queryKey: ["tickets"], exact: false });
@@ -44,7 +123,11 @@ function attachListeners(instance: Socket<ServerToClientEvents>) {
   });
 
   instance.on("connect_error", (error) => {
-    console.warn("Realtime socket failed", error?.message ?? error);
+    const message = getErrorMessage(error);
+    console.warn("Realtime socket failed", message || error);
+    if (isAuthRelatedError(message)) {
+      void refreshSocketSession();
+    }
   });
 }
 

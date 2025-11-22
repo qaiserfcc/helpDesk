@@ -27,6 +27,8 @@ enum TicketStatus {
 enum TicketActivityType {
   status_change
   assignment_change
+  assignment_request
+  ticket_update
 }
 
 enum IssueType {

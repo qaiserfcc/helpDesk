@@ -244,6 +244,14 @@ export async function updateTicket(
 
   const nextStatus = updates.status ?? ticket.status;
   const statusChanged = nextStatus !== ticket.status;
+  const descriptionChanged =
+    updates.description !== undefined && updates.description !== ticket.description;
+  const priorityChanged =
+    updates.priority !== undefined && updates.priority !== ticket.priority;
+  const issueTypeChanged =
+    updates.issueType !== undefined && updates.issueType !== ticket.issueType;
+  const detailFieldsChanged =
+    descriptionChanged || priorityChanged || issueTypeChanged;
   const resolvedAt =
     nextStatus === TicketStatus.resolved && ticket.resolvedAt === null
       ? new Date()
@@ -268,6 +276,16 @@ export async function updateTicket(
       ticketId,
       actorId: user.id,
       type: TicketActivityType.status_change,
+      fromStatus: ticket.status,
+      toStatus: nextStatus,
+      fromAssigneeId: ticket.assignedTo,
+      toAssigneeId: ticket.assignedTo,
+    });
+  } else if (user.role === Role.user && detailFieldsChanged) {
+    await logTicketActivity({
+      ticketId,
+      actorId: user.id,
+      type: "ticket_update" as TicketActivityType,
       fromStatus: ticket.status,
       toStatus: nextStatus,
       fromAssigneeId: ticket.assignedTo,
@@ -447,6 +465,15 @@ export async function requestAssignment(ticketId: string, user: RequestUser) {
   });
 
   notifyTicketChange(updatedTicket);
+  await logTicketActivity({
+    ticketId,
+    actorId: user.id,
+    type: "assignment_request" as TicketActivityType,
+    fromStatus: ticket.status,
+    toStatus: updatedTicket.status,
+    fromAssigneeId: ticket.assignedTo,
+    toAssigneeId: user.id,
+  });
   return updatedTicket;
 }
 
@@ -508,6 +535,18 @@ export async function appendAttachments(
   });
 
   notifyTicketChange(updatedTicket);
+
+  if (user.role === Role.user) {
+    await logTicketActivity({
+      ticketId,
+      actorId: user.id,
+      type: "ticket_update" as TicketActivityType,
+      fromStatus: ticket.status,
+      toStatus: updatedTicket.status,
+      fromAssigneeId: ticket.assignedTo,
+      toAssigneeId: ticket.assignedTo,
+    });
+  }
   return updatedTicket;
 }
 
@@ -593,17 +632,38 @@ export async function listRecentTicketActivity(
   limit: number,
   user: RequestUser,
 ) {
-  if (user.role !== Role.admin) {
-    throw createError(403, "Only admins can view ticket activity reports");
+  const take = Math.min(Math.max((limit ?? 25) || 25, 1), 200);
+  if (user.role === Role.admin) {
+    return prisma.ticketActivity.findMany({
+      orderBy: { createdAt: "desc" },
+      take,
+      include: ticketActivityInclude,
+    });
   }
 
-  const take = Math.min(Math.max((limit ?? 25) || 25, 1), 200);
+  if (user.role === Role.agent) {
+    return prisma.ticketActivity.findMany({
+      where: {
+        ticket: {
+          OR: [{ assignedTo: user.id }, { assignmentRequestId: user.id }],
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      take,
+      include: ticketActivityInclude,
+    });
+  }
 
-  return prisma.ticketActivity.findMany({
-    orderBy: { createdAt: "desc" },
-    take,
-    include: ticketActivityInclude,
-  });
+  if (user.role === Role.user) {
+    return prisma.ticketActivity.findMany({
+      where: { ticket: { createdBy: user.id } },
+      orderBy: { createdAt: "desc" },
+      take,
+      include: ticketActivityInclude,
+    });
+  }
+
+  throw createError(403, "Unsupported role for ticket activity reports");
 }
 
 export async function getTicketStatusSummary(user: RequestUser) {
