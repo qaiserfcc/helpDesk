@@ -20,15 +20,26 @@ vi.mock("../lib/prisma.js", () => {
     findUnique: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
+    groupBy: vi.fn(),
   };
   const user = {
     findUnique: vi.fn(),
+    findMany: vi.fn(),
   };
-  return { prisma: { ticket, user } };
+  const ticketActivity = {
+    create: vi.fn(),
+    findMany: vi.fn(),
+  };
+  const $transaction = vi.fn((operations: unknown[]) =>
+    Promise.all(operations as Promise<unknown>[]),
+  );
+  return { prisma: { ticket, user, ticketActivity, $transaction } };
 });
 
 const prismaTicket = prisma.ticket as unknown as Record<string, Mock>;
 const prismaUser = prisma.user as unknown as Record<string, Mock>;
+const prismaTicketActivity =
+  prisma.ticketActivity as unknown as Record<string, Mock>;
 
 const baseUser: Express.AuthenticatedUser = {
   id: "user-1",
@@ -74,6 +85,7 @@ const ticketWithRelations = {
 beforeEach(() => {
   Object.values(prismaTicket).forEach((mock) => mock.mockReset());
   Object.values(prismaUser).forEach((mock) => mock.mockReset());
+  Object.values(prismaTicketActivity).forEach((mock) => mock.mockReset());
 });
 
 describe("listTickets", () => {
