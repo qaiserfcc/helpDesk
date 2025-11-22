@@ -4,6 +4,7 @@
 
 - [x] Capture master project brief & scope in memory bank
 - [x] Initialize repository/workspace scaffolding
+
 - [x] **Milestone 1 – Foundations**
   - [x] Backend: Express.js + TypeScript project setup
   - [x] Backend: Prisma + PostgreSQL schema bootstrap
@@ -11,6 +12,7 @@
   - [x] Frontend: React Native TS template, navigation, theming
   - [x] Frontend: Offline DB (SQLite/WatermelonDB) integration
   - [x] Shared: Axios base client + env management
+  
 - [x] **Milestone 2 – Authentication (3–4 days)**
   - [x] Backend auth endpoints (login, refresh)
   - [x] Role model + middleware (User/Agent/Admin)
@@ -25,21 +27,20 @@
   - [x] Mobile create/list/detail/update flows per role
   - [x] Offline queue + auto-sync/background service
 
-## Doing
-
-- **Milestone 4 kick-off (Unit tests are mandatory for every code change in this milestone.)**
-- [ ] **Milestone 4 – Notifications (2–4 days)**
+- [x] **Milestone 4 – Notifications (2–4 days)**
   - [x] Backend: socket notifications and real time update + email provider integration
   - [x] Backend triggers for ticket events
   - [x] Mobile: sockets event handling
 
-## Next
+## Doing
 
 - **Milestone 5 kick-off (Unit tests are mandatory for every code change in this milestone.)**
 - [ ] **Milestone 5 – Admin Features (3–4 days)**
   - [ ] In-app user management screens
   - [ ] Ticket allocation dashboard + reporting views
   - [ ] Role-aware UI guards/components
+
+## Next
 
 - [ ] **Milestone 6 – QA & Launch (3–5 days)**
   - [ ] Offline + E2E test passes
