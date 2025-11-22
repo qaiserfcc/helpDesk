@@ -25,19 +25,13 @@ import {
 } from "@/services/tickets";
 import { fetchUsers, UserSummary } from "@/services/users";
 import { env } from "@/config/env";
+import {
+  describeTicketActivity,
+  formatTicketStatus,
+} from "@/utils/ticketActivity";
+import { useNotificationStore } from "@/store/useNotificationStore";
 
-function formatStatus(status: TicketStatus) {
-  switch (status) {
-    case "open":
-      return "Open";
-    case "in_progress":
-      return "In Progress";
-    case "resolved":
-      return "Resolved";
-    default:
-      return status;
-  }
-}
+const formatStatus = formatTicketStatus;
 
 type Props = NativeStackScreenProps<RootStackParamList, "TicketDetail">;
 
@@ -94,6 +88,11 @@ export function TicketDetailScreen({ route, navigation }: Props) {
     enabled: canAssign,
     staleTime: 60_000,
   });
+  const markTicketRead = useNotificationStore((state) => state.markTicketRead);
+
+  useEffect(() => {
+    markTicketRead(ticketId);
+  }, [ticketId, markTicketRead]);
 
   useEffect(() => {
     if (!ticket) {
@@ -203,22 +202,6 @@ export function TicketDetailScreen({ route, navigation }: Props) {
       </View>
     );
   }
-
-  const describeActivity = (entry: TicketActivityEntry) => {
-    if (entry.type === "assignment_change") {
-      if (entry.toAssignee && entry.fromAssignee) {
-        return `${entry.actor.name} reassigned from ${entry.fromAssignee.name} to ${entry.toAssignee.name}`;
-      }
-      if (entry.toAssignee) {
-        return `${entry.actor.name} assigned ${entry.toAssignee.name}`;
-      }
-      return `${entry.actor.name} cleared the assignment`;
-    }
-    if (entry.fromStatus && entry.toStatus) {
-      return `${entry.actor.name} changed status ${formatStatus(entry.fromStatus)} → ${formatStatus(entry.toStatus)}`;
-    }
-    return `${entry.actor.name} updated the ticket`;
-  };
 
   const formatActivityTime = (iso: string) => {
     try {
@@ -336,7 +319,7 @@ export function TicketDetailScreen({ route, navigation }: Props) {
             {activities.map((entry) => (
               <View key={entry.id} style={styles.activityItem}>
                 <Text style={styles.activityDescription}>
-                  {describeActivity(entry)}
+                  {describeTicketActivity(entry)}
                 </Text>
                 <Text style={styles.activityMeta}>
                   {formatActivityTime(entry.createdAt)}

@@ -497,6 +497,8 @@ export async function declineAssignmentRequest(
     throw createError(409, "No pending request to decline");
   }
 
+  const requesterId = ticket.assignmentRequestId;
+
   const updatedTicket = await prisma.ticket.update({
     where: { id: ticketId },
     data: { assignmentRequestId: null },
@@ -504,6 +506,15 @@ export async function declineAssignmentRequest(
   });
 
   notifyTicketChange(updatedTicket);
+  await logTicketActivity({
+    ticketId,
+    actorId: user.id,
+    type: TicketActivityType.assignment_change,
+    fromStatus: ticket.status,
+    toStatus: updatedTicket.status,
+    fromAssigneeId: requesterId,
+    toAssigneeId: null,
+  });
   return updatedTicket;
 }
 

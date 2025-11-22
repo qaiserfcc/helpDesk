@@ -7,7 +7,6 @@ import React, {
 } from "react";
 import {
   ActivityIndicator,
-  Animated,
   FlatList,
   LayoutChangeEvent,
   Pressable,
@@ -25,8 +24,12 @@ import { useQuery } from "@tanstack/react-query";
 import { RootStackParamList } from "@/navigation/AppNavigator";
 import { useAuthStore } from "@/store/useAuthStore";
 import {
+  useNotificationStore,
+  type NotificationEntry,
+  type NotificationBase,
+} from "@/store/useNotificationStore";
+import {
   Ticket,
-  TicketActivityEntry,
   TicketStatus,
   fetchRecentTicketActivity,
   fetchTicketStatusSummary,
@@ -34,6 +37,10 @@ import {
 } from "@/services/tickets";
 import { listQueuedTickets } from "@/storage/offline-db";
 import { syncQueuedTickets } from "@/services/syncService";
+import {
+  describeTicketActivity,
+  formatTicketStatus,
+} from "@/utils/ticketActivity";
 
 const statusFilters: Array<{ label: string; value?: TicketStatus }> = [
   { label: "All" },
@@ -42,44 +49,7 @@ const statusFilters: Array<{ label: string; value?: TicketStatus }> = [
   { label: "Resolved", value: "resolved" },
 ];
 
-function formatStatus(status: TicketStatus) {
-  switch (status) {
-    case "open":
-      return "Open";
-    case "in_progress":
-      return "In Progress";
-    case "resolved":
-      return "Resolved";
-    default:
-      return status;
-  }
-}
-
-function describeActivity(entry: TicketActivityEntry) {
-  const ticketLabel = `#${entry.ticketId.slice(0, 6)}`;
-
-  switch (entry.type) {
-    case "assignment_request":
-      return `${entry.actor.name} requested assignment on ${ticketLabel}`;
-    case "ticket_update":
-      return `${entry.actor.name} updated details on ${ticketLabel}`;
-    case "assignment_change":
-      if (entry.toAssignee) {
-        return `${entry.actor.name} assigned ${ticketLabel} to ${entry.toAssignee.name}`;
-      }
-      return `${entry.actor.name} unassigned ${ticketLabel}`;
-    case "status_change":
-      if (entry.toStatus) {
-        return `${entry.actor.name} moved ${ticketLabel} to ${formatStatus(entry.toStatus)}`;
-      }
-      if (entry.fromStatus) {
-        return `${entry.actor.name} updated ${ticketLabel} from ${formatStatus(entry.fromStatus)}`;
-      }
-      return `${entry.actor.name} updated ${ticketLabel}`;
-    default:
-      return `${entry.actor.name} updated ${ticketLabel}`;
-  }
-}
+const formatStatus = formatTicketStatus;
 
 type Navigation = NativeStackNavigationProp<RootStackParamList, "Dashboard">;
 
@@ -90,16 +60,16 @@ export function DashboardScreen() {
   const [statusFilter, setStatusFilter] = useState<TicketStatus | undefined>();
   const [assignedOnly, setAssignedOnly] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [latestActivityId, setLatestActivityId] = useState<string | null>(null);
-  const [toastQueue, setToastQueue] = useState<TicketActivityEntry[]>([]);
-  const [activeToast, setActiveToast] = useState<TicketActivityEntry | null>(
-    null,
-  );
-  const toastOpacity = useRef(new Animated.Value(0)).current;
   const listRef = useRef<FlatList<Ticket> | null>(null);
   const headerHeightRef = useRef(0);
   const canCreate = user?.role === "user" || user?.role === "admin";
+  const notifications = useNotificationStore((state) => state.notifications);
+  const unreadCount = useNotificationStore((state) => state.unreadCount);
+  const seedNotifications = useNotificationStore(
+    (state) => state.seedFromHistory,
+  );
+  const markAllRead = useNotificationStore((state) => state.markAllRead);
+  const markRead = useNotificationStore((state) => state.markRead);
 
   const {
     data: tickets = [],
@@ -126,7 +96,6 @@ export function DashboardScreen() {
 
   const {
     data: recentActivity = [],
-    isLoading: activityLoading,
     refetch: refetchActivity,
   } = useQuery({
     queryKey: ["reports", "activity"],
@@ -162,68 +131,17 @@ export function DashboardScreen() {
       return;
     }
 
-    if (!latestActivityId) {
-      setLatestActivityId(recentActivity[0].id);
-      return;
-    }
+    const payload: NotificationBase[] = recentActivity.map((entry) => ({
+      id: entry.id,
+      ticketId: entry.ticketId,
+      actor: entry.actor.name,
+      summary: describeTicketActivity(entry),
+      createdAt: entry.createdAt,
+      type: "activity",
+    }));
 
-    if (recentActivity[0].id === latestActivityId) {
-      return;
-    }
-
-    const newEntries: TicketActivityEntry[] = [];
-    for (const entry of recentActivity) {
-      if (entry.id === latestActivityId) {
-        break;
-      }
-      newEntries.push(entry);
-    }
-
-    if (newEntries.length > 0) {
-      setLatestActivityId(recentActivity[0].id);
-      setToastQueue((queue) => [...queue, ...newEntries.reverse()]);
-      setUnreadCount((count) => count + newEntries.length);
-    }
-  }, [recentActivity, latestActivityId]);
-
-  useEffect(() => {
-    if (activeToast || toastQueue.length === 0) {
-      return;
-    }
-
-    setActiveToast(toastQueue[0]);
-    setToastQueue((queue) => queue.slice(1));
-  }, [toastQueue, activeToast]);
-
-  useEffect(() => {
-    if (!activeToast) {
-      return;
-    }
-
-    toastOpacity.setValue(0);
-    const fadeIn = Animated.timing(toastOpacity, {
-      toValue: 1,
-      duration: 180,
-      useNativeDriver: true,
-    });
-
-    fadeIn.start();
-
-    const hideTimeout = setTimeout(() => {
-      Animated.timing(toastOpacity, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }).start(() => {
-        setActiveToast(null);
-      });
-    }, 3400);
-
-    return () => {
-      fadeIn.stop();
-      clearTimeout(hideTimeout);
-    };
-  }, [activeToast, toastOpacity]);
+    seedNotifications(payload);
+  }, [recentActivity, seedNotifications]);
 
   const counters = useMemo(() => {
     return tickets.reduce(
@@ -273,7 +191,7 @@ export function DashboardScreen() {
     setNotificationsOpen((open) => {
       const next = !open;
       if (!open && next) {
-        setUnreadCount(0);
+        markAllRead();
       }
       return next;
     });
@@ -281,6 +199,12 @@ export function DashboardScreen() {
 
   const closeNotificationsDrawer = () => {
     setNotificationsOpen(false);
+  };
+
+  const handleNotificationSelect = (entry: NotificationEntry) => {
+    markRead(entry.id);
+    setNotificationsOpen(false);
+    navigation.navigate("TicketDetail", { ticketId: entry.ticketId });
   };
 
   const scrollToTicketsList = useCallback(() => {
@@ -330,6 +254,13 @@ export function DashboardScreen() {
             onPress={handleNotificationPress}
           >
             <Text style={styles.iconGlyph}>🔔</Text>
+            {unreadCount > 0 && (
+              <View style={styles.iconBadge}>
+                <Text style={styles.iconBadgeText}>
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </Text>
+              </View>
+            )}
           </Pressable>
           <Pressable style={styles.signOut} onPress={signOut}>
             <Text style={styles.signOutText}>Sign out</Text>
@@ -503,25 +434,31 @@ export function DashboardScreen() {
               style={styles.drawerScroll}
               contentContainerStyle={styles.drawerContent}
             >
-              {recentActivity.length === 0 ? (
+              {notifications.length === 0 ? (
                 <Text style={styles.notificationsEmpty}>
-                  No updates to show yet.
+                  Real-time updates will appear here once new activity comes in.
                 </Text>
               ) : (
-                recentActivity.map((entry) => (
-                  <View key={entry.id} style={styles.notificationRow}>
-                    <View>
-                      <Text style={styles.notificationText}>
-                        {entry.actor.name}
-                      </Text>
-                      <Text style={styles.notificationSub}>
-                        {describeActivity(entry)}
+                notifications.map((entry) => (
+                  <Pressable
+                    key={entry.id}
+                    style={[
+                      styles.notificationRow,
+                      !entry.read && styles.notificationUnread,
+                    ]}
+                    onPress={() => handleNotificationSelect(entry)}
+                  >
+                    <View style={styles.notificationCopy}>
+                      <Text style={styles.notificationText}>{entry.actor}</Text>
+                      <Text style={styles.notificationSub}>{entry.summary}</Text>
+                    </View>
+                    <View style={styles.notificationMeta}>
+                      {!entry.read && <View style={styles.notificationUnreadDot} />}
+                      <Text style={styles.notificationTime}>
+                        {new Date(entry.createdAt).toLocaleTimeString()}
                       </Text>
                     </View>
-                    <Text style={styles.notificationTime}>
-                      {new Date(entry.createdAt).toLocaleTimeString()}
-                    </Text>
-                  </View>
+                  </Pressable>
                 ))
               )}
             </ScrollView>
@@ -535,24 +472,6 @@ export function DashboardScreen() {
         </Pressable>
       )}
 
-      {activeToast && (
-        <Animated.View
-          style={[
-            styles.toastBanner,
-            { opacity: toastOpacity, bottom: canCreate ? 100 : 32 },
-          ]}
-        >
-          <View style={styles.toastCopy}>
-            <Text style={styles.toastActor}>{activeToast.actor.name}</Text>
-            <Text style={styles.toastMessage}>
-              {describeActivity(activeToast)}
-            </Text>
-          </View>
-          <Pressable onPress={() => setActiveToast(null)}>
-            <Text style={styles.toastDismiss}>Dismiss</Text>
-          </Pressable>
-        </Animated.View>
-      )}
     </SafeAreaView>
   );
 }
@@ -888,6 +807,26 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderBottomWidth: 1,
     borderBottomColor: "#1E293B",
+  },
+  notificationUnread: {
+    backgroundColor: "rgba(56, 189, 248, 0.08)",
+    borderRadius: 12,
+    paddingHorizontal: 8,
+  },
+  notificationCopy: {
+    flex: 1,
+    paddingRight: 12,
+    gap: 2,
+  },
+  notificationMeta: {
+    alignItems: "flex-end",
+    gap: 4,
+  },
+  notificationUnreadDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "#38BDF8",
   },
   notificationText: {
     color: "#E2E8F0",

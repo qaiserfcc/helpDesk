@@ -20,19 +20,12 @@ import {
   fetchTicketStatusSummary,
 } from "@/services/tickets";
 import { useAuthStore } from "@/store/useAuthStore";
+import {
+  describeTicketActivity,
+  formatTicketStatus,
+} from "@/utils/ticketActivity";
 
-function formatStatus(status: TicketStatus) {
-  switch (status) {
-    case "open":
-      return "Open";
-    case "in_progress":
-      return "In Progress";
-    case "resolved":
-      return "Resolved";
-    default:
-      return status;
-  }
-}
+const formatStatus = formatTicketStatus;
 
 type Navigation = NativeStackNavigationProp<
   RootStackParamList,
@@ -224,30 +217,19 @@ export function StatusSummaryScreen() {
             <ActivityIndicator color="#38BDF8" />
           ) : recentActivity.length > 0 ? (
             <View style={styles.activityFeed}>
-              {recentActivity.map((entry: TicketActivityEntry) => {
-                const fallbackStatus: TicketStatus =
-                  entry.toStatus ?? entry.fromStatus ?? "open";
-                const activityCopy =
-                  entry.type === "status_change"
-                    ? `Changed status on #${entry.ticketId.slice(0, 8)} to ${formatStatus(
-                        fallbackStatus,
-                      )}`
-                    : `Updated assignment on #${entry.ticketId.slice(0, 8)}`;
-
-                return (
-                  <View key={entry.id} style={styles.activityRow}>
-                    <View style={styles.activityTextGroup}>
-                      <Text style={styles.activityTitle}>
-                        {entry.actor.name}
-                      </Text>
-                      <Text style={styles.activityCopy}>{activityCopy}</Text>
-                    </View>
-                    <Text style={styles.activityTime}>
-                      {new Date(entry.createdAt).toLocaleTimeString()}
+              {recentActivity.map((entry: TicketActivityEntry) => (
+                <View key={entry.id} style={styles.activityRow}>
+                  <View style={styles.activityTextGroup}>
+                    <Text style={styles.activityTitle}>{entry.actor.name}</Text>
+                    <Text style={styles.activityCopy}>
+                      {describeTicketActivity(entry)}
                     </Text>
                   </View>
-                );
-              })}
+                  <Text style={styles.activityTime}>
+                    {new Date(entry.createdAt).toLocaleTimeString()}
+                  </Text>
+                </View>
+              ))}
             </View>
           ) : (
             <Text style={styles.sectionHint}>No recent activity logged.</Text>

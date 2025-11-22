@@ -3,7 +3,9 @@ import { io, type Socket } from "socket.io-client";
 import { env } from "@/config/env";
 import { queryClient } from "@/lib/queryClient";
 import { useAuthStore, type AuthSession } from "@/store/useAuthStore";
+import { useNotificationStore } from "@/store/useNotificationStore";
 import type { Ticket, TicketActivityEntry } from "@/services/tickets";
+import { describeTicketActivity } from "@/utils/ticketActivity";
 
 type ServerToClientEvents = {
   "tickets:created": (payload: { ticket: Ticket }) => void;
@@ -109,6 +111,18 @@ function invalidateTicketActivity(ticketId: string) {
   void queryClient.invalidateQueries({ queryKey: ["reports", "activity"] });
 }
 
+function pushActivityNotification(activity: TicketActivityEntry) {
+  const store = useNotificationStore.getState();
+  store.addNotification({
+    id: activity.id,
+    ticketId: activity.ticketId,
+    actor: activity.actor.name,
+    summary: describeTicketActivity(activity),
+    createdAt: activity.createdAt,
+    type: "activity",
+  });
+}
+
 function attachListeners(instance: Socket<ServerToClientEvents>) {
   instance.on("tickets:created", ({ ticket }) => {
     invalidateTicketLists(ticket.id);
@@ -118,8 +132,11 @@ function attachListeners(instance: Socket<ServerToClientEvents>) {
     invalidateTicketLists(ticket.id);
   });
 
-  instance.on("tickets:activity", ({ ticketId }) => {
+  instance.on("tickets:activity", ({ ticketId, activity }) => {
     invalidateTicketActivity(ticketId);
+    if (activity) {
+      pushActivityNotification(activity);
+    }
   });
 
   instance.on("connect_error", (error) => {

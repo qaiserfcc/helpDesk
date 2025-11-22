@@ -9,6 +9,7 @@ import { TicketDetailScreen } from "@/screens/TicketDetailScreen";
 import { TicketFormScreen } from "@/screens/TicketFormScreen";
 import { StatusSummaryScreen } from "@/screens/StatusSummaryScreen";
 import { useAuthStore } from "@/store/useAuthStore";
+import { navigationRef } from "./navigationRef";
 
 export type RootStackParamList = {
   Loading: undefined;
@@ -35,7 +36,7 @@ export function AppNavigator() {
   const session = useAuthStore((state) => state.session);
 
   return (
-    <NavigationContainer theme={navTheme}>
+    <NavigationContainer theme={navTheme} ref={navigationRef}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!initialized ? (
           <Stack.Screen name="Loading" component={LoadingScreen} />

@@ -297,6 +297,28 @@ describe("declineAssignmentRequest", () => {
     );
   });
 
+  it("logs ticket activity when declining a request", async () => {
+    prismaTicket.findUnique.mockResolvedValue({
+      ...ticketRecord,
+      assignmentRequestId: agentUser.id,
+    });
+    prismaTicket.update.mockResolvedValue(ticketWithRelations);
+
+    await declineAssignmentRequest(ticketRecord.id, adminUser);
+
+    expect(prismaTicketActivity.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          ticketId: ticketRecord.id,
+          actorId: adminUser.id,
+          type: "assignment_change",
+          fromAssigneeId: agentUser.id,
+          toAssigneeId: null,
+        }),
+      }),
+    );
+  });
+
   it("rejects when there is no pending request", async () => {
     prismaTicket.findUnique.mockResolvedValue(ticketRecord);
 

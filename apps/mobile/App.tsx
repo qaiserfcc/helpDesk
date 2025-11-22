@@ -1,6 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { NotificationHost } from '@/components/notifications/NotificationHost';
 import { AppProviders } from './src/providers/AppProviders';
 import { AppNavigator } from './src/navigation/AppNavigator';
 
@@ -10,6 +11,7 @@ export default function App() {
       <AppProviders>
         <StatusBar style="light" />
         <AppNavigator />
+        <NotificationHost />
       </AppProviders>
     </SafeAreaProvider>
   );

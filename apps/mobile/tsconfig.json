@@ -17,6 +17,9 @@
       "@/screens/*": [
         "screens/*"
       ],
+      "@/components/*": [
+        "components/*"
+      ],
       "@/theme/*": [
         "theme/*"
       ],
@@ -37,6 +40,9 @@
       ],
       "@/services/*": [
         "services/*"
+      ],
+      "@/utils/*": [
+        "utils/*"
       ],
       "@/lib/*": [
         "lib/*"
