@@ -14,10 +14,12 @@ import { useQuery } from "@tanstack/react-query";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "@/navigation/AppNavigator";
 import {
+  ReportTicket,
   TicketActivityEntry,
   TicketStatus,
+  fetchAdminEscalationReport,
+  fetchAdminOverviewReport,
   fetchRecentTicketActivity,
-  fetchTicketStatusSummary,
 } from "@/services/tickets";
 import { useAuthStore } from "@/store/useAuthStore";
 import {
@@ -26,6 +28,7 @@ import {
 } from "@/utils/ticketActivity";
 
 const formatStatus = formatTicketStatus;
+const defaultCounts = { open: 0, in_progress: 0, resolved: 0 };
 
 type Navigation = NativeStackNavigationProp<
   RootStackParamList,
@@ -36,13 +39,27 @@ export function StatusSummaryScreen() {
   const navigation = useNavigation<Navigation>();
   const user = useAuthStore((state) => state.session?.user);
 
+  const handleOpenTicket = (ticketId: string) => {
+    navigation.navigate("TicketDetail", { ticketId });
+  };
+
   const {
-    data: summary,
-    isLoading: summaryLoading,
-    refetch: refetchSummary,
+    data: overview,
+    isLoading: overviewLoading,
+    refetch: refetchOverview,
   } = useQuery({
-    queryKey: ["reports", "status-summary"],
-    queryFn: fetchTicketStatusSummary,
+    queryKey: ["reports", "admin-overview"],
+    queryFn: fetchAdminOverviewReport,
+    enabled: user?.role === "admin",
+  });
+
+  const {
+    data: escalations,
+    isLoading: escalationsLoading,
+    refetch: refetchEscalations,
+  } = useQuery({
+    queryKey: ["reports", "admin-escalations"],
+    queryFn: fetchAdminEscalationReport,
     enabled: user?.role === "admin",
   });
 
@@ -56,19 +73,27 @@ export function StatusSummaryScreen() {
     enabled: user?.role === "admin",
   });
 
-  const statusBuckets = summary?.statuses ?? [];
-  const assignments = summary?.assignments ?? [];
-  const totalTickets = statusBuckets.reduce(
-    (acc, bucket) => acc + bucket.count,
-    0,
+  const statusCounts = overview?.statusCounts ?? defaultCounts;
+  const statusBuckets = (Object.keys(statusCounts) as TicketStatus[]).map(
+    (status) => ({
+      status,
+      count: statusCounts[status],
+    }),
   );
+  const assignments = overview?.assignmentLoad ?? [];
+  const oldestOpen = overview?.oldestOpen ?? [];
+  const highPriority = escalations?.highPriority ?? [];
+  const staleTickets = escalations?.staleTickets ?? [];
+  const totalTickets = statusBuckets.reduce((acc, bucket) => acc + bucket.count, 0);
+  const refreshing = overviewLoading || escalationsLoading || activityLoading;
 
   const topAgents = useMemo(() => {
     return [...assignments].sort((a, b) => b.count - a.count);
   }, [assignments]);
 
   const onRefresh = () => {
-    refetchSummary();
+    refetchOverview();
+    refetchEscalations();
     refetchActivity();
   };
 
@@ -97,7 +122,7 @@ export function StatusSummaryScreen() {
         style={styles.container}
         refreshControl={
           <RefreshControl
-            refreshing={summaryLoading || activityLoading}
+            refreshing={refreshing}
             onRefresh={onRefresh}
             tintColor="#38BDF8"
           />
@@ -146,7 +171,7 @@ export function StatusSummaryScreen() {
 
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Status distribution</Text>
-          {summaryLoading && !summary ? (
+          {overviewLoading && !overview ? (
             <ActivityIndicator color="#38BDF8" />
           ) : statusBuckets.length > 0 ? (
             <View style={styles.statusList}>
@@ -184,7 +209,7 @@ export function StatusSummaryScreen() {
 
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Assignment load</Text>
-          {summaryLoading && !summary ? (
+          {overviewLoading && !overview ? (
             <ActivityIndicator color="#38BDF8" />
           ) : topAgents.length > 0 ? (
             <View style={styles.assignmentList}>
@@ -208,6 +233,98 @@ export function StatusSummaryScreen() {
             </View>
           ) : (
             <Text style={styles.sectionHint}>No active assignments.</Text>
+          )}
+        </View>
+
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>Oldest open tickets</Text>
+          <Text style={styles.sectionSubtitle}>Longest waiting issues</Text>
+          {overviewLoading && oldestOpen.length === 0 ? (
+            <ActivityIndicator color="#38BDF8" />
+          ) : oldestOpen.length > 0 ? (
+            <View style={styles.ticketList}>
+              {oldestOpen.map((ticket: ReportTicket) => (
+                <Pressable
+                  key={ticket.id}
+                  style={styles.miniTicketRow}
+                  onPress={() => handleOpenTicket(ticket.id)}
+                >
+                  <View style={styles.ticketTextGroup}>
+                    <Text style={styles.ticketTitle}>{ticket.description}</Text>
+                    <Text style={styles.ticketMeta}>
+                      Opened {new Date(ticket.createdAt).toLocaleDateString()} •
+                      {" "}
+                      {ticket.creator.name}
+                    </Text>
+                  </View>
+                  <Text style={styles.ticketNavigate}>›</Text>
+                </Pressable>
+              ))}
+            </View>
+          ) : (
+            <Text style={styles.sectionHint}>No pending open tickets.</Text>
+          )}
+        </View>
+
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>High priority alerts</Text>
+          <Text style={styles.sectionSubtitle}>Requires immediate action</Text>
+          {escalationsLoading && highPriority.length === 0 ? (
+            <ActivityIndicator color="#38BDF8" />
+          ) : highPriority.length > 0 ? (
+            <View style={styles.ticketList}>
+              {highPriority.map((ticket: ReportTicket) => (
+                <Pressable
+                  key={ticket.id}
+                  style={styles.miniTicketRow}
+                  onPress={() => handleOpenTicket(ticket.id)}
+                >
+                  <View style={styles.ticketTextGroup}>
+                    <Text style={styles.ticketTitle}>{ticket.description}</Text>
+                    <Text style={styles.ticketMeta}>
+                      {formatStatus(ticket.status)} •
+                      {" "}
+                      <Text style={styles.ticketMetaEmphasis}>
+                        {ticket.priority.toUpperCase()} priority
+                      </Text>
+                    </Text>
+                  </View>
+                  <Text style={styles.ticketNavigate}>›</Text>
+                </Pressable>
+              ))}
+            </View>
+          ) : (
+            <Text style={styles.sectionHint}>No high priority tickets.</Text>
+          )}
+        </View>
+
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>Stale tickets</Text>
+          <Text style={styles.sectionSubtitle}>No updates in 3+ days</Text>
+          {escalationsLoading && staleTickets.length === 0 ? (
+            <ActivityIndicator color="#38BDF8" />
+          ) : staleTickets.length > 0 ? (
+            <View style={styles.ticketList}>
+              {staleTickets.map((ticket: ReportTicket) => (
+                <Pressable
+                  key={ticket.id}
+                  style={styles.miniTicketRow}
+                  onPress={() => handleOpenTicket(ticket.id)}
+                >
+                  <View style={styles.ticketTextGroup}>
+                    <Text style={styles.ticketTitle}>{ticket.description}</Text>
+                    <Text style={styles.ticketMeta}>
+                      Updated {new Date(ticket.updatedAt).toLocaleDateString()} •
+                      {" "}
+                      Assigned to {ticket.assignee?.name ?? "unassigned"}
+                    </Text>
+                  </View>
+                  <Text style={styles.ticketNavigate}>›</Text>
+                </Pressable>
+              ))}
+            </View>
+          ) : (
+            <Text style={styles.sectionHint}>No stale tickets detected.</Text>
           )}
         </View>
 
@@ -316,6 +433,12 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginBottom: 12,
   },
+  sectionSubtitle: {
+    color: "#64748B",
+    fontSize: 12,
+    marginTop: -4,
+    marginBottom: 12,
+  },
   sectionHint: {
     color: "#94A3B8",
   },
@@ -416,6 +539,38 @@ const styles = StyleSheet.create({
   activityTime: {
     color: "#94A3B8",
     fontSize: 12,
+  },
+  ticketList: {
+    gap: 12,
+  },
+  miniTicketRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderBottomWidth: 1,
+    borderBottomColor: "#1E293B",
+    paddingVertical: 8,
+  },
+  ticketTextGroup: {
+    flex: 1,
+    marginRight: 12,
+  },
+  ticketTitle: {
+    color: "#E2E8F0",
+    fontWeight: "600",
+  },
+  ticketMeta: {
+    color: "#94A3B8",
+    fontSize: 12,
+    marginTop: 2,
+  },
+  ticketMetaEmphasis: {
+    color: "#FDE68A",
+    fontWeight: "700",
+  },
+  ticketNavigate: {
+    color: "#94A3B8",
+    fontSize: 20,
   },
   unauthorized: {
     flex: 1,

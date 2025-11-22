@@ -215,6 +215,40 @@ export function DashboardScreen() {
     listRef.current.scrollToOffset({ offset, animated: true });
   }, []);
 
+  const adminNavItems = useMemo(
+    () => [
+      {
+        key: "dashboard",
+        title: "Dashboard",
+        subtitle: "Live overview",
+        glyph: "🏠",
+        onPress: scrollToTicketsList,
+      },
+      {
+        key: "user-management",
+        title: "User management",
+        subtitle: "Manage members",
+        glyph: "👥",
+        onPress: () => navigation.navigate("UserManagement"),
+      },
+      {
+        key: "org-summary",
+        title: "Org summary",
+        subtitle: "Status & escalations",
+        glyph: "🏢",
+        onPress: () => navigation.navigate("StatusSummary"),
+      },
+      {
+        key: "reporting",
+        title: "Reporting",
+        subtitle: "Exports & tables",
+        glyph: "📊",
+        onPress: () => navigation.navigate("ReportsTable"),
+      },
+    ],
+    [navigation, scrollToTicketsList],
+  );
+
   const renderTicket = ({ item }: { item: Ticket }) => (
     <Pressable
       style={styles.ticketCard}
@@ -272,26 +306,36 @@ export function DashboardScreen() {
         <View style={styles.navMenu}>
           <Text style={styles.navMenuLabel}>Navigation</Text>
           <View style={styles.navMenuRow}>
-            <Pressable
-              style={styles.navMenuCard}
-              onPress={() => navigation.navigate("StatusSummary")}
-            >
-              <Text style={styles.navMenuTitle}>Organization Summary</Text>
-              <Text style={styles.navMenuSubtitle}>
-                Deep dive into overall metrics
-              </Text>
-            </Pressable>
-            <Pressable
-              style={styles.navMenuCard}
-              onPress={scrollToTicketsList}
-            >
-              <Text style={styles.navMenuTitle}>Tickets List</Text>
-              <Text style={styles.navMenuSubtitle}>
-                Jump to the active queue
-              </Text>
-            </Pressable>
+            {adminNavItems.map((item) => (
+              <Pressable
+                key={item.key}
+                style={styles.navMenuCard}
+                onPress={item.onPress}
+              >
+                <Text style={styles.navMenuGlyph}>{item.glyph}</Text>
+                <View>
+                  <Text style={styles.navMenuTitle}>{item.title}</Text>
+                  <Text style={styles.navMenuSubtitle}>{item.subtitle}</Text>
+                </View>
+              </Pressable>
+            ))}
           </View>
         </View>
+      )}
+
+      {user?.role === "user" && (
+        <Pressable
+          style={styles.reportShortcut}
+          onPress={() => navigation.navigate("ReportsTable")}
+        >
+          <View>
+            <Text style={styles.reportShortcutTitle}>Reporting</Text>
+            <Text style={styles.reportShortcutSubtitle}>
+              View table layout + export
+            </Text>
+          </View>
+          <Text style={styles.reportShortcutGlyph}>📊</Text>
+        </Pressable>
       )}
 
       <View style={styles.cardsRow}>
@@ -519,16 +563,24 @@ const styles = StyleSheet.create({
   },
   navMenuRow: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: 12,
   },
   navMenuCard: {
-    flex: 1,
+    flexBasis: "48%",
+    flexGrow: 1,
     padding: 14,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: "#1E293B",
     backgroundColor: "#0B1220",
     gap: 6,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  navMenuGlyph: {
+    fontSize: 22,
+    marginRight: 8,
   },
   navMenuTitle: {
     color: "#F8FAFC",
@@ -538,6 +590,29 @@ const styles = StyleSheet.create({
   navMenuSubtitle: {
     color: "#94A3B8",
     fontSize: 12,
+  },
+  reportShortcut: {
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#1E293B",
+    backgroundColor: "#0F172A",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  reportShortcutTitle: {
+    color: "#F8FAFC",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  reportShortcutSubtitle: {
+    color: "#94A3B8",
+    fontSize: 12,
+    marginTop: 4,
+  },
+  reportShortcutGlyph: {
+    fontSize: 26,
   },
   title: {
     fontSize: 26,

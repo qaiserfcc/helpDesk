@@ -30,6 +30,19 @@ export type Ticket = {
   assignmentRequest: TicketUser | null;
 };
 
+export type ReportTicket = {
+  id: string;
+  description: string;
+  priority: TicketPriority;
+  issueType: IssueType;
+  status: TicketStatus;
+  createdAt: string;
+  updatedAt: string;
+  resolvedAt: string | null;
+  creator: TicketUser;
+  assignee: TicketUser | null;
+};
+
 export type TicketActivityType =
   | "status_change"
   | "assignment_change"
@@ -55,6 +68,49 @@ export type TicketSummaryReport = {
     count: number;
     agent: TicketUser | null;
   }>;
+};
+
+export type StatusCounts = Record<TicketStatus, number>;
+
+export type UserTicketReport = {
+  statusCounts: StatusCounts;
+  tickets: ReportTicket[];
+};
+
+export type AgentWorkloadReport = {
+  statusCounts: StatusCounts;
+  assigned: ReportTicket[];
+  pendingRequests: ReportTicket[];
+  escalations: ReportTicket[];
+};
+
+export type AdminOverviewReport = {
+  statusCounts: StatusCounts;
+  assignmentLoad: Array<{
+    agentId: string;
+    count: number;
+    agent: TicketUser | null;
+  }>;
+  oldestOpen: ReportTicket[];
+};
+
+export type AdminEscalationReport = {
+  highPriority: ReportTicket[];
+  staleTickets: ReportTicket[];
+};
+
+export type AdminProductivityReport = {
+  resolutionTrend: Array<{ date: string; count: number }>;
+};
+
+export type TicketExportScope = "auto" | "user" | "agent" | "admin";
+
+export type TicketExportFilters = {
+  agentId?: string;
+  creatorId?: string;
+  status?: TicketStatus;
+  format?: "json" | "csv";
+  scope?: TicketExportScope;
 };
 
 export type TicketFilters = {
@@ -158,6 +214,60 @@ export async function fetchTicketStatusSummary() {
     "/reports/tickets/status-summary",
   );
   return response.data.summary;
+}
+
+export async function fetchUserTicketReport() {
+  const response = await apiClient.get<{ report: UserTicketReport }>(
+    "/reports/users/me/tickets",
+  );
+  return response.data.report;
+}
+
+export async function fetchAgentWorkloadReport() {
+  const response = await apiClient.get<{ report: AgentWorkloadReport }>(
+    "/reports/agents/me/workload",
+  );
+  return response.data.report;
+}
+
+export async function fetchAdminOverviewReport() {
+  const response = await apiClient.get<{ report: AdminOverviewReport }>(
+    "/reports/admin/overview",
+  );
+  return response.data.report;
+}
+
+export async function fetchAdminEscalationReport() {
+  const response = await apiClient.get<{ report: AdminEscalationReport }>(
+    "/reports/admin/escalations",
+  );
+  return response.data.report;
+}
+
+export async function fetchAdminProductivityReport(days?: number) {
+  const response = await apiClient.get<{ report: AdminProductivityReport }>(
+    "/reports/admin/productivity",
+    { params: { days } },
+  );
+  return response.data.report;
+}
+
+export async function fetchTicketExportDataset(
+  filters: TicketExportFilters = {},
+) {
+  const response = await apiClient.get<{ scope: string; tickets: ReportTicket[] }>(
+    "/reports/tickets/export",
+    {
+      params: {
+        scope: filters.scope ?? "auto",
+        agentId: filters.agentId,
+        creatorId: filters.creatorId,
+        status: filters.status,
+        format: filters.format ?? "json",
+      },
+    },
+  );
+  return response.data;
 }
 
 export async function uploadTicketAttachments(

@@ -36,9 +36,15 @@
 
 - **Milestone 5 kick-off (Unit tests are mandatory for every code change in this milestone.)**
 - [ ] **Milestone 5 – Admin Features (3–4 days)**
+  - [ ] Backend: admin user CRUD + role assignment APIs
+  - [ ] Backend: allocation/reporting endpoints for dashboards
+  - [ ] Mobile: admin onboarding/invite flow
   - [ ] In-app user management screens
+  - [ ] Mobile: workload overview & escalation tools
   - [ ] Ticket allocation dashboard + reporting views
+  - [ ] Shared: permission hooks, components, and tests
   - [ ] Role-aware UI guards/components
+  - [ ] QA: end-to-end scenarios for admin actions
 
 ## Next
 
