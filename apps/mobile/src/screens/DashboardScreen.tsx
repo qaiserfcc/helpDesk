@@ -54,6 +54,7 @@ export function DashboardScreen() {
   const signOut = useAuthStore((state) => state.signOut);
   const [statusFilter, setStatusFilter] = useState<TicketStatus | undefined>();
   const [assignedOnly, setAssignedOnly] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const canCreate = user?.role === "user" || user?.role === "admin";
 
   const {
@@ -134,6 +135,19 @@ export function DashboardScreen() {
   };
 
   const queuedCount = queuedTickets.length;
+  const notificationCount = recentActivity.length;
+  const statusBuckets = statusSummary?.statuses ?? [];
+  const totalTickets = statusBuckets.reduce(
+    (acc, bucket) => acc + bucket.count,
+    0,
+  );
+  const openTotal =
+    statusBuckets.find((bucket) => bucket.status === "open")?.count ?? 0;
+  const inProgressTotal =
+    statusBuckets.find((bucket) => bucket.status === "in_progress")?.count ?? 0;
+  const resolvedTotal =
+    statusBuckets.find((bucket) => bucket.status === "resolved")?.count ?? 0;
+  const assignmentPreview = statusSummary?.assignments.slice(0, 3) ?? [];
 
   const renderTicket = ({ item }: { item: Ticket }) => (
     <Pressable
@@ -169,10 +183,52 @@ export function DashboardScreen() {
               {user ? `Welcome, ${user.name}` : "Tickets overview"}
             </Text>
           </View>
-          <Pressable style={styles.signOut} onPress={signOut}>
-            <Text style={styles.signOutText}>Sign out</Text>
-          </Pressable>
+          <View style={styles.headerActions}>
+            <Pressable
+              style={styles.iconButton}
+              onPress={() => setNotificationsOpen((open) => !open)}
+            >
+              <Text style={styles.iconGlyph}>🔔</Text>
+              {notificationCount > 0 && (
+                <View style={styles.iconBadge}>
+                  <Text style={styles.iconBadgeText}>
+                    {notificationCount > 9 ? "9+" : notificationCount}
+                  </Text>
+                </View>
+              )}
+            </Pressable>
+            <Pressable style={styles.signOut} onPress={signOut}>
+              <Text style={styles.signOutText}>Sign out</Text>
+            </Pressable>
+          </View>
         </View>
+
+        {notificationsOpen && (
+          <View style={styles.notificationsPanel}>
+            <Text style={styles.notificationsTitle}>Notifications</Text>
+            {recentActivity.length === 0 ? (
+              <Text style={styles.notificationsEmpty}>
+                You are all caught up.
+              </Text>
+            ) : (
+              recentActivity.map((entry: TicketActivityEntry) => (
+                <View key={entry.id} style={styles.notificationRow}>
+                  <View>
+                    <Text style={styles.notificationText}>
+                      {entry.actor.name} • {entry.type.replace("_", " ")}
+                    </Text>
+                    <Text style={styles.notificationSub}>
+                      Ticket #{entry.ticketId.slice(0, 6)}
+                    </Text>
+                  </View>
+                  <Text style={styles.notificationTime}>
+                    {new Date(entry.createdAt).toLocaleTimeString()}
+                  </Text>
+                </View>
+              ))
+            )}
+          </View>
+        )}
 
         <View style={styles.cardsRow}>
           {["open", "in_progress", "resolved"].map((statusKey) => (
@@ -253,39 +309,85 @@ export function DashboardScreen() {
 
         {user?.role === "admin" && (
           <View style={styles.reportCard}>
-            <Text style={styles.reportTitle}>Status summary</Text>
+            <View style={styles.reportHeader}>
+              <View>
+                <Text style={styles.reportTitle}>Global summary</Text>
+                <Text style={styles.reportHint}>Organization snapshot</Text>
+              </View>
+              <Pressable
+                style={styles.reportLink}
+                onPress={() => navigation.navigate("StatusSummary")}
+              >
+                <Text style={styles.reportLinkText}>View report</Text>
+              </Pressable>
+            </View>
             {summaryLoading && !statusSummary ? (
               <ActivityIndicator color="#38BDF8" />
             ) : statusSummary ? (
-              <View style={styles.summaryGrid}>
-                {statusSummary.statuses.map((bucket) => (
-                  <View key={bucket.status} style={styles.summaryChip}>
-                    <Text style={styles.summaryChipLabel}>
-                      {formatStatus(bucket.status)}
-                    </Text>
-                    <Text style={styles.summaryChipValue}>{bucket.count}</Text>
+              <>
+                <View style={styles.summaryHighlights}>
+                  <View style={styles.highlightCard}>
+                    <Text style={styles.highlightLabel}>Total tickets</Text>
+                    <Text style={styles.highlightValue}>{totalTickets}</Text>
                   </View>
-                ))}
-              </View>
+                  <View style={styles.highlightCard}>
+                    <Text style={styles.highlightLabel}>Open</Text>
+                    <Text style={styles.highlightValue}>{openTotal}</Text>
+                  </View>
+                  <View style={styles.highlightCard}>
+                    <Text style={styles.highlightLabel}>In progress</Text>
+                    <Text style={styles.highlightValue}>{inProgressTotal}</Text>
+                  </View>
+                  <View style={styles.highlightCard}>
+                    <Text style={styles.highlightLabel}>Resolved</Text>
+                    <Text style={styles.highlightValue}>{resolvedTotal}</Text>
+                  </View>
+                </View>
+                <Text style={styles.sectionHeading}>Status breakdown</Text>
+                <View style={styles.summaryGrid}>
+                  {statusBuckets.map((bucket) => (
+                    <View key={bucket.status} style={styles.summaryChip}>
+                      <Text style={styles.summaryChipLabel}>
+                        {formatStatus(bucket.status)}
+                      </Text>
+                      <Text style={styles.summaryChipValue}>
+                        {bucket.count}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+                <Text style={styles.sectionHeading}>Top assignments</Text>
+                {assignmentPreview.length > 0 ? (
+                  <View style={styles.assignmentList}>
+                    {assignmentPreview.map((assignment) => (
+                      <View
+                        key={assignment.agentId}
+                        style={styles.assignmentRow}
+                      >
+                        <Text style={styles.assignmentName}>
+                          {assignment.agent?.name ?? "Unknown agent"}
+                        </Text>
+                        <Text style={styles.assignmentCount}>
+                          {assignment.count}
+                        </Text>
+                      </View>
+                    ))}
+                    {statusSummary.assignments.length >
+                      assignmentPreview.length && (
+                      <Text style={styles.assignmentMore}>
+                        +
+                        {statusSummary.assignments.length -
+                          assignmentPreview.length}{" "}
+                        more agents
+                      </Text>
+                    )}
+                  </View>
+                ) : (
+                  <Text style={styles.reportHint}>No active assignments.</Text>
+                )}
+              </>
             ) : (
               <Text style={styles.reportHint}>No summary data yet.</Text>
-            )}
-            <Text style={styles.reportTitle}>Assignments</Text>
-            {summaryLoading && !statusSummary ? (
-              <ActivityIndicator color="#38BDF8" />
-            ) : statusSummary && statusSummary.assignments.length > 0 ? (
-              <View style={styles.assignmentList}>
-                {statusSummary.assignments.map((assignment) => (
-                  <View key={assignment.agentId} style={styles.assignmentRow}>
-                    <Text style={styles.assignmentName}>
-                      {assignment.agent?.name ?? "Unknown agent"}
-                    </Text>
-                    <Text style={styles.assignmentCount}>{assignment.count}</Text>
-                  </View>
-                ))}
-              </View>
-            ) : (
-              <Text style={styles.reportHint}>No active assignments.</Text>
             )}
           </View>
         )}
@@ -369,6 +471,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
   title: {
     fontSize: 26,
     fontWeight: "700",
@@ -389,6 +496,34 @@ const styles = StyleSheet.create({
   signOutText: {
     color: "#E2E8F0",
     fontSize: 13,
+  },
+  iconButton: {
+    position: "relative",
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#0F172A",
+    borderWidth: 1,
+    borderColor: "#1E293B",
+  },
+  iconGlyph: {
+    fontSize: 18,
+  },
+  iconBadge: {
+    position: "absolute",
+    top: 6,
+    right: 6,
+    backgroundColor: "#EF4444",
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 999,
+  },
+  iconBadgeText: {
+    color: "#fff",
+    fontSize: 10,
+    fontWeight: "700",
   },
   cardsRow: {
     flexDirection: "row",
@@ -573,15 +708,63 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#1E293B",
   },
+  reportHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
   reportTitle: {
     color: "#F8FAFC",
     fontSize: 16,
     fontWeight: "600",
-    marginBottom: 8,
+    marginBottom: 4,
   },
   reportHint: {
     color: "#94A3B8",
     fontSize: 13,
+  },
+  reportLink: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#1E293B",
+  },
+  reportLinkText: {
+    color: "#38BDF8",
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  summaryHighlights: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+    marginBottom: 12,
+  },
+  highlightCard: {
+    flexBasis: "47%",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#1E293B",
+    padding: 12,
+    backgroundColor: "#0B1220",
+  },
+  highlightLabel: {
+    color: "#94A3B8",
+    fontSize: 12,
+  },
+  highlightValue: {
+    marginTop: 6,
+    color: "#F8FAFC",
+    fontSize: 20,
+    fontWeight: "700",
+  },
+  sectionHeading: {
+    marginTop: 8,
+    marginBottom: 6,
+    color: "#E2E8F0",
+    fontWeight: "600",
   },
   summaryGrid: {
     flexDirection: "row",
@@ -625,6 +808,11 @@ const styles = StyleSheet.create({
     color: "#38BDF8",
     fontWeight: "700",
   },
+  assignmentMore: {
+    marginTop: 4,
+    color: "#94A3B8",
+    fontSize: 12,
+  },
   activityFeed: {
     marginTop: 8,
     gap: 10,
@@ -647,6 +835,43 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   activityFeedTime: {
+    color: "#94A3B8",
+    fontSize: 12,
+  },
+  notificationsPanel: {
+    marginTop: 12,
+    borderRadius: 16,
+    padding: 16,
+    backgroundColor: "#0B1220",
+    borderWidth: 1,
+    borderColor: "#1E293B",
+  },
+  notificationsTitle: {
+    color: "#F8FAFC",
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 8,
+  },
+  notificationsEmpty: {
+    color: "#94A3B8",
+    fontSize: 13,
+  },
+  notificationRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#1E293B",
+  },
+  notificationText: {
+    color: "#E2E8F0",
+    fontWeight: "600",
+  },
+  notificationSub: {
+    color: "#94A3B8",
+    fontSize: 12,
+  },
+  notificationTime: {
     color: "#94A3B8",
     fontSize: 12,
   },

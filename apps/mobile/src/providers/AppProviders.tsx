@@ -13,7 +13,9 @@ type Props = {
 };
 
 export function AppProviders({ children }: Props) {
-  const accessToken = useAuthStore((state) => state.session?.accessToken ?? null);
+  const accessToken = useAuthStore(
+    (state) => state.session?.accessToken ?? null,
+  );
 
   useEffect(() => {
     startSyncLoop();

@@ -133,10 +133,7 @@ export async function declineAssignmentRequest(ticketId: string) {
   return response.data.ticket;
 }
 
-export async function fetchTicketActivity(
-  ticketId: string,
-  limit = 50,
-) {
+export async function fetchTicketActivity(ticketId: string, limit = 50) {
   const response = await apiClient.get<{ activities: TicketActivityEntry[] }>(
     `/tickets/${ticketId}/activity`,
     { params: { limit } },

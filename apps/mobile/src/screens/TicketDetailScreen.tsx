@@ -76,12 +76,10 @@ export function TicketDetailScreen({ route, navigation }: Props) {
         (authUser?.role === "user" && ticket.creator.id === authUser.id)),
   );
   const pendingRequest = ticket?.assignmentRequest;
-  const agentHasPendingRequest =
-    isAgent && pendingRequest?.id === authUser?.id;
+  const agentHasPendingRequest = isAgent && pendingRequest?.id === authUser?.id;
   const otherAgentRequested =
     isAgent && !!pendingRequest && pendingRequest.id !== authUser?.id;
-  const isAssignedAgent =
-    isAgent && ticket?.assignee?.id === authUser?.id;
+  const isAssignedAgent = isAgent && ticket?.assignee?.id === authUser?.id;
   const canResolve = Boolean(isAssignedAgent && ticket?.status !== "resolved");
   const canDeclineRequest = Boolean(canAssign && pendingRequest);
   const canRequestAssignment = Boolean(
@@ -175,10 +173,7 @@ export function TicketDetailScreen({ route, navigation }: Props) {
       await invalidateTickets();
     } catch (error) {
       console.error("request assignment failed", error);
-      Alert.alert(
-        "Request failed",
-        "Unable to request this ticket right now.",
-      );
+      Alert.alert("Request failed", "Unable to request this ticket right now.");
     }
   };
 
@@ -376,15 +371,15 @@ export function TicketDetailScreen({ route, navigation }: Props) {
             </Text>
           </Pressable>
         )}
-          {canDeclineRequest && ticket.status !== "resolved" && (
-            <Pressable
-              style={[styles.secondaryBtn, styles.dangerBtn]}
-              onPress={handleDeclineRequest}
-            >
-              <Text style={styles.dangerText}>Decline request</Text>
-            </Pressable>
-          )}
-          {canRequestAssignment && (
+        {canDeclineRequest && ticket.status !== "resolved" && (
+          <Pressable
+            style={[styles.secondaryBtn, styles.dangerBtn]}
+            onPress={handleDeclineRequest}
+          >
+            <Text style={styles.dangerText}>Decline request</Text>
+          </Pressable>
+        )}
+        {canRequestAssignment && (
           <Pressable
             style={[
               styles.secondaryBtn,

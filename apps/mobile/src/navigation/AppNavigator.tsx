@@ -7,6 +7,7 @@ import { LoginScreen } from "@/screens/LoginScreen";
 import { RegisterScreen } from "@/screens/RegisterScreen";
 import { TicketDetailScreen } from "@/screens/TicketDetailScreen";
 import { TicketFormScreen } from "@/screens/TicketFormScreen";
+import { StatusSummaryScreen } from "@/screens/StatusSummaryScreen";
 import { useAuthStore } from "@/store/useAuthStore";
 
 export type RootStackParamList = {
@@ -14,6 +15,7 @@ export type RootStackParamList = {
   Login: undefined;
   Register: undefined;
   Dashboard: undefined;
+  StatusSummary: undefined;
   TicketDetail: { ticketId: string };
   TicketForm: { ticketId?: string } | undefined;
 };
@@ -45,6 +47,10 @@ export function AppNavigator() {
         ) : (
           <>
             <Stack.Screen name="Dashboard" component={DashboardScreen} />
+            <Stack.Screen
+              name="StatusSummary"
+              component={StatusSummaryScreen}
+            />
             <Stack.Screen name="TicketDetail" component={TicketDetailScreen} />
             <Stack.Screen name="TicketForm" component={TicketFormScreen} />
           </>

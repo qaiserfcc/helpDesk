@@ -1,10 +1,7 @@
 import { io, type Socket } from "socket.io-client";
 import { env } from "@/config/env";
 import { queryClient } from "@/lib/queryClient";
-import type {
-  Ticket,
-  TicketActivityEntry,
-} from "@/services/tickets";
+import type { Ticket, TicketActivityEntry } from "@/services/tickets";
 
 type ServerToClientEvents = {
   "tickets:created": (payload: { ticket: Ticket }) => void;
@@ -21,7 +18,9 @@ let currentToken: string | null = null;
 function invalidateTicketLists(ticketId: string) {
   void queryClient.invalidateQueries({ queryKey: ["tickets"], exact: false });
   void queryClient.invalidateQueries({ queryKey: ["ticket", ticketId] });
-  void queryClient.invalidateQueries({ queryKey: ["reports", "status-summary"] });
+  void queryClient.invalidateQueries({
+    queryKey: ["reports", "status-summary"],
+  });
 }
 
 function invalidateTicketActivity(ticketId: string) {
