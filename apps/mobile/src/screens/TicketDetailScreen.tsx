@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -17,10 +17,13 @@ import {
   assignTicket,
   declineAssignmentRequest,
   fetchTicket,
+  fetchTicketActivity,
   requestAssignment,
   resolveTicket,
   TicketStatus,
+  TicketActivityEntry,
 } from "@/services/tickets";
+import { fetchUsers, UserSummary } from "@/services/users";
 import { env } from "@/config/env";
 
 function formatStatus(status: TicketStatus) {
@@ -52,9 +55,16 @@ export function TicketDetailScreen({ route, navigation }: Props) {
   const { ticketId } = route.params;
   const queryClient = useQueryClient();
   const authUser = useAuthStore((state) => state.session?.user);
+  const [selectedAssigneeId, setSelectedAssigneeId] = useState<string | null>(
+    null,
+  );
   const { data: ticket, isLoading } = useQuery({
     queryKey: ["ticket", ticketId],
     queryFn: () => fetchTicket(ticketId),
+  });
+  const { data: activities = [], isLoading: activityLoading } = useQuery({
+    queryKey: ["ticket-activity", ticketId],
+    queryFn: () => fetchTicketActivity(ticketId, 100),
   });
 
   const isAdmin = authUser?.role === "admin";
@@ -80,6 +90,28 @@ export function TicketDetailScreen({ route, navigation }: Props) {
       ticket?.status !== "resolved" &&
       !isAssignedAgent,
   );
+  const { data: agents = [], isLoading: agentsLoading } = useQuery({
+    queryKey: ["users", "agents"],
+    queryFn: () => fetchUsers({ role: "agent" }),
+    enabled: canAssign,
+    staleTime: 60_000,
+  });
+
+  useEffect(() => {
+    if (!ticket) {
+      setSelectedAssigneeId(null);
+      return;
+    }
+    if (ticket.assignee?.id) {
+      setSelectedAssigneeId(ticket.assignee.id);
+      return;
+    }
+    if (ticket.assignmentRequest?.id) {
+      setSelectedAssigneeId(ticket.assignmentRequest.id);
+      return;
+    }
+    setSelectedAssigneeId(null);
+  }, [ticket]);
 
   const invalidateTickets = async () => {
     await queryClient.invalidateQueries({
@@ -91,15 +123,18 @@ export function TicketDetailScreen({ route, navigation }: Props) {
 
   const handleAssign = async () => {
     if (!ticket) return;
-    if (!ticket.assignmentRequest) {
+    const fallbackRequest = ticket.assignmentRequest?.id;
+    const targetAssignee = selectedAssigneeId ?? fallbackRequest;
+
+    if (!targetAssignee) {
       Alert.alert(
-        "No pending request",
-        "This ticket has no agent request to approve yet.",
+        "Select an agent",
+        "Choose an agent from the list or wait for a request.",
       );
       return;
     }
     try {
-      await assignTicket(ticketId, ticket.assignmentRequest.id);
+      await assignTicket(ticketId, targetAssignee);
       await invalidateTickets();
     } catch (error) {
       console.error("assign ticket failed", error);
@@ -170,6 +205,34 @@ export function TicketDetailScreen({ route, navigation }: Props) {
     );
   }
 
+  const selectedAgent = useMemo(() => {
+    return agents.find((agent) => agent.id === selectedAssigneeId) ?? null;
+  }, [agents, selectedAssigneeId]);
+
+  const describeActivity = (entry: TicketActivityEntry) => {
+    if (entry.type === "assignment_change") {
+      if (entry.toAssignee && entry.fromAssignee) {
+        return `${entry.actor.name} reassigned from ${entry.fromAssignee.name} to ${entry.toAssignee.name}`;
+      }
+      if (entry.toAssignee) {
+        return `${entry.actor.name} assigned ${entry.toAssignee.name}`;
+      }
+      return `${entry.actor.name} cleared the assignment`;
+    }
+    if (entry.fromStatus && entry.toStatus) {
+      return `${entry.actor.name} changed status ${formatStatus(entry.fromStatus)} → ${formatStatus(entry.toStatus)}`;
+    }
+    return `${entry.actor.name} updated the ticket`;
+  };
+
+  const formatActivityTime = (iso: string) => {
+    try {
+      return new Date(iso).toLocaleString();
+    } catch {
+      return iso;
+    }
+  };
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.ticketId}>Ticket #{ticket.id.slice(0, 8)}</Text>
@@ -207,6 +270,48 @@ export function TicketDetailScreen({ route, navigation }: Props) {
         )}
       </View>
 
+      {canAssign && (
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Assign ticket</Text>
+          {agentsLoading ? (
+            <ActivityIndicator color="#38BDF8" />
+          ) : agents.length === 0 ? (
+            <Text style={styles.sectionHint}>
+              Invite agents from the admin portal to assign tickets.
+            </Text>
+          ) : (
+            <View style={styles.agentGrid}>
+              {agents.map((agent: UserSummary) => {
+                const isSelected = selectedAssigneeId === agent.id;
+                return (
+                  <Pressable
+                    key={agent.id}
+                    style={[
+                      styles.agentChip,
+                      isSelected && styles.agentChipActive,
+                    ]}
+                    onPress={() => setSelectedAssigneeId(agent.id)}
+                  >
+                    <Text
+                      style={[
+                        styles.agentChipText,
+                        isSelected && styles.agentChipTextActive,
+                      ]}
+                    >
+                      {agent.name}
+                    </Text>
+                    <Text style={styles.agentChipSub}>{agent.email}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          )}
+          <Text style={styles.sectionHint}>
+            Select an agent and tap Assign to re-route immediately.
+          </Text>
+        </View>
+      )}
+
       {ticket.attachments.length > 0 && (
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>Attachments</Text>
@@ -225,6 +330,28 @@ export function TicketDetailScreen({ route, navigation }: Props) {
         </View>
       )}
 
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>Activity</Text>
+        {activityLoading ? (
+          <ActivityIndicator color="#38BDF8" />
+        ) : activities.length === 0 ? (
+          <Text style={styles.sectionHint}>No recent changes yet.</Text>
+        ) : (
+          <View style={styles.activityList}>
+            {activities.map((entry) => (
+              <View key={entry.id} style={styles.activityItem}>
+                <Text style={styles.activityDescription}>
+                  {describeActivity(entry)}
+                </Text>
+                <Text style={styles.activityMeta}>
+                  {formatActivityTime(entry.createdAt)}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
+      </View>
+
       <View style={styles.actions}>
         {canEdit && (
           <Pressable style={styles.secondaryBtn} onPress={handleEdit}>
@@ -233,14 +360,19 @@ export function TicketDetailScreen({ route, navigation }: Props) {
         )}
         {canAssign && ticket.status !== "resolved" && (
           <Pressable
-            style={[styles.primaryBtn, !pendingRequest && styles.disabledBtn]}
+            style={[
+              styles.primaryBtn,
+              !selectedAgent && !pendingRequest ? styles.disabledBtn : null,
+            ]}
             onPress={handleAssign}
-            disabled={!pendingRequest}
+            disabled={!selectedAgent && !pendingRequest}
           >
             <Text style={styles.primaryText}>
-              {pendingRequest
-                ? `Assign to ${pendingRequest.name}`
-                : "Awaiting agent request"}
+              {selectedAgent
+                ? `Assign to ${selectedAgent.name}`
+                : pendingRequest
+                  ? `Assign to ${pendingRequest.name}`
+                  : "Select an agent"}
             </Text>
           </Pressable>
         )}
@@ -402,5 +534,59 @@ const styles = StyleSheet.create({
     marginTop: 4,
     color: "#FACC15",
     fontSize: 13,
+  },
+  sectionHint: {
+    marginTop: 8,
+    color: "#94A3B8",
+    fontSize: 13,
+  },
+  agentGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+  },
+  agentChip: {
+    flexBasis: "48%",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#1E293B",
+    padding: 12,
+    backgroundColor: "#0F172A",
+  },
+  agentChipActive: {
+    borderColor: "#22D3EE",
+    backgroundColor: "#082F49",
+  },
+  agentChipText: {
+    color: "#E2E8F0",
+    fontWeight: "600",
+  },
+  agentChipTextActive: {
+    color: "#67E8F9",
+  },
+  agentChipSub: {
+    color: "#94A3B8",
+    fontSize: 12,
+    marginTop: 4,
+  },
+  activityList: {
+    gap: 12,
+  },
+  activityItem: {
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: "#0F172A",
+    borderWidth: 1,
+    borderColor: "#1E293B",
+  },
+  activityDescription: {
+    color: "#E2E8F0",
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  activityMeta: {
+    marginTop: 4,
+    color: "#94A3B8",
+    fontSize: 12,
   },
 });

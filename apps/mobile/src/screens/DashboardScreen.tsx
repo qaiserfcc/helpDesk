@@ -15,7 +15,14 @@ import { useQuery } from "@tanstack/react-query";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "@/navigation/AppNavigator";
 import { useAuthStore } from "@/store/useAuthStore";
-import { Ticket, TicketStatus, fetchTickets } from "@/services/tickets";
+import {
+  Ticket,
+  TicketActivityEntry,
+  TicketStatus,
+  fetchRecentTicketActivity,
+  fetchTicketStatusSummary,
+  fetchTickets,
+} from "@/services/tickets";
 import { listQueuedTickets } from "@/storage/offline-db";
 import { syncQueuedTickets } from "@/services/syncService";
 
@@ -72,11 +79,35 @@ export function DashboardScreen() {
     queryFn: listQueuedTickets,
   });
 
+  const {
+    data: recentActivity = [],
+    isLoading: activityLoading,
+    refetch: refetchActivity,
+  } = useQuery({
+    queryKey: ["reports", "activity"],
+    queryFn: () => fetchRecentTicketActivity(10),
+    enabled: user?.role === "admin",
+  });
+
+  const {
+    data: statusSummary,
+    isLoading: summaryLoading,
+    refetch: refetchSummary,
+  } = useQuery({
+    queryKey: ["reports", "status-summary"],
+    queryFn: fetchTicketStatusSummary,
+    enabled: user?.role === "admin",
+  });
+
   useFocusEffect(
     useCallback(() => {
       refetch();
       refetchQueued();
-    }, [refetch, refetchQueued]),
+      if (user?.role === "admin") {
+        refetchActivity();
+        refetchSummary();
+      }
+    }, [refetch, refetchQueued, refetchActivity, refetchSummary, user?.role]),
   );
 
   const counters = useMemo(() => {
@@ -96,6 +127,10 @@ export function DashboardScreen() {
   const onRefresh = () => {
     refetch();
     refetchQueued();
+    if (user?.role === "admin") {
+      refetchActivity();
+      refetchSummary();
+    }
   };
 
   const queuedCount = queuedTickets.length;
@@ -213,6 +248,74 @@ export function DashboardScreen() {
                 <Text style={styles.syncText}>Sync now</Text>
               )}
             </Pressable>
+          </View>
+        )}
+
+        {user?.role === "admin" && (
+          <View style={styles.reportCard}>
+            <Text style={styles.reportTitle}>Status summary</Text>
+            {summaryLoading && !statusSummary ? (
+              <ActivityIndicator color="#38BDF8" />
+            ) : statusSummary ? (
+              <View style={styles.summaryGrid}>
+                {statusSummary.statuses.map((bucket) => (
+                  <View key={bucket.status} style={styles.summaryChip}>
+                    <Text style={styles.summaryChipLabel}>
+                      {formatStatus(bucket.status)}
+                    </Text>
+                    <Text style={styles.summaryChipValue}>{bucket.count}</Text>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <Text style={styles.reportHint}>No summary data yet.</Text>
+            )}
+            <Text style={styles.reportTitle}>Assignments</Text>
+            {summaryLoading && !statusSummary ? (
+              <ActivityIndicator color="#38BDF8" />
+            ) : statusSummary && statusSummary.assignments.length > 0 ? (
+              <View style={styles.assignmentList}>
+                {statusSummary.assignments.map((assignment) => (
+                  <View key={assignment.agentId} style={styles.assignmentRow}>
+                    <Text style={styles.assignmentName}>
+                      {assignment.agent?.name ?? "Unknown agent"}
+                    </Text>
+                    <Text style={styles.assignmentCount}>{assignment.count}</Text>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <Text style={styles.reportHint}>No active assignments.</Text>
+            )}
+          </View>
+        )}
+
+        {user?.role === "admin" && (
+          <View style={styles.reportCard}>
+            <Text style={styles.reportTitle}>Recent activity</Text>
+            {activityLoading && recentActivity.length === 0 ? (
+              <ActivityIndicator color="#38BDF8" />
+            ) : recentActivity.length === 0 ? (
+              <Text style={styles.reportHint}>No recent changes.</Text>
+            ) : (
+              <View style={styles.activityFeed}>
+                {recentActivity.map((entry: TicketActivityEntry) => (
+                  <View key={entry.id} style={styles.activityFeedRow}>
+                    <View>
+                      <Text style={styles.activityFeedText}>
+                        {entry.actor.name} • {entry.type.replace("_", " ")}
+                      </Text>
+                      <Text style={styles.activityFeedSub}>
+                        Ticket #{entry.ticketId.slice(0, 6)}
+                      </Text>
+                    </View>
+                    <Text style={styles.activityFeedTime}>
+                      {new Date(entry.createdAt).toLocaleTimeString()}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            )}
           </View>
         )}
 
@@ -461,5 +564,90 @@ const styles = StyleSheet.create({
   primaryText: {
     fontWeight: "700",
     color: "#020617",
+  },
+  reportCard: {
+    marginTop: 16,
+    padding: 16,
+    borderRadius: 16,
+    backgroundColor: "#0F172A",
+    borderWidth: 1,
+    borderColor: "#1E293B",
+  },
+  reportTitle: {
+    color: "#F8FAFC",
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 8,
+  },
+  reportHint: {
+    color: "#94A3B8",
+    fontSize: 13,
+  },
+  summaryGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+    marginBottom: 12,
+  },
+  summaryChip: {
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#1E293B",
+    padding: 10,
+    backgroundColor: "#0B1220",
+    flexBasis: "30%",
+  },
+  summaryChipLabel: {
+    color: "#CBD5F5",
+    fontSize: 12,
+  },
+  summaryChipValue: {
+    marginTop: 6,
+    color: "#F8FAFC",
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  assignmentList: {
+    marginTop: 8,
+    gap: 8,
+  },
+  assignmentRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 4,
+  },
+  assignmentName: {
+    color: "#E2E8F0",
+    fontSize: 14,
+  },
+  assignmentCount: {
+    color: "#38BDF8",
+    fontWeight: "700",
+  },
+  activityFeed: {
+    marginTop: 8,
+    gap: 10,
+  },
+  activityFeedRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#1E293B",
+  },
+  activityFeedText: {
+    color: "#E2E8F0",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  activityFeedSub: {
+    color: "#94A3B8",
+    fontSize: 12,
+  },
+  activityFeedTime: {
+    color: "#94A3B8",
+    fontSize: 12,
   },
 });

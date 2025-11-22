@@ -30,6 +30,29 @@ export type Ticket = {
   assignmentRequest: TicketUser | null;
 };
 
+export type TicketActivityType = "status_change" | "assignment_change";
+
+export type TicketActivityEntry = {
+  id: string;
+  ticketId: string;
+  type: TicketActivityType;
+  createdAt: string;
+  actor: TicketUser & { role: "user" | "agent" | "admin" };
+  fromStatus: TicketStatus | null;
+  toStatus: TicketStatus | null;
+  fromAssignee: TicketUser | null;
+  toAssignee: TicketUser | null;
+};
+
+export type TicketSummaryReport = {
+  statuses: Array<{ status: TicketStatus; count: number }>;
+  assignments: Array<{
+    agentId: string;
+    count: number;
+    agent: TicketUser | null;
+  }>;
+};
+
 export type TicketFilters = {
   status?: TicketStatus;
   issueType?: IssueType;
@@ -108,6 +131,32 @@ export async function declineAssignmentRequest(ticketId: string) {
     `/tickets/${ticketId}/assignment-request/decline`,
   );
   return response.data.ticket;
+}
+
+export async function fetchTicketActivity(
+  ticketId: string,
+  limit = 50,
+) {
+  const response = await apiClient.get<{ activities: TicketActivityEntry[] }>(
+    `/tickets/${ticketId}/activity`,
+    { params: { limit } },
+  );
+  return response.data.activities;
+}
+
+export async function fetchRecentTicketActivity(limit = 25) {
+  const response = await apiClient.get<{ activities: TicketActivityEntry[] }>(
+    "/reports/tickets/activity",
+    { params: { limit } },
+  );
+  return response.data.activities;
+}
+
+export async function fetchTicketStatusSummary() {
+  const response = await apiClient.get<{ summary: TicketSummaryReport }>(
+    "/reports/tickets/status-summary",
+  );
+  return response.data.summary;
 }
 
 export async function uploadTicketAttachments(
