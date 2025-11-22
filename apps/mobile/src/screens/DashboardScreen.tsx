@@ -300,6 +300,15 @@ export function DashboardScreen() {
           onPress: createDrawerHandler(() => navigation.navigate("StatusSummary")),
         },
         {
+          key: "allocation-dashboard",
+          title: "Allocation dashboard",
+          subtitle: "Live workload",
+          glyph: "🎯",
+          onPress: createDrawerHandler(() =>
+            navigation.navigate("AllocationDashboard"),
+          ),
+        },
+        {
           key: "user-management",
           title: "User management",
           subtitle: "Manage members",

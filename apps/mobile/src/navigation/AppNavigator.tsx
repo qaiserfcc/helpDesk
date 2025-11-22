@@ -12,6 +12,7 @@ import { UserReportScreen } from "@/screens/UserReportScreen";
 import { AgentWorkloadScreen } from "@/screens/AgentWorkloadScreen";
 import { UserManagementScreen } from "@/screens/UserManagementScreen";
 import { ReportsTableScreen } from "@/screens/ReportsTableScreen";
+import { AllocationDashboardScreen } from "@/screens/AllocationDashboardScreen";
 import { useAuthStore } from "@/store/useAuthStore";
 import { navigationRef } from "./navigationRef";
 
@@ -21,6 +22,7 @@ export type RootStackParamList = {
   Register: undefined;
   Dashboard: undefined;
   StatusSummary: undefined;
+  AllocationDashboard: undefined;
   UserManagement: undefined;
   ReportsTable: undefined;
   UserReport: undefined;
@@ -59,6 +61,10 @@ export function AppNavigator() {
             <Stack.Screen
               name="StatusSummary"
               component={StatusSummaryScreen}
+            />
+            <Stack.Screen
+              name="AllocationDashboard"
+              component={AllocationDashboardScreen}
             />
             <Stack.Screen
               name="UserManagement"

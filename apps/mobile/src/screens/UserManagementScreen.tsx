@@ -18,7 +18,6 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { RootStackParamList } from "@/navigation/AppNavigator";
-import { useAuthStore } from "@/store/useAuthStore";
 import { fetchAdminOverviewReport } from "@/services/tickets";
 import {
   fetchUsers,
@@ -33,6 +32,8 @@ import {
   type UserFormValues,
   type UserFormErrors,
 } from "@/utils/userFormValidation";
+import { useRoleGuard } from "@/hooks/useRoleGuard";
+import { RoleRestrictedView } from "@/components/RoleRestrictedView";
 
 type Navigation = NativeStackNavigationProp<
   RootStackParamList,
@@ -63,7 +64,7 @@ const makeEmptyForm = (): UserFormValues => ({
 
 export function UserManagementScreen() {
   const navigation = useNavigation<Navigation>();
-  const user = useAuthStore((state) => state.session?.user);
+  const { isAuthorized } = useRoleGuard(["admin"]);
   const queryClient = useQueryClient();
   const [roleFilter, setRoleFilter] = useState<RoleFilterValue>("all");
   const [formMode, setFormMode] = useState<"create" | "edit">("create");
@@ -81,7 +82,7 @@ export function UserManagementScreen() {
   } = useQuery({
     queryKey: ["reports", "admin", "user-management"],
     queryFn: fetchAdminOverviewReport,
-    enabled: user?.role === "admin",
+    enabled: isAuthorized,
   });
 
   const {
@@ -94,7 +95,7 @@ export function UserManagementScreen() {
     queryKey: ["admin", "users", roleFilter],
     queryFn: () =>
       fetchUsers(roleFilter === "all" ? {} : { role: roleFilter }),
-    enabled: user?.role === "admin",
+    enabled: isAuthorized,
   });
 
   const assignments = overview?.assignmentLoad ?? [];
@@ -258,19 +259,13 @@ export function UserManagementScreen() {
       ? usersError.message
       : "Unable to load directory.";
 
-  if (user?.role !== "admin") {
+  if (!isAuthorized) {
     return (
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.unauthorized}>
-          <Text style={styles.unauthorizedTitle}>Admins only</Text>
-          <Text style={styles.unauthorizedCopy}>
-            You need admin access to manage organization members.
-          </Text>
-          <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
-            <Text style={styles.backButtonText}>Back</Text>
-          </Pressable>
-        </View>
-      </SafeAreaView>
+      <RoleRestrictedView
+        title="Admins only"
+        message="You need admin access to manage organization members."
+        onBack={() => navigation.goBack()}
+      />
     );
   }
 
@@ -802,34 +797,6 @@ const styles = StyleSheet.create({
     borderColor: "#1E293B",
   },
   secondaryCtaText: {
-    color: "#E2E8F0",
-    fontWeight: "600",
-  },
-  unauthorized: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 24,
-  },
-  unauthorizedTitle: {
-    color: "#F8FAFC",
-    fontSize: 20,
-    fontWeight: "700",
-    marginBottom: 12,
-  },
-  unauthorizedCopy: {
-    color: "#94A3B8",
-    textAlign: "center",
-    marginBottom: 20,
-  },
-  backButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#1E293B",
-  },
-  backButtonText: {
     color: "#E2E8F0",
     fontWeight: "600",
   },
