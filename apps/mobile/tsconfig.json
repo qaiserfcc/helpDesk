@@ -11,16 +11,39 @@
     "resolveJsonModule": true,
     "baseUrl": "./src",
     "paths": {
-      "@/navigation/*": ["navigation/*"],
-      "@/screens/*": ["screens/*"],
-      "@/theme/*": ["theme/*"],
-      "@/store/*": ["store/*"],
-      "@/providers/*": ["providers/*"],
-      "@/storage/*": ["storage/*"],
-      "@/services/*": ["services/*"],
-      "@/config/*": ["config/*"]
+      "@/navigation/*": [
+        "navigation/*"
+      ],
+      "@/screens/*": [
+        "screens/*"
+      ],
+      "@/theme/*": [
+        "theme/*"
+      ],
+      "@/store/*": [
+        "store/*"
+      ],
+      "@/providers/*": [
+        "providers/*"
+      ],
+      "@/storage/*": [
+        "storage/*"
+      ],
+      "@/services/*": [
+        "services/*"
+      ],
+      "@/config/*": [
+        "config/*"
+      ]
     }
   },
-  "include": ["src", "App.tsx"],
-  "exclude": ["node_modules", "dist"]
+  "include": [
+    "src",
+    "App.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ],
+  "extends": "expo/tsconfig.base"
 }
