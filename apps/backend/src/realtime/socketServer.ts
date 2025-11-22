@@ -4,6 +4,7 @@ import { Server, type DefaultEventsMap, type Socket } from "socket.io";
 import { Role } from "@prisma/client";
 import { verifyAccessToken } from "../utils/token.js";
 import { prisma } from "../lib/prisma.js";
+import { logSocketFailure } from "../utils/socketLogger.js";
 
 type SocketData = {
   user: Express.AuthenticatedUser;
@@ -130,20 +131,38 @@ export function initRealtimeServer(server: HttpServer) {
       await authenticateSocket(socket);
       next();
     } catch (error) {
+      const message =
+        error instanceof Error ? error.message : String(error ?? "unknown");
       console.error(
         "[socket] authentication error",
-        error instanceof Error ? error.message : error,
+        message,
       );
+      void logSocketFailure("auth", message, {
+        socketId: socket.id,
+        address: socket.handshake.address,
+      });
       next(error instanceof Error ? error : new Error("Socket auth failed"));
     }
   });
 
+  io.engine.on("connection_error", (error) => {
+    const message =
+      error instanceof Error ? error.message : String(error ?? "unknown");
+    console.error("[socket] engine connection error", message);
+    void logSocketFailure("connection", message, {
+      code: (error as { code?: string }).code,
+    });
+  });
+
   io.on("connection", (socket) => {
     socket.on("error", (error) => {
-      console.error(
-        "[socket] runtime error",
-        error instanceof Error ? error.message : error,
-      );
+      const message =
+        error instanceof Error ? error.message : String(error ?? "unknown");
+      console.error("[socket] runtime error", message);
+      void logSocketFailure("runtime", message, {
+        socketId: socket.id,
+        userId: socket.data.user?.id,
+      });
     });
 
     const user = socket.data.user;
@@ -172,6 +191,11 @@ export function initRealtimeServer(server: HttpServer) {
           const message = createError.isHttpError(error)
             ? error.message
             : "Unable to watch ticket";
+          void logSocketFailure("tickets:watch", message, {
+            socketId: socket.id,
+            userId: user.id,
+            ticketId,
+          });
           ack?.({ ok: false, error: message });
         }
       },

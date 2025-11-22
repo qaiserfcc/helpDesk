@@ -76,10 +76,16 @@ async function logTicketActivity(input: ActivityLogInput) {
     include: ticketActivityInclude,
   });
 
+  const audience = await prisma.ticket.findUnique({
+    where: { id: input.ticketId },
+    select: { id: true, createdBy: true, assignedTo: true },
+  });
+
   publishTicketEvent({
     type: "tickets:activity",
     ticketId: input.ticketId,
     activity,
+    audience,
   });
 }
 
