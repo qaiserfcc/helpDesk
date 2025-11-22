@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import * as Crypto from "expo-crypto";
 import * as Network from "expo-network";
+import * as DocumentPicker from "expo-document-picker";
 import { isAxiosError } from "axios";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -20,8 +21,10 @@ import {
   CreateTicketPayload,
   IssueType,
   TicketPriority,
+  Ticket,
   createTicket,
   fetchTicket,
+  uploadTicketAttachments,
   updateTicket,
 } from "@/services/tickets";
 import { queueTicket } from "@/storage/offline-db";
@@ -37,6 +40,18 @@ const issueOptions: IssueType[] = [
 ];
 
 type Props = NativeStackScreenProps<RootStackParamList, "TicketForm">;
+
+type AttachmentDraft = {
+  uri: string;
+  name: string;
+  type: string;
+};
+
+const defaultMimeType = "application/octet-stream";
+
+function getAttachmentName(path: string) {
+  return path.replace(/^.*[\\/]/, "");
+}
 
 function isNetworkError(error: unknown) {
   if (isAxiosError(error)) {
@@ -59,6 +74,7 @@ export function TicketFormScreen({ route, navigation }: Props) {
   const [priority, setPriority] = useState<TicketPriority>("medium");
   const [issueType, setIssueType] = useState<IssueType>("other");
   const [submitting, setSubmitting] = useState(false);
+  const [attachments, setAttachments] = useState<AttachmentDraft[]>([]);
 
   useEffect(() => {
     if (ticket) {
@@ -73,7 +89,40 @@ export function TicketFormScreen({ route, navigation }: Props) {
     [isEdit],
   );
 
+  const handleAddAttachment = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        multiple: true,
+        copyToCacheDirectory: true,
+      });
+
+      if (result.canceled || !result.assets?.length) {
+        return;
+      }
+
+      const mapped = result.assets.map((asset) => ({
+        uri: asset.uri,
+        name: asset.name ?? getAttachmentName(asset.uri),
+        type: asset.mimeType ?? defaultMimeType,
+      }));
+      setAttachments((prev) => [...prev, ...mapped]);
+    } catch (error) {
+      console.error("document picker error", error);
+      Alert.alert("Attachment error", "Unable to pick a file right now.");
+    }
+  };
+
+  const handleRemoveAttachment = (index: number) => {
+    setAttachments((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleQueueFallback = async (payload: CreateTicketPayload) => {
+    if (attachments.length) {
+      Alert.alert(
+        "Attachments pending",
+        "Attachments can't be queued offline. Re-open the ticket when you're back online to upload them.",
+      );
+    }
     const tempId = Crypto.randomUUID();
     await queueTicket({
       tickets: [
@@ -109,16 +158,31 @@ export function TicketFormScreen({ route, navigation }: Props) {
       issueType,
     };
 
+    let savedTicket: Ticket | undefined;
+
     try {
       if (isEdit && ticketId) {
-        await updateTicket(ticketId, payload);
+        savedTicket = await updateTicket(ticketId, payload);
       } else {
         const networkState = await Network.getNetworkStateAsync();
         if (!networkState.isConnected) {
           await handleQueueFallback(payload);
           return;
         }
-        await createTicket(payload);
+        savedTicket = await createTicket(payload);
+      }
+
+      if (attachments.length && savedTicket) {
+        try {
+          await uploadTicketAttachments(savedTicket.id, attachments);
+          setAttachments([]);
+        } catch (error) {
+          console.error("attachment upload failed", error);
+          Alert.alert(
+            "Attachment upload failed",
+            "Ticket saved but files could not be uploaded. Please try again from the ticket detail screen.",
+          );
+        }
       }
 
       await queryClient.invalidateQueries({
@@ -203,6 +267,36 @@ export function TicketFormScreen({ route, navigation }: Props) {
           })}
         </View>
 
+        <Text style={styles.label}>Attachments</Text>
+        {isEdit && ticket?.attachments?.length ? (
+          <View style={styles.existingAttachments}>
+            <Text style={styles.existingLabel}>Current files</Text>
+            {ticket.attachments.map((path) => (
+              <Text key={path} style={styles.existingAttachmentText}>
+                {getAttachmentName(path)}
+              </Text>
+            ))}
+          </View>
+        ) : null}
+
+        <View style={styles.attachmentCard}>
+          {attachments.length === 0 ? (
+            <Text style={styles.attachmentHint}>No new files selected.</Text>
+          ) : (
+            attachments.map((file, index) => (
+              <View key={`${file.uri}-${index}`} style={styles.attachmentRow}>
+                <Text style={styles.attachmentName}>{file.name}</Text>
+                <Pressable onPress={() => handleRemoveAttachment(index)}>
+                  <Text style={styles.removeText}>Remove</Text>
+                </Pressable>
+              </View>
+            ))
+          )}
+          <Pressable style={styles.attachmentBtn} onPress={handleAddAttachment}>
+            <Text style={styles.attachmentBtnText}>+ Add file</Text>
+          </Pressable>
+        </View>
+
         <Pressable
           style={[styles.submitBtn, submitting && styles.submitBtnDisabled]}
           onPress={handleSubmit}
@@ -278,6 +372,60 @@ const styles = StyleSheet.create({
   },
   optionTextActive: {
     color: "#0B1120",
+    fontWeight: "600",
+  },
+  existingAttachments: {
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#1E293B",
+    padding: 12,
+    marginBottom: 12,
+  },
+  existingLabel: {
+    color: "#94A3B8",
+    fontSize: 12,
+    marginBottom: 6,
+  },
+  existingAttachmentText: {
+    color: "#E2E8F0",
+    fontSize: 14,
+  },
+  attachmentCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#1E293B",
+    padding: 14,
+    marginBottom: 24,
+    gap: 10,
+  },
+  attachmentHint: {
+    color: "#64748B",
+    fontSize: 13,
+  },
+  attachmentRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 12,
+  },
+  attachmentName: {
+    flex: 1,
+    color: "#E2E8F0",
+  },
+  removeText: {
+    color: "#F87171",
+    fontWeight: "600",
+  },
+  attachmentBtn: {
+    marginTop: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#22D3EE",
+    paddingVertical: 10,
+    alignItems: "center",
+  },
+  attachmentBtnText: {
+    color: "#22D3EE",
     fontWeight: "600",
   },
   submitBtn: {
