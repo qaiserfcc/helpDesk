@@ -24,8 +24,9 @@
   - [x] Ticket CRUD endpoints + workflow states
   - [x] Assignment/resolve actions + attachment upload API
   - [x] Offline sync helper endpoints (diff/merge)
-  - [ ] Mobile create/list/detail/update flows per role
-  - [ ] Offline queue + auto-sync/background service
+  - [x] Swagger docs updated for all backend endpoints
+  - [x] Mobile create/list/detail/update flows per role
+  - [x] Offline queue + auto-sync/background service
 
 ## Next
 
