@@ -38,7 +38,7 @@ export async function queueTicket(payload: Record<string, unknown>) {
 export async function listQueuedTickets(): Promise<TicketRow[]> {
   const db = await openDatabase();
   const rows = await db.getAllAsync<TicketRow>(
-    "SELECT * FROM tickets WHERE status != ?",
+    "SELECT * FROM tickets WHERE status != ? ORDER BY updatedAt ASC",
     ["synced"],
   );
   return rows;
@@ -49,5 +49,13 @@ export async function markTicketSynced(id: string) {
   await db.runAsync(
     "UPDATE tickets SET status = ?, updatedAt = ? WHERE id = ?",
     ["synced", Date.now(), id],
+  );
+}
+
+export async function markTicketFailed(id: string) {
+  const db = await openDatabase();
+  await db.runAsync(
+    "UPDATE tickets SET status = ?, updatedAt = ? WHERE id = ?",
+    ["failed", Date.now(), id],
   );
 }

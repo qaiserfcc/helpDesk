@@ -1,13 +1,13 @@
-import createError from 'http-errors';
-import { Prisma, Role } from '@prisma/client';
-import { prisma } from '../lib/prisma.js';
-import { hashPassword } from '../utils/password.js';
+import createError from "http-errors";
+import { Prisma, Role } from "@prisma/client";
+import { prisma } from "../lib/prisma.js";
+import { hashPassword } from "../utils/password.js";
 
 const userSelect = {
   id: true,
   name: true,
   email: true,
-  role: true
+  role: true,
 } as const;
 
 export type CreateUserInput = {
@@ -25,27 +25,33 @@ export async function createUser(input: CreateUserInput) {
         name: input.name,
         email: input.email,
         role: input.role ?? Role.user,
-        passwordHash
+        passwordHash,
       },
-      select: userSelect
+      select: userSelect,
     });
 
     return user;
   } catch (error) {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError ||
-      (typeof error === 'object' && error !== null && 'code' in error && (error as { code?: string }).code === 'P2002')
+      (typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        (error as { code?: string }).code === "P2002")
     ) {
-      throw createError(409, 'Email is already in use');
+      throw createError(409, "Email is already in use");
     }
     throw error;
   }
 }
 
 export async function getUserProfile(id: string) {
-  const user = await prisma.user.findUnique({ where: { id }, select: userSelect });
+  const user = await prisma.user.findUnique({
+    where: { id },
+    select: userSelect,
+  });
   if (!user) {
-    throw createError(404, 'User not found');
+    throw createError(404, "User not found");
   }
   return user;
 }

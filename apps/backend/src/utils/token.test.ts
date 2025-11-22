@@ -1,10 +1,14 @@
-import { describe, expect, it } from 'vitest';
-import { createTokenPair, verifyAccessToken, verifyRefreshToken } from './token.js';
-import { Role } from '@prisma/client';
+import { describe, expect, it } from "vitest";
+import {
+  createTokenPair,
+  verifyAccessToken,
+  verifyRefreshToken,
+} from "./token.js";
+import { Role } from "@prisma/client";
 
-describe('token utils', () => {
-  it('creates verifiable access and refresh tokens', () => {
-    const subject = { id: 'user-123', role: Role.user };
+describe("token utils", () => {
+  it("creates verifiable access and refresh tokens", () => {
+    const subject = { id: "user-123", role: Role.user };
     const tokens = createTokenPair(subject);
 
     expect(tokens.accessToken).toBeTruthy();

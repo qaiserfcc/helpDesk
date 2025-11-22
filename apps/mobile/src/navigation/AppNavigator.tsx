@@ -5,6 +5,8 @@ import { DashboardScreen } from "@/screens/DashboardScreen";
 import { LoadingScreen } from "@/screens/LoadingScreen";
 import { LoginScreen } from "@/screens/LoginScreen";
 import { RegisterScreen } from "@/screens/RegisterScreen";
+import { TicketDetailScreen } from "@/screens/TicketDetailScreen";
+import { TicketFormScreen } from "@/screens/TicketFormScreen";
 import { useAuthStore } from "@/store/useAuthStore";
 
 export type RootStackParamList = {
@@ -12,6 +14,8 @@ export type RootStackParamList = {
   Login: undefined;
   Register: undefined;
   Dashboard: undefined;
+  TicketDetail: { ticketId: string };
+  TicketForm: { ticketId?: string } | undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -39,7 +43,11 @@ export function AppNavigator() {
             <Stack.Screen name="Register" component={RegisterScreen} />
           </>
         ) : (
-          <Stack.Screen name="Dashboard" component={DashboardScreen} />
+          <>
+            <Stack.Screen name="Dashboard" component={DashboardScreen} />
+            <Stack.Screen name="TicketDetail" component={TicketDetailScreen} />
+            <Stack.Screen name="TicketForm" component={TicketFormScreen} />
+          </>
         )}
       </Stack.Navigator>
     </NavigationContainer>

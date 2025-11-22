@@ -2,7 +2,9 @@
 
 ## Current Goals
 
-- Execute Milestone 1 foundations: scaffold backend (Express+TS, Prisma, Vercel config) and mobile app (React Native TS, navigation, offline DB, Axios env setup).
+- Execute Milestone 3 – Ticketing:
+  - Backend: Ticket CRUD endpoints, assignment/resolve actions, attachment metadata, offline sync helpers (diff + queue ingest).
+  - Mobile: Ticket list/detail/create flows per role with offline queue + auto-sync integration.
 
 ## Current Blockers
 

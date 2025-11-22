@@ -11,25 +11,23 @@
   - [x] Frontend: React Native TS template, navigation, theming
   - [x] Frontend: Offline DB (SQLite/WatermelonDB) integration
   - [x] Shared: Axios base client + env management
-
-## Doing
-
-- **Milestone 2 kick-off (Unit tests are mandatory for every code change in this milestone.)**
-- [ ] **Milestone 2 – Authentication (3–4 days)**
+- [x] **Milestone 2 – Authentication (3–4 days)**
   - [x] Backend auth endpoints (login, refresh)
   - [x] Role model + middleware (User/Agent/Admin)
   - [x] Mobile login UI + form validation
   - [x] Auth state management (context/Redux) + secure token storage
 
-## Next
+## Doing
 
 - **Milestone 3 kick-off (Unit tests are mandatory for every code change in this milestone.)**
 - [ ] **Milestone 3 – Ticketing (7–10 days)**
-  - [ ] Ticket CRUD endpoints + workflow states
-  - [ ] Assignment/resolve actions + attachment upload API
-  - [ ] Offline sync helper endpoints (diff/merge)
+  - [x] Ticket CRUD endpoints + workflow states
+  - [x] Assignment/resolve actions + attachment upload API
+  - [x] Offline sync helper endpoints (diff/merge)
   - [ ] Mobile create/list/detail/update flows per role
   - [ ] Offline queue + auto-sync/background service
+
+## Next
 
 - **Milestone 4 kick-off (Unit tests are mandatory for every code change in this milestone.)**
 - [ ] **Milestone 4 – Notifications (2–4 days)**

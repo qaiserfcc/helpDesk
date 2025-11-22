@@ -1,8 +1,7 @@
 import React, { useEffect } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { startSyncLoop, stopSyncLoop } from "@/services/syncService";
-
-const queryClient = new QueryClient();
+import { queryClient } from "@/lib/queryClient";
 
 type Props = {
   children: React.ReactNode;
