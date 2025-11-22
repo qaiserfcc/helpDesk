@@ -12,14 +12,18 @@
     "updates": {
       "fallbackToCacheTimeout": 0
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.qaiserfcc.helpdesk"
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#0F172A"
-      }
+      },
+      "package": "com.qaiserfcc.helpdesk"
     },
     "extra": {
       "eas": {

@@ -10,23 +10,30 @@ export type TicketRow = {
   updatedAt: number;
 };
 
+let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
+
 async function openDatabase() {
-  const db = await SQLite.openDatabaseAsync(DB_NAME);
-  await db.execAsync(`
-    PRAGMA journal_mode = WAL;
-    CREATE TABLE IF NOT EXISTS tickets (
-      id TEXT PRIMARY KEY NOT NULL,
-      payload TEXT NOT NULL,
-      status TEXT NOT NULL,
-      updatedAt INTEGER NOT NULL
-    );
-  `);
-  return db;
+  if (!dbPromise) {
+    dbPromise = (async () => {
+      const db = await SQLite.openDatabaseAsync(DB_NAME);
+      await db.runAsync("PRAGMA journal_mode = WAL;");
+      await db.runAsync(`
+        CREATE TABLE IF NOT EXISTS tickets (
+          id TEXT PRIMARY KEY NOT NULL,
+          payload TEXT NOT NULL,
+          status TEXT NOT NULL,
+          updatedAt INTEGER NOT NULL
+        );
+      `);
+      return db;
+    })();
+  }
+  return dbPromise;
 }
 
 export async function queueTicket(payload: Record<string, unknown>) {
   const db = await openDatabase();
-  const id = await Crypto.randomUUIDAsync();
+  const id = Crypto.randomUUID();
   const now = Date.now();
   await db.runAsync(
     "INSERT INTO tickets (id, payload, status, updatedAt) VALUES (?, ?, ?, ?)",
