@@ -4,9 +4,6 @@
 
 - [x] Capture master project brief & scope in memory bank
 - [x] Initialize repository/workspace scaffolding
-
-## Doing
-
 - [x] **Milestone 1 – Foundations**
   - [x] Backend: Express.js + TypeScript project setup
   - [x] Backend: Prisma + PostgreSQL schema bootstrap
@@ -15,8 +12,9 @@
   - [x] Frontend: Offline DB (SQLite/WatermelonDB) integration
   - [x] Shared: Axios base client + env management
 
-## Next
+## Doing
 
+- **Milestone 2 kick-off (Unit tests are mandatory for every code change in this milestone.)**
 - [ ] **Milestone 2 – Authentication (3–4 days)**
   - [ ] Backend auth endpoints (login, refresh)
   - [ ] Role model + middleware (User/Agent/Admin)
@@ -24,6 +22,9 @@
   - [ ] Mobile login UI + form validation
   - [ ] Auth state management (context/Redux) + secure token storage
 
+## Next
+
+- **Milestone 3 kick-off (Unit tests are mandatory for every code change in this milestone.)**
 - [ ] **Milestone 3 – Ticketing (7–10 days)**
   - [ ] Ticket CRUD endpoints + workflow states
   - [ ] Assignment/resolve actions + attachment upload API
@@ -31,11 +32,13 @@
   - [ ] Mobile create/list/detail/update flows per role
   - [ ] Offline queue + auto-sync/background service
 
+- **Milestone 4 kick-off (Unit tests are mandatory for every code change in this milestone.)**
 - [ ] **Milestone 4 – Notifications (2–4 days)**
   - [ ] Backend: FCM + email provider integration
   - [ ] Backend triggers for ticket events
   - [ ] Mobile: FCM token registration + handlers
 
+- **Milestone 5 kick-off (Unit tests are mandatory for every code change in this milestone.)**
 - [ ] **Milestone 5 – Admin Features (3–4 days)**
   - [ ] In-app user management screens
   - [ ] Ticket allocation dashboard + reporting views

@@ -4,6 +4,7 @@
     "lib": ["ES2021"],
     "module": "ESNext",
     "moduleResolution": "Node",
+    "types": ["node", "vitest/globals"],
     "strict": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
