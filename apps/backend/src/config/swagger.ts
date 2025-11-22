@@ -285,7 +285,7 @@ const swaggerDocument = {
                 properties: {
                   name: { type: "string", minLength: 2 },
                   email: { type: "string", format: "email" },
-                  password: { type: "string", minLength: 8 },
+                  password: { type: "string", minLength: 6 },
                   role: {
                     $ref: "#/components/schemas/Role",
                     description: "Optional. Defaults to user when omitted.",
@@ -322,7 +322,7 @@ const swaggerDocument = {
                 type: "object",
                 properties: {
                   email: { type: "string", format: "email" },
-                  password: { type: "string", minLength: 8 },
+                  password: { type: "string", minLength: 6 },
                 },
                 required: ["email", "password"],
               },
@@ -414,7 +414,7 @@ const swaggerDocument = {
                 properties: {
                   name: { type: "string", minLength: 2 },
                   email: { type: "string", format: "email" },
-                  password: { type: "string", minLength: 8 },
+                  password: { type: "string", minLength: 6 },
                   role: { $ref: "#/components/schemas/Role" },
                 },
                 required: ["name", "email", "password"],

@@ -61,7 +61,7 @@ export function RegisterScreen({ navigation }: Props) {
       });
       await applySession(session);
     } catch (err) {
-      console.warn("Registration failed", err);
+      console.error("Registration failed", err);
       setError("We couldn't create your account");
       Alert.alert(
         "Sign up failed",
@@ -136,7 +136,7 @@ export function RegisterScreen({ navigation }: Props) {
             <TextInput
               style={styles.input}
               secureTextEntry
-              placeholder="At least 8 characters"
+              placeholder="At least 6 characters"
               placeholderTextColor="#475569"
               value={password}
               onChangeText={setPassword}

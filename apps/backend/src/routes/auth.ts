@@ -7,12 +7,13 @@ import {
   refreshSession,
   registerUser,
 } from "../services/authService.js";
+import { MIN_PASSWORD_LENGTH } from "../constants/auth.js";
 
 const router = Router();
 
 const loginSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(8),
+  password: z.string().min(MIN_PASSWORD_LENGTH),
 });
 
 const refreshSchema = z.object({
@@ -22,7 +23,7 @@ const refreshSchema = z.object({
 const registerSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
-  password: z.string().min(8),
+  password: z.string().min(MIN_PASSWORD_LENGTH),
   role: z.nativeEnum(Role).optional(),
 });
 
@@ -37,6 +38,7 @@ router.post("/register", async (req, res, next) => {
     const result = await registerUser(parsed.data);
     res.status(201).json(result);
   } catch (error) {
+    console.error("[auth] register handler error", error);
     next(error);
   }
 });

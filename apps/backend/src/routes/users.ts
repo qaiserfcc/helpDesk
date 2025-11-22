@@ -4,13 +4,14 @@ import { z } from "zod";
 import { Role } from "@prisma/client";
 import { requireAuth, requireRole } from "../middleware/auth.js";
 import { createUser } from "../services/userService.js";
+import { MIN_PASSWORD_LENGTH } from "../constants/auth.js";
 
 const router = Router();
 
 const createUserSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
-  password: z.string().min(8),
+  password: z.string().min(MIN_PASSWORD_LENGTH),
   role: z.nativeEnum(Role).optional(),
 });
 

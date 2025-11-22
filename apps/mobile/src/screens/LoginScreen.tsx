@@ -31,7 +31,7 @@ export function LoginScreen({ navigation }: Props) {
       const session = await login({ email: email.trim(), password });
       await applySession(session);
     } catch (err) {
-      console.warn("Login failed", err);
+      console.error("Login failed", err);
       setError("Invalid email or password");
       Alert.alert(
         "Login failed",
