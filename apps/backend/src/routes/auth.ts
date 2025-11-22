@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import createError from 'http-errors';
 import { z } from 'zod';
-import { login, refreshSession } from '../services/authService.js';
+import { login, refreshSession, registerUser } from '../services/authService.js';
 
 const router = Router();
 
@@ -12,6 +12,27 @@ const loginSchema = z.object({
 
 const refreshSchema = z.object({
   refreshToken: z.string().min(1)
+});
+
+const registerSchema = z.object({
+  name: z.string().min(2),
+  email: z.string().email(),
+  password: z.string().min(8)
+});
+
+router.post('/register', async (req, res, next) => {
+  const parsed = registerSchema.safeParse(req.body);
+  if (!parsed.success) {
+    next(createError(400, 'Invalid registration payload'));
+    return;
+  }
+
+  try {
+    const result = await registerUser(parsed.data);
+    res.status(201).json(result);
+  } catch (error) {
+    next(error);
+  }
 });
 
 router.post('/login', async (req, res, next) => {

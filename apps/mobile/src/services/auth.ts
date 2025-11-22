@@ -6,6 +6,12 @@ export type LoginInput = {
   password: string;
 };
 
+export type RegisterInput = {
+  name: string;
+  email: string;
+  password: string;
+};
+
 type AuthResponse = {
   user: AuthSession["user"];
   tokens: {
@@ -31,5 +37,10 @@ export async function refresh(refreshToken: string): Promise<AuthSession> {
   const { data } = await apiClient.post<AuthResponse>("/auth/refresh", {
     refreshToken,
   });
+  return mapResponseToSession(data);
+}
+
+export async function register(input: RegisterInput): Promise<AuthSession> {
+  const { data } = await apiClient.post<AuthResponse>("/auth/register", input);
   return mapResponseToSession(data);
 }

@@ -3,6 +3,7 @@ import type { Role } from '@prisma/client';
 import { prisma } from '../lib/prisma.js';
 import { verifyPassword } from '../utils/password.js';
 import { createTokenPair, verifyRefreshToken, type TokenPair } from '../utils/token.js';
+import { createUser } from './userService.js';
 
 const loginSelect = {
   id: true,
@@ -31,6 +32,12 @@ export type LoginInput = {
   password: string;
 };
 
+export type RegisterInput = {
+  name: string;
+  email: string;
+  password: string;
+};
+
 export type AuthResult = {
   user: AuthUser;
   tokens: TokenPair;
@@ -54,6 +61,21 @@ export async function login({ email, password }: LoginInput): Promise<AuthResult
   }
 
   const { passwordHash: _ignored, ...user } = userRecord;
+  const tokens = createTokenPair({ id: user.id, role: user.role });
+
+  return {
+    user: toAuthUser(user),
+    tokens
+  };
+}
+
+export async function registerUser(input: RegisterInput): Promise<AuthResult> {
+  const user = await createUser({
+    name: input.name,
+    email: input.email,
+    password: input.password
+  });
+
   const tokens = createTokenPair({ id: user.id, role: user.role });
 
   return {

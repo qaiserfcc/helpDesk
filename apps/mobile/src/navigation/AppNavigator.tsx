@@ -4,11 +4,13 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { DashboardScreen } from "@/screens/DashboardScreen";
 import { LoadingScreen } from "@/screens/LoadingScreen";
 import { LoginScreen } from "@/screens/LoginScreen";
+import { RegisterScreen } from "@/screens/RegisterScreen";
 import { useAuthStore } from "@/store/useAuthStore";
 
 export type RootStackParamList = {
   Loading: undefined;
   Login: undefined;
+  Register: undefined;
   Dashboard: undefined;
 };
 
@@ -32,7 +34,10 @@ export function AppNavigator() {
         {!initialized ? (
           <Stack.Screen name="Loading" component={LoadingScreen} />
         ) : !session ? (
-          <Stack.Screen name="Login" component={LoginScreen} />
+          <>
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="Register" component={RegisterScreen} />
+          </>
         ) : (
           <Stack.Screen name="Dashboard" component={DashboardScreen} />
         )}

@@ -9,10 +9,14 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { login } from "@/services/auth";
 import { useAuthStore } from "@/store/useAuthStore";
+import { RootStackParamList } from "@/navigation/AppNavigator";
 
-export function LoginScreen() {
+type Props = NativeStackScreenProps<RootStackParamList, "Login">;
+
+export function LoginScreen({ navigation }: Props) {
   const applySession = useAuthStore((state) => state.applySession);
   const [email, setEmail] = useState("admin@helpdesk.local");
   const [password, setPassword] = useState("ChangeMe123!");
@@ -85,6 +89,13 @@ export function LoginScreen() {
             {submitting ? "Signing in…" : "Sign in"}
           </Text>
         </Pressable>
+
+        <Pressable
+          style={styles.secondaryCta}
+          onPress={() => navigation.replace("Register")}
+        >
+          <Text style={styles.secondaryText}>Need an account? Create one</Text>
+        </Pressable>
       </View>
     </KeyboardAvoidingView>
   );
@@ -139,6 +150,14 @@ const styles = StyleSheet.create({
   primaryText: {
     color: "#0F172A",
     fontWeight: "700",
+  },
+  secondaryCta: {
+    marginTop: 16,
+    alignItems: "center",
+  },
+  secondaryText: {
+    color: "#94A3B8",
+    fontWeight: "600",
   },
   disabled: {
     opacity: 0.5,
