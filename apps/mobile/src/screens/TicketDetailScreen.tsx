@@ -20,6 +20,7 @@ import {
   fetchTicketActivity,
   requestAssignment,
   resolveTicket,
+  updateTicket,
   TicketStatus,
   TicketActivityEntry,
 } from "@/services/tickets";
@@ -63,11 +64,14 @@ export function TicketDetailScreen({ route, navigation }: Props) {
 
   const isAdmin = authUser?.role === "admin";
   const isAgent = authUser?.role === "agent";
-  const canAssign = isAdmin;
+  const isTicketResolved = ticket?.status === "resolved";
+  const isTicketOwner = Boolean(ticket && ticket.creator.id === authUser?.id);
+  const canAssign = Boolean(isAdmin && !isTicketResolved);
   const canEdit = Boolean(
     ticket &&
+      !isTicketResolved &&
       ((isAdmin && authUser?.id) ||
-        (authUser?.role === "user" && ticket.creator.id === authUser.id)),
+        (authUser?.role === "user" && isTicketOwner)),
   );
   const pendingRequest = ticket?.assignmentRequest;
   const agentHasPendingRequest = isAgent && pendingRequest?.id === authUser?.id;
@@ -82,6 +86,7 @@ export function TicketDetailScreen({ route, navigation }: Props) {
       ticket?.status !== "resolved" &&
       !isAssignedAgent,
   );
+  const canReopen = Boolean(isAdmin && isTicketResolved);
   const { data: agents = [], isLoading: agentsLoading } = useQuery({
     queryKey: ["users", "agents"],
     queryFn: () => fetchUsers({ role: "agent" }),
@@ -159,6 +164,16 @@ export function TicketDetailScreen({ route, navigation }: Props) {
     } catch (error) {
       console.error("resolve ticket failed", error);
       Alert.alert("Resolve failed", "Please try again in a moment.");
+    }
+  };
+
+  const handleReopen = async () => {
+    try {
+      await updateTicket(ticketId, { status: "open" });
+      await invalidateTickets();
+    } catch (error) {
+      console.error("reopen ticket failed", error);
+      Alert.alert("Reopen failed", "Please try again in a moment.");
     }
   };
 
@@ -330,13 +345,22 @@ export function TicketDetailScreen({ route, navigation }: Props) {
         )}
       </View>
 
+      {isTicketResolved && !isAdmin && (
+        <View style={styles.section}>
+          <Text style={styles.resolvedNotice}>
+            This ticket is resolved. Contact support if you need further
+            changes.
+          </Text>
+        </View>
+      )}
+
       <View style={styles.actions}>
         {canEdit && (
           <Pressable style={styles.secondaryBtn} onPress={handleEdit}>
             <Text style={styles.secondaryText}>Edit ticket</Text>
           </Pressable>
         )}
-        {canAssign && ticket.status !== "resolved" && (
+        {canAssign && (
           <Pressable
             style={[
               styles.primaryBtn,
@@ -354,7 +378,7 @@ export function TicketDetailScreen({ route, navigation }: Props) {
             </Text>
           </Pressable>
         )}
-        {canDeclineRequest && ticket.status !== "resolved" && (
+        {canDeclineRequest && (
           <Pressable
             style={[styles.secondaryBtn, styles.dangerBtn]}
             onPress={handleDeclineRequest}
@@ -387,6 +411,14 @@ export function TicketDetailScreen({ route, navigation }: Props) {
             onPress={handleResolve}
           >
             <Text style={styles.primaryText}>Resolve</Text>
+          </Pressable>
+        )}
+        {canReopen && (
+          <Pressable
+            style={[styles.secondaryBtn, styles.reopenBtn]}
+            onPress={handleReopen}
+          >
+            <Text style={styles.reopenText}>Reopen ticket</Text>
           </Pressable>
         )}
       </View>
@@ -501,6 +533,13 @@ const styles = StyleSheet.create({
     color: "#E2E8F0",
     fontWeight: "600",
   },
+  reopenBtn: {
+    borderColor: "#22D3EE",
+  },
+  reopenText: {
+    color: "#22D3EE",
+    fontWeight: "600",
+  },
   dangerBtn: {
     borderColor: "#DC2626",
   },
@@ -566,5 +605,12 @@ const styles = StyleSheet.create({
     marginTop: 4,
     color: "#94A3B8",
     fontSize: 12,
+  },
+  resolvedNotice: {
+    backgroundColor: "#1D4ED8",
+    color: "#E0F2FE",
+    padding: 12,
+    borderRadius: 12,
+    fontSize: 13,
   },
 });

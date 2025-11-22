@@ -212,6 +212,10 @@ export async function updateTicket(
     throw createError(404, "Ticket not found");
   }
 
+  if (user.role === Role.user && ticket.status === TicketStatus.resolved) {
+    throw createError(403, "Resolved tickets cannot be edited");
+  }
+
   const isAdmin = user.role === Role.admin;
   const isOwner = ticket.createdBy === user.id;
   const isAssignedAgent =
@@ -258,10 +262,12 @@ export async function updateTicket(
     updates.issueType !== undefined && updates.issueType !== ticket.issueType;
   const detailFieldsChanged =
     descriptionChanged || priorityChanged || issueTypeChanged;
-  const resolvedAt =
-    nextStatus === TicketStatus.resolved && ticket.resolvedAt === null
-      ? new Date()
-      : ticket.resolvedAt;
+  let resolvedAt = ticket.resolvedAt;
+  if (nextStatus === TicketStatus.resolved) {
+    resolvedAt = ticket.resolvedAt ?? new Date();
+  } else if (ticket.status === TicketStatus.resolved) {
+    resolvedAt = null;
+  }
 
   const updatedTicket = await prisma.ticket.update({
     where: { id: ticketId },
