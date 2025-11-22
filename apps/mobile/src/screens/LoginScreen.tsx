@@ -12,6 +12,7 @@ import {
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { login } from "@/services/auth";
 import { useAuthStore } from "@/store/useAuthStore";
+import { demoAccounts } from "@/constants/demoAccounts";
 import { RootStackParamList } from "@/navigation/AppNavigator";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Login">;
@@ -51,6 +52,25 @@ export function LoginScreen({ navigation }: Props) {
         <Text style={styles.subtitle}>
           Use your workspace credentials to continue.
         </Text>
+
+        <View style={styles.presetSection}>
+          <Text style={styles.presetHeading}>Quick fill demo accounts</Text>
+          <View style={styles.presetRow}>
+            {demoAccounts.map((account) => (
+              <Pressable
+                key={`login-${account.label}`}
+                style={styles.presetButton}
+                onPress={() => {
+                  setEmail(account.email);
+                  setPassword(account.password);
+                }}
+              >
+                <Text style={styles.presetLabel}>{account.label}</Text>
+                <Text style={styles.presetHint}>{account.email}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
 
         <View style={styles.fieldGroup}>
           <Text style={styles.label}>Email</Text>
@@ -124,6 +144,40 @@ const styles = StyleSheet.create({
   },
   fieldGroup: {
     marginTop: 18,
+  },
+  presetSection: {
+    marginTop: 18,
+  },
+  presetHeading: {
+    color: "#94A3B8",
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  presetRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginTop: 10,
+  },
+  presetButton: {
+    flexBasis: "30%",
+    flexGrow: 1,
+    marginRight: 8,
+    marginTop: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#1E293B",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: "#0B1120",
+  },
+  presetLabel: {
+    color: "#F8FAFC",
+    fontWeight: "600",
+  },
+  presetHint: {
+    marginTop: 4,
+    color: "#64748B",
+    fontSize: 12,
   },
   label: {
     color: "#94A3B8",

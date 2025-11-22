@@ -1,6 +1,7 @@
 import { Router } from "express";
 import createError from "http-errors";
 import { z } from "zod";
+import { Role } from "@prisma/client";
 import {
   login,
   refreshSession,
@@ -22,6 +23,7 @@ const registerSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
   password: z.string().min(8),
+  role: z.nativeEnum(Role).optional(),
 });
 
 router.post("/register", async (req, res, next) => {

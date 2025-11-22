@@ -40,6 +40,7 @@ export type RegisterInput = {
   name: string;
   email: string;
   password: string;
+  role?: Role;
 };
 
 export type AuthResult = {
@@ -89,6 +90,7 @@ export async function registerUser(input: RegisterInput): Promise<AuthResult> {
     name: input.name,
     email: input.email,
     password: input.password,
+    role: input.role,
   });
 
   const tokens = createTokenPair({ id: user.id, role: user.role });

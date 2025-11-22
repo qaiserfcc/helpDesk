@@ -13,13 +13,26 @@ const swaggerDocument = {
     },
   ],
   tags: [
-    { name: "Health", description: "Service health checks" },
-    { name: "Metadata", description: "Information about the running service" },
-    { name: "Auth", description: "Authentication and session management" },
-    { name: "Users", description: "User profile and administration" },
+    {
+      name: "Health",
+      description: "Service health checks",
+    },
+    {
+      name: "Metadata",
+      description: "Information about the running service",
+    },
+    {
+      name: "Auth",
+      description: "Authentication and session management",
+    },
+    {
+      name: "Users",
+      description: "User profile and administration",
+    },
     {
       name: "Tickets",
-      description: "Ticket lifecycle, synchronization, and attachment operations",
+      description:
+        "Ticket lifecycle, synchronization, and attachment operations",
     },
   ],
   components: {
@@ -273,6 +286,10 @@ const swaggerDocument = {
                   name: { type: "string", minLength: 2 },
                   email: { type: "string", format: "email" },
                   password: { type: "string", minLength: 8 },
+                  role: {
+                    $ref: "#/components/schemas/Role",
+                    description: "Optional. Defaults to user when omitted.",
+                  },
                 },
                 required: ["name", "email", "password"],
               },
@@ -449,7 +466,8 @@ const swaggerDocument = {
             name: "assignedToMe",
             in: "query",
             schema: { type: "boolean" },
-            description: "When true, returns tickets assigned to the caller (agents only).",
+            description:
+              "When true, returns tickets assigned to the caller (agents only).",
           },
           {
             name: "limit",
@@ -507,7 +525,8 @@ const swaggerDocument = {
             in: "query",
             required: true,
             schema: { type: "string", format: "date-time" },
-            description: "ISO timestamp that marks the lower bound for updates.",
+            description:
+              "ISO timestamp that marks the lower bound for updates.",
           },
         ],
         responses: {
@@ -528,7 +547,8 @@ const swaggerDocument = {
       post: {
         tags: ["Tickets"],
         summary: "Bulk-ingest offline tickets",
-        description: "Accepts up to 25 offline tickets and returns their persisted records.",
+        description:
+          "Accepts up to 25 offline tickets and returns their persisted records.",
         security: [{ bearerAuth: [] }],
         requestBody: {
           required: true,
@@ -628,7 +648,8 @@ const swaggerDocument = {
       post: {
         tags: ["Tickets"],
         summary: "Assign a ticket",
-        description: "Agents/admins can assign tickets to themselves or another agent.",
+        description:
+          "Agents/admins can assign tickets to themselves or another agent.",
         security: [{ bearerAuth: [] }],
         parameters: [
           {
@@ -666,7 +687,8 @@ const swaggerDocument = {
       post: {
         tags: ["Tickets"],
         summary: "Resolve a ticket",
-        description: "Marks a ticket as resolved. Only agents or admins can resolve tickets.",
+        description:
+          "Marks a ticket as resolved. Only agents or admins can resolve tickets.",
         security: [{ bearerAuth: [] }],
         parameters: [
           {

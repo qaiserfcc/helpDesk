@@ -1,5 +1,5 @@
 import { apiClient } from "./apiClient";
-import type { AuthSession } from "@/store/useAuthStore";
+import type { AuthSession, UserRole } from "@/store/useAuthStore";
 
 export type LoginInput = {
   email: string;
@@ -10,6 +10,7 @@ export type RegisterInput = {
   name: string;
   email: string;
   password: string;
+  role?: UserRole;
 };
 
 type AuthResponse = {
