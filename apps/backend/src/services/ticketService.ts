@@ -8,6 +8,8 @@ import {
   TicketActivityType,
 } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
+import { publishTicketEvent } from "../realtime/ticketPublisher.js";
+import { dispatchTicketEmail } from "../notifications/ticketMailer.js";
 
 const ticketInclude = {
   creator: { select: { id: true, name: true, email: true } },
@@ -42,9 +44,7 @@ const ticketCoreSelect = {
   updatedAt: true,
 } as const;
 
-type TicketCore = Prisma.TicketGetPayload<{ select: typeof ticketCoreSelect }>;
-
-type TicketWithRelations = Prisma.TicketGetPayload<{
+export type TicketWithRelations = Prisma.TicketGetPayload<{
   include: typeof ticketInclude;
 }>;
 
@@ -63,7 +63,7 @@ type ActivityLogInput = {
 };
 
 async function logTicketActivity(input: ActivityLogInput) {
-  await prisma.ticketActivity.create({
+  const activity = await prisma.ticketActivity.create({
     data: {
       ticketId: input.ticketId,
       actorId: input.actorId,
@@ -73,7 +73,22 @@ async function logTicketActivity(input: ActivityLogInput) {
       fromAssigneeId: input.fromAssigneeId ?? null,
       toAssigneeId: input.toAssigneeId ?? null,
     },
+    include: ticketActivityInclude,
   });
+
+  publishTicketEvent({
+    type: "tickets:activity",
+    ticketId: input.ticketId,
+    activity,
+  });
+}
+
+function notifyTicketChange(
+  ticket: TicketWithRelations,
+  type: "tickets:created" | "tickets:updated" = "tickets:updated",
+) {
+  publishTicketEvent({ type, ticket });
+  void dispatchTicketEmail(ticket, type);
 }
 
 function extractAggregateCount(
@@ -156,7 +171,7 @@ export async function createTicket(
     throw createError(403, "Only end-users or admins can create tickets");
   }
 
-  return prisma.ticket.create({
+  const ticket = await prisma.ticket.create({
     data: {
       description: input.description,
       priority: input.priority,
@@ -166,6 +181,9 @@ export async function createTicket(
     },
     include: ticketInclude,
   });
+
+  notifyTicketChange(ticket, "tickets:created");
+  return ticket;
 }
 
 type UpdateTicketInput = Partial<
@@ -218,7 +236,10 @@ export async function updateTicket(
   }
 
   if (updates.status && !(isAssignedAgent || isAdmin)) {
-    throw createError(403, "Only the assigned agent or an admin can change ticket status");
+    throw createError(
+      403,
+      "Only the assigned agent or an admin can change ticket status",
+    );
   }
 
   const nextStatus = updates.status ?? ticket.status;
@@ -239,6 +260,8 @@ export async function updateTicket(
     },
     include: ticketInclude,
   });
+
+  notifyTicketChange(updatedTicket);
 
   if (statusChanged) {
     await logTicketActivity({
@@ -306,6 +329,8 @@ export async function assignTicket(
     include: ticketInclude,
   });
 
+  notifyTicketChange(updatedTicket);
+
   if (assignmentChanged) {
     await logTicketActivity({
       ticketId,
@@ -366,6 +391,8 @@ export async function resolveTicket(ticketId: string, user: RequestUser) {
     include: ticketInclude,
   });
 
+  notifyTicketChange(updatedTicket);
+
   if (!alreadyResolved) {
     await logTicketActivity({
       ticketId,
@@ -402,10 +429,7 @@ export async function requestAssignment(ticketId: string, user: RequestUser) {
     throw createError(400, "Ticket already assigned");
   }
 
-  if (
-    ticket.assignmentRequestId &&
-    ticket.assignmentRequestId !== user.id
-  ) {
+  if (ticket.assignmentRequestId && ticket.assignmentRequestId !== user.id) {
     throw createError(409, "Ticket already requested by another agent");
   }
 
@@ -416,11 +440,14 @@ export async function requestAssignment(ticketId: string, user: RequestUser) {
     });
   }
 
-  return prisma.ticket.update({
+  const updatedTicket = await prisma.ticket.update({
     where: { id: ticketId },
     data: { assignmentRequestId: user.id },
     include: ticketInclude,
   });
+
+  notifyTicketChange(updatedTicket);
+  return updatedTicket;
 }
 
 export async function declineAssignmentRequest(
@@ -443,11 +470,14 @@ export async function declineAssignmentRequest(
     throw createError(409, "No pending request to decline");
   }
 
-  return prisma.ticket.update({
+  const updatedTicket = await prisma.ticket.update({
     where: { id: ticketId },
     data: { assignmentRequestId: null },
     include: ticketInclude,
   });
+
+  notifyTicketChange(updatedTicket);
+  return updatedTicket;
 }
 
 export async function appendAttachments(
@@ -471,11 +501,14 @@ export async function appendAttachments(
     throw createError(403, "You cannot update attachments for this ticket");
   }
 
-  return prisma.ticket.update({
+  const updatedTicket = await prisma.ticket.update({
     where: { id: ticketId },
     data: { attachments: [...ticket.attachments, ...attachmentPaths] },
     include: ticketInclude,
   });
+
+  notifyTicketChange(updatedTicket);
+  return updatedTicket;
 }
 
 type QueuedTicketInput = {
@@ -518,6 +551,7 @@ export async function ingestQueuedTickets(
       include: ticketInclude,
     });
 
+    notifyTicketChange(ticket, "tickets:created");
     results.push({ tempId: payload.tempId, ticket });
   }
 
@@ -601,7 +635,6 @@ export async function getTicketStatusSummary(user: RequestUser) {
         select: { id: true, name: true, email: true },
       })
     : [];
-
   return {
     statuses: statusBuckets.map((bucket) => ({
       status: bucket.status,
@@ -612,8 +645,7 @@ export async function getTicketStatusSummary(user: RequestUser) {
       .map((bucket) => ({
         agentId: bucket.assignedTo as string,
         count: extractAggregateCount(bucket._count),
-        agent:
-          agents.find((agent) => agent.id === bucket.assignedTo) ?? null,
+        agent: agents.find((agent) => agent.id === bucket.assignedTo) ?? null,
       })),
   };
 }

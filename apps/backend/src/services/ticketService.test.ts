@@ -13,6 +13,7 @@ import {
   updateTicket,
 } from "./ticketService.js";
 import { prisma } from "../lib/prisma.js";
+import { dispatchTicketEmail } from "../notifications/ticketMailer.js";
 
 vi.mock("../lib/prisma.js", () => {
   const ticket = {
@@ -36,10 +37,15 @@ vi.mock("../lib/prisma.js", () => {
   return { prisma: { ticket, user, ticketActivity, $transaction } };
 });
 
+vi.mock("../notifications/ticketMailer.js", () => ({
+  dispatchTicketEmail: vi.fn().mockResolvedValue(undefined),
+}));
+
 const prismaTicket = prisma.ticket as unknown as Record<string, Mock>;
 const prismaUser = prisma.user as unknown as Record<string, Mock>;
 const prismaTicketActivity =
   prisma.ticketActivity as unknown as Record<string, Mock>;
+const dispatchTicketEmailMock = dispatchTicketEmail as unknown as Mock;
 
 const baseUser: Express.AuthenticatedUser = {
   id: "user-1",
@@ -86,6 +92,7 @@ beforeEach(() => {
   Object.values(prismaTicket).forEach((mock) => mock.mockReset());
   Object.values(prismaUser).forEach((mock) => mock.mockReset());
   Object.values(prismaTicketActivity).forEach((mock) => mock.mockReset());
+  dispatchTicketEmailMock.mockReset();
 });
 
 describe("listTickets", () => {
@@ -125,6 +132,10 @@ describe("createTicket", () => {
       }),
     );
     expect(ticket.id).toBe(ticketRecord.id);
+    expect(dispatchTicketEmailMock).toHaveBeenCalledWith(
+      ticketWithRelations,
+      "tickets:created",
+    );
   });
 
   it("rejects ticket creation for agents", async () => {
@@ -198,7 +209,7 @@ describe("assignTicket", () => {
       assignmentRequestId: agentUser.id,
     });
     prismaUser.findUnique.mockResolvedValue({ id: agentUser.id, role: Role.agent });
-    prismaTicket.update.mockResolvedValue({
+    const assignedTicket = {
       ...ticketWithRelations,
       assignedTo: agentUser.id,
       assignee: {
@@ -206,7 +217,8 @@ describe("assignTicket", () => {
         name: agentUser.name,
         email: agentUser.email,
       },
-    });
+    };
+    prismaTicket.update.mockResolvedValue(assignedTicket);
 
     const ticket = (await assignTicket(
       ticketRecord.id,
@@ -220,6 +232,10 @@ describe("assignTicket", () => {
       }),
     );
     expect(ticket.assignee?.id).toBe(agentUser.id);
+    expect(dispatchTicketEmailMock).toHaveBeenCalledWith(
+      assignedTicket,
+      "tickets:updated",
+    );
   });
 
   it("requires admin role", async () => {

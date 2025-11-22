@@ -29,11 +29,17 @@
       "@/providers/*": [
         "providers/*"
       ],
+      "@/realtime/*": [
+        "realtime/*"
+      ],
       "@/storage/*": [
         "storage/*"
       ],
       "@/services/*": [
         "services/*"
+      ],
+      "@/lib/*": [
+        "lib/*"
       ],
       "@/config/*": [
         "config/*"

@@ -29,9 +29,9 @@
 
 - **Milestone 4 kick-off (Unit tests are mandatory for every code change in this milestone.)**
 - [ ] **Milestone 4 – Notifications (2–4 days)**
-  - [ ] Backend: socket notifications and real time update + email provider integration
-  - [ ] Backend triggers for ticket events
-  - [ ] Mobile: sockets event handling
+  - [x] Backend: socket notifications and real time update + email provider integration
+  - [x] Backend triggers for ticket events
+  - [x] Mobile: sockets event handling
 
 ## Next
 
