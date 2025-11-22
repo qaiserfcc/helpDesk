@@ -197,6 +197,10 @@ export function TicketDetailScreen({ route, navigation }: Props) {
     }
   };
 
+  const selectedAgent = useMemo(() => {
+    return agents.find((agent) => agent.id === selectedAssigneeId) ?? null;
+  }, [agents, selectedAssigneeId]);
+
   if (isLoading || !ticket) {
     return (
       <View style={styles.loader}>
@@ -204,10 +208,6 @@ export function TicketDetailScreen({ route, navigation }: Props) {
       </View>
     );
   }
-
-  const selectedAgent = useMemo(() => {
-    return agents.find((agent) => agent.id === selectedAssigneeId) ?? null;
-  }, [agents, selectedAssigneeId]);
 
   const describeActivity = (entry: TicketActivityEntry) => {
     if (entry.type === "assignment_change") {
