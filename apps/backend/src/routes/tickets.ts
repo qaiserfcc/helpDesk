@@ -1,4 +1,3 @@
-import fs from "node:fs";
 import path from "node:path";
 import { Router } from "express";
 import createError from "http-errors";
@@ -17,6 +16,7 @@ import {
   resolveTicket,
   updateTicket,
 } from "../services/ticketService.js";
+import { attachmentsDir } from "../config/attachments.js";
 
 const router = Router();
 
@@ -66,9 +66,6 @@ const syncSchema = z.object({
 const diffQuerySchema = z.object({
   since: z.string().datetime(),
 });
-
-const attachmentsDir = path.resolve(process.cwd(), "tmp/attachments");
-fs.mkdirSync(attachmentsDir, { recursive: true });
 
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => {

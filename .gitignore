@@ -63,3 +63,4 @@ prisma/dev.db-journal
 # Local assets not meant for git
 *.local
 **/storage.db
+apps/backend/tmp/

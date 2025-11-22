@@ -2,6 +2,7 @@ import React from "react";
 import {
   ActivityIndicator,
   Alert,
+  Linking,
   ScrollView,
   StyleSheet,
   Text,
@@ -18,6 +19,7 @@ import {
   resolveTicket,
   TicketStatus,
 } from "@/services/tickets";
+import { env } from "@/config/env";
 
 function formatStatus(status: TicketStatus) {
   switch (status) {
@@ -33,6 +35,16 @@ function formatStatus(status: TicketStatus) {
 }
 
 type Props = NativeStackScreenProps<RootStackParamList, "TicketDetail">;
+
+const httpLikePattern = /^https?:\/\//i;
+
+const buildAttachmentUrl = (path: string) => {
+  if (httpLikePattern.test(path)) {
+    return path;
+  }
+  const sanitized = path.replace(/^\/+/, "");
+  return `${env.apiBaseUrl}/${sanitized}`;
+};
 
 export function TicketDetailScreen({ route, navigation }: Props) {
   const { ticketId } = route.params;
@@ -76,6 +88,21 @@ export function TicketDetailScreen({ route, navigation }: Props) {
 
   const handleEdit = () => {
     navigation.navigate("TicketForm", { ticketId });
+  };
+
+  const handleOpenAttachment = async (attachment: string) => {
+    const url = buildAttachmentUrl(attachment);
+    try {
+      const supported = await Linking.canOpenURL(url);
+      if (!supported) {
+        Alert.alert("Cannot open attachment", "Unsupported file link.");
+        return;
+      }
+      await Linking.openURL(url);
+    } catch (error) {
+      console.error("open attachment failed", error);
+      Alert.alert("Unable to open attachment", "Please try again later.");
+    }
   };
 
   if (isLoading || !ticket) {
@@ -122,9 +149,16 @@ export function TicketDetailScreen({ route, navigation }: Props) {
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>Attachments</Text>
           {ticket.attachments.map((attachment) => (
-            <Text key={attachment} style={styles.attachment}>
-              {attachment}
-            </Text>
+            <Pressable
+              key={attachment}
+              style={styles.attachmentButton}
+              onPress={() => handleOpenAttachment(attachment)}
+            >
+              <Text style={styles.attachmentLabel}>
+                {attachment.split("/").pop() ?? attachment}
+              </Text>
+              <Text style={styles.attachmentHint}>Tap to open</Text>
+            </Pressable>
           ))}
         </View>
       )}
@@ -213,9 +247,23 @@ const styles = StyleSheet.create({
     color: "#E2E8F0",
     fontSize: 16,
   },
-  attachment: {
-    color: "#38BDF8",
-    marginTop: 4,
+  attachmentButton: {
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#1D4ED8",
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    marginTop: 8,
+    backgroundColor: "#0F172A",
+  },
+  attachmentLabel: {
+    color: "#E2E8F0",
+    fontWeight: "600",
+  },
+  attachmentHint: {
+    color: "#94A3B8",
+    fontSize: 12,
+    marginTop: 2,
   },
   actions: {
     marginTop: 28,

@@ -4,6 +4,7 @@ import {
   FlatList,
   Pressable,
   RefreshControl,
+  SafeAreaView,
   StyleSheet,
   Switch,
   Text,
@@ -123,123 +124,132 @@ export function DashboardScreen() {
   );
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.title}>Help Desk</Text>
-          <Text style={styles.subtitle}>
-            {user ? `Welcome, ${user.name}` : "Tickets overview"}
-          </Text>
-        </View>
-        <Pressable style={styles.signOut} onPress={signOut}>
-          <Text style={styles.signOutText}>Sign out</Text>
-        </Pressable>
-      </View>
-
-      <View style={styles.cardsRow}>
-        {["open", "in_progress", "resolved"].map((statusKey) => (
-          <View key={statusKey} style={styles.card}>
-            <Text style={styles.cardLabel}>
-              {formatStatus(statusKey as TicketStatus)}
-            </Text>
-            <Text style={styles.cardValue}>
-              {statusKey === "open"
-                ? counters.open
-                : statusKey === "in_progress"
-                  ? counters.in_progress
-                  : counters.resolved}
-            </Text>
-          </View>
-        ))}
-      </View>
-
-      <View style={styles.filterRow}>
-        <View style={styles.filterTabs}>
-          {statusFilters.map((filter) => {
-            const isActive = statusFilter === filter.value;
-            return (
-              <Pressable
-                key={filter.label}
-                style={[styles.filterChip, isActive && styles.filterChipActive]}
-                onPress={() => setStatusFilter(filter.value)}
-              >
-                <Text
-                  style={[
-                    styles.filterChipText,
-                    isActive && styles.filterChipTextActive,
-                  ]}
-                >
-                  {filter.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-        {user?.role !== "user" && (
-          <View style={styles.switchRow}>
-            <Text style={styles.switchLabel}>Assigned to me</Text>
-            <Switch
-              value={assignedOnly}
-              onValueChange={setAssignedOnly}
-              trackColor={{ false: "#475569", true: "#38BDF8" }}
-            />
-          </View>
-        )}
-      </View>
-
-      {queuedCount > 0 && (
-        <View style={styles.queueBanner}>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <View style={styles.header}>
           <View>
-            <Text style={styles.queueTitle}>
-              {queuedCount} offline ticket(s)
-            </Text>
-            <Text style={styles.queueSubtitle}>
-              We will sync automatically when you are online.
+            <Text style={styles.title}>Help Desk</Text>
+            <Text style={styles.subtitle}>
+              {user ? `Welcome, ${user.name}` : "Tickets overview"}
             </Text>
           </View>
-          <Pressable
-            style={styles.syncButton}
-            onPress={() => syncQueuedTickets().then(() => refetchQueued())}
-          >
-            {queuedLoading ? (
-              <ActivityIndicator color="#0F172A" />
-            ) : (
-              <Text style={styles.syncText}>Sync now</Text>
-            )}
+          <Pressable style={styles.signOut} onPress={signOut}>
+            <Text style={styles.signOutText}>Sign out</Text>
           </Pressable>
         </View>
-      )}
 
-      <FlatList
-        data={tickets}
-        keyExtractor={(item) => item.id}
-        renderItem={renderTicket}
-        contentContainerStyle={styles.listContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={isLoading || isRefetching}
-            onRefresh={onRefresh}
-            tintColor="#38BDF8"
-          />
-        }
-        ListEmptyComponent={() => (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyTitle}>No tickets found</Text>
-            <Text style={styles.emptySubtitle}>
-              Try a different filter or create a new ticket below.
-            </Text>
+        <View style={styles.cardsRow}>
+          {["open", "in_progress", "resolved"].map((statusKey) => (
+            <View key={statusKey} style={styles.card}>
+              <Text style={styles.cardLabel}>
+                {formatStatus(statusKey as TicketStatus)}
+              </Text>
+              <Text style={styles.cardValue}>
+                {statusKey === "open"
+                  ? counters.open
+                  : statusKey === "in_progress"
+                    ? counters.in_progress
+                    : counters.resolved}
+              </Text>
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.filterRow}>
+          <View style={styles.filterTabs}>
+            {statusFilters.map((filter) => {
+              const isActive = statusFilter === filter.value;
+              return (
+                <Pressable
+                  key={filter.label}
+                  style={[
+                    styles.filterChip,
+                    isActive && styles.filterChipActive,
+                  ]}
+                  onPress={() => setStatusFilter(filter.value)}
+                >
+                  <Text
+                    style={[
+                      styles.filterChipText,
+                      isActive && styles.filterChipTextActive,
+                    ]}
+                  >
+                    {filter.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          {user?.role !== "user" && (
+            <View style={styles.switchRow}>
+              <Text style={styles.switchLabel}>Assigned to me</Text>
+              <Switch
+                value={assignedOnly}
+                onValueChange={setAssignedOnly}
+                trackColor={{ false: "#475569", true: "#38BDF8" }}
+              />
+            </View>
+          )}
+        </View>
+
+        {queuedCount > 0 && (
+          <View style={styles.queueBanner}>
+            <View>
+              <Text style={styles.queueTitle}>
+                {queuedCount} offline ticket(s)
+              </Text>
+              <Text style={styles.queueSubtitle}>
+                We will sync automatically when you are online.
+              </Text>
+            </View>
+            <Pressable
+              style={styles.syncButton}
+              onPress={() => syncQueuedTickets().then(() => refetchQueued())}
+            >
+              {queuedLoading ? (
+                <ActivityIndicator color="#0F172A" />
+              ) : (
+                <Text style={styles.syncText}>Sync now</Text>
+              )}
+            </Pressable>
           </View>
         )}
-      />
 
-      <Pressable style={styles.primaryCta} onPress={onCreateTicket}>
-        <Text style={styles.primaryText}>Create Ticket</Text>
-      </Pressable>
-    </View>
+        <FlatList
+          data={tickets}
+          keyExtractor={(item) => item.id}
+          renderItem={renderTicket}
+          contentContainerStyle={styles.listContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={isLoading || isRefetching}
+              onRefresh={onRefresh}
+              tintColor="#38BDF8"
+            />
+          }
+          ListEmptyComponent={() => (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyTitle}>No tickets found</Text>
+              <Text style={styles.emptySubtitle}>
+                Try a different filter or create a new ticket below.
+              </Text>
+            </View>
+          )}
+        />
+
+        <Pressable style={styles.primaryCta} onPress={onCreateTicket}>
+          <Text style={styles.primaryText}>Create Ticket</Text>
+        </Pressable>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#020617",
+  },
   container: {
     flex: 1,
     paddingHorizontal: 20,

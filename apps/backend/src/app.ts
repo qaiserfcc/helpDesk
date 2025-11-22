@@ -6,6 +6,7 @@ import createError from "http-errors";
 import swaggerUi from "swagger-ui-express";
 import router from "./routes/index.js";
 import swaggerDocument from "./config/swagger.js";
+import { attachmentsDir } from "./config/attachments.js";
 
 const app = express();
 
@@ -27,6 +28,8 @@ app.use(
 app.get("/docs.json", (_req, res) => {
   res.json(swaggerDocument);
 });
+
+app.use("/tmp/attachments", express.static(attachmentsDir));
 
 app.use("/api", router);
 
