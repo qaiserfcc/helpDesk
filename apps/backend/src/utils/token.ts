@@ -1,4 +1,4 @@
-import jwt, { JwtPayload, JsonWebTokenError } from 'jsonwebtoken';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 import { Role } from '@prisma/client';
 import { env } from '../config/env.js';
 
@@ -40,7 +40,7 @@ function verifyToken(token: string, kind: TokenKind) {
   const decoded = jwt.verify(token, secret);
 
   if (typeof decoded === 'string' || decoded.type !== kind) {
-    throw new JsonWebTokenError('Invalid token payload');
+    throw new jwt.JsonWebTokenError('Invalid token payload');
   }
 
   return decoded as (AccessTokenPayload | RefreshTokenPayload) & { type: typeof kind };

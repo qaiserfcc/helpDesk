@@ -16,11 +16,10 @@
 
 - **Milestone 2 kick-off (Unit tests are mandatory for every code change in this milestone.)**
 - [ ] **Milestone 2 – Authentication (3–4 days)**
-  - [ ] Backend auth endpoints (login, refresh)
-  - [ ] Role model + middleware (User/Agent/Admin)
-  - [ ] Optional welcome/activation email template
-  - [ ] Mobile login UI + form validation
-  - [ ] Auth state management (context/Redux) + secure token storage
+  - [x] Backend auth endpoints (login, refresh)
+  - [x] Role model + middleware (User/Agent/Admin)
+  - [x] Mobile login UI + form validation
+  - [x] Auth state management (context/Redux) + secure token storage
 
 ## Next
 
