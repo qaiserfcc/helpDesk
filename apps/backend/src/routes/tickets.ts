@@ -9,8 +9,10 @@ import {
   appendAttachments,
   assignTicket,
   createTicket,
+  declineAssignmentRequest,
   getTicket,
   getTicketDiff,
+  listTicketActivity,
   ingestQueuedTickets,
   listTickets,
   requestAssignment,
@@ -170,6 +172,26 @@ router.get("/:ticketId", async (req, res, next) => {
   }
 });
 
+router.get("/:ticketId/activity", async (req, res, next) => {
+  if (!req.user) {
+    next(createError(401, "Authentication required"));
+    return;
+  }
+
+  const limit = Number.parseInt(String(req.query.limit ?? "50"), 10);
+
+  try {
+    const activities = await listTicketActivity(
+      req.params.ticketId,
+      req.user,
+      Number.isNaN(limit) ? 50 : limit,
+    );
+    res.json({ activities });
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.post("/", async (req, res, next) => {
   if (!req.user) {
     next(createError(401, "Authentication required"));
@@ -261,6 +283,31 @@ router.post("/:ticketId/request-assignment", async (req, res, next) => {
     next(error);
   }
 });
+
+router.post(
+  "/:ticketId/assignment-request/decline",
+  async (req, res, next) => {
+    if (!req.user) {
+      next(createError(401, "Authentication required"));
+      return;
+    }
+
+    if (req.user.role !== Role.admin) {
+      next(createError(403, "Only admins can decline assignment requests"));
+      return;
+    }
+
+    try {
+      const ticket = await declineAssignmentRequest(
+        req.params.ticketId,
+        req.user,
+      );
+      res.json({ ticket });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 router.post("/:ticketId/resolve", async (req, res, next) => {
   if (!req.user) {

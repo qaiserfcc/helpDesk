@@ -32,9 +32,9 @@
 
 - **Milestone 4 kick-off (Unit tests are mandatory for every code change in this milestone.)**
 - [ ] **Milestone 4 – Notifications (2–4 days)**
-  - [ ] Backend: FCM + email provider integration
+  - [ ] Backend: socket notifications and real time update + email provider integration
   - [ ] Backend triggers for ticket events
-  - [ ] Mobile: FCM token registration + handlers
+  - [ ] Mobile: sockets event handling
 
 - **Milestone 5 kick-off (Unit tests are mandatory for every code change in this milestone.)**
 - [ ] **Milestone 5 – Admin Features (3–4 days)**

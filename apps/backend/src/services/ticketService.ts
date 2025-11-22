@@ -5,6 +5,7 @@ import {
   TicketPriority,
   TicketStatus,
   Role,
+  TicketActivityType,
 } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 
@@ -16,9 +17,73 @@ const ticketInclude = {
   },
 } as const;
 
+const ticketActivityInclude = {
+  actor: { select: { id: true, name: true, email: true, role: true } },
+  fromAssignee: {
+    select: { id: true, name: true, email: true },
+  },
+  toAssignee: {
+    select: { id: true, name: true, email: true },
+  },
+} as const;
+
+const ticketCoreSelect = {
+  id: true,
+  status: true,
+  description: true,
+  priority: true,
+  issueType: true,
+  attachments: true,
+  createdBy: true,
+  assignedTo: true,
+  assignmentRequestId: true,
+  resolvedAt: true,
+  createdAt: true,
+  updatedAt: true,
+} as const;
+
+type TicketCore = Prisma.TicketGetPayload<{ select: typeof ticketCoreSelect }>;
+
 type TicketWithRelations = Prisma.TicketGetPayload<{
   include: typeof ticketInclude;
 }>;
+
+export type TicketActivityEntry = Prisma.TicketActivityGetPayload<{
+  include: typeof ticketActivityInclude;
+}>;
+
+type ActivityLogInput = {
+  ticketId: string;
+  actorId: string;
+  type: TicketActivityType;
+  fromStatus?: TicketStatus | null;
+  toStatus?: TicketStatus | null;
+  fromAssigneeId?: string | null;
+  toAssigneeId?: string | null;
+};
+
+async function logTicketActivity(input: ActivityLogInput) {
+  await prisma.ticketActivity.create({
+    data: {
+      ticketId: input.ticketId,
+      actorId: input.actorId,
+      type: input.type,
+      fromStatus: input.fromStatus ?? null,
+      toStatus: input.toStatus ?? null,
+      fromAssigneeId: input.fromAssigneeId ?? null,
+      toAssigneeId: input.toAssigneeId ?? null,
+    },
+  });
+}
+
+function extractAggregateCount(
+  aggregate: { _all?: number } | true | null | undefined,
+) {
+  if (!aggregate || aggregate === true) {
+    return 0;
+  }
+  return aggregate._all ?? 0;
+}
 
 export type TicketFilters = {
   status?: TicketStatus;
@@ -114,7 +179,10 @@ export async function updateTicket(
   updates: UpdateTicketInput,
   user: RequestUser,
 ) {
-  const ticket = await prisma.ticket.findUnique({ where: { id: ticketId } });
+  const ticket = await prisma.ticket.findUnique({
+    where: { id: ticketId },
+    select: ticketCoreSelect,
+  });
 
   if (!ticket) {
     throw createError(404, "Ticket not found");
@@ -122,8 +190,24 @@ export async function updateTicket(
 
   const isAdmin = user.role === Role.admin;
   const isOwner = ticket.createdBy === user.id;
+  const isAssignedAgent =
+    user.role === Role.agent && ticket.assignedTo === user.id;
+  const isAgent = user.role === Role.agent;
 
-  if (!isAdmin) {
+  if (isAgent) {
+    const { status, ...otherUpdates } = updates;
+    const hasOtherChanges = Object.values(otherUpdates).some(
+      (value) => value !== undefined,
+    );
+
+    if (hasOtherChanges) {
+      throw createError(403, "Agents may only change ticket status");
+    }
+
+    if (!status) {
+      throw createError(400, "Status update is required");
+    }
+  } else if (!isAdmin) {
     if (user.role === Role.user) {
       if (!isOwner) {
         throw createError(403, "You cannot modify this ticket");
@@ -133,17 +217,18 @@ export async function updateTicket(
     }
   }
 
-  if (updates.status && !isAdmin) {
-    throw createError(403, "Only admins can change ticket status");
+  if (updates.status && !(isAssignedAgent || isAdmin)) {
+    throw createError(403, "Only the assigned agent or an admin can change ticket status");
   }
 
   const nextStatus = updates.status ?? ticket.status;
+  const statusChanged = nextStatus !== ticket.status;
   const resolvedAt =
     nextStatus === TicketStatus.resolved && ticket.resolvedAt === null
       ? new Date()
       : ticket.resolvedAt;
 
-  return prisma.ticket.update({
+  const updatedTicket = await prisma.ticket.update({
     where: { id: ticketId },
     data: {
       description: updates.description ?? ticket.description,
@@ -154,6 +239,20 @@ export async function updateTicket(
     },
     include: ticketInclude,
   });
+
+  if (statusChanged) {
+    await logTicketActivity({
+      ticketId,
+      actorId: user.id,
+      type: TicketActivityType.status_change,
+      fromStatus: ticket.status,
+      toStatus: nextStatus,
+      fromAssigneeId: ticket.assignedTo,
+      toAssigneeId: ticket.assignedTo,
+    });
+  }
+
+  return updatedTicket;
 }
 
 export async function assignTicket(
@@ -165,7 +264,10 @@ export async function assignTicket(
     throw createError(403, "Only admins can assign tickets");
   }
 
-  const ticket = await prisma.ticket.findUnique({ where: { id: ticketId } });
+  const ticket = await prisma.ticket.findUnique({
+    where: { id: ticketId },
+    select: ticketCoreSelect,
+  });
   if (!ticket) {
     throw createError(404, "Ticket not found");
   }
@@ -187,50 +289,96 @@ export async function assignTicket(
     throw createError(400, "Assignee must be an agent");
   }
 
-  return prisma.ticket.update({
+  const nextStatus =
+    ticket.status === TicketStatus.open
+      ? TicketStatus.in_progress
+      : ticket.status;
+  const statusChanged = nextStatus !== ticket.status;
+  const assignmentChanged = ticket.assignedTo !== assignee.id;
+
+  const updatedTicket = await prisma.ticket.update({
     where: { id: ticketId },
     data: {
       assignedTo: assignee.id,
       assignmentRequestId: null,
-      status:
-        ticket.status === TicketStatus.open
-          ? TicketStatus.in_progress
-          : ticket.status,
+      status: nextStatus,
     },
     include: ticketInclude,
   });
+
+  if (assignmentChanged) {
+    await logTicketActivity({
+      ticketId,
+      actorId: user.id,
+      type: TicketActivityType.assignment_change,
+      fromAssigneeId: ticket.assignedTo,
+      toAssigneeId: assignee.id,
+      fromStatus: ticket.status,
+      toStatus: nextStatus,
+    });
+  } else if (statusChanged) {
+    await logTicketActivity({
+      ticketId,
+      actorId: user.id,
+      type: TicketActivityType.status_change,
+      fromStatus: ticket.status,
+      toStatus: nextStatus,
+      fromAssigneeId: ticket.assignedTo,
+      toAssigneeId: ticket.assignedTo,
+    });
+  }
+
+  return updatedTicket;
 }
 
 export async function resolveTicket(ticketId: string, user: RequestUser) {
-  if (user.role === Role.user) {
-    throw createError(403, "Only agents or admins can resolve tickets");
+  if (user.role !== Role.agent) {
+    throw createError(403, "Only agents can resolve tickets");
   }
 
-  const ticket = await prisma.ticket.findUnique({ where: { id: ticketId } });
+  const ticket = await prisma.ticket.findUnique({
+    where: { id: ticketId },
+    select: ticketCoreSelect,
+  });
   if (!ticket) {
     throw createError(404, "Ticket not found");
   }
 
-  if (ticket.status === TicketStatus.resolved) {
-    return prisma.ticket.update({
-      where: { id: ticketId },
-      data: {
+  if (ticket.assignedTo !== user.id) {
+    throw createError(403, "Only the assigned agent can resolve this ticket");
+  }
+
+  const alreadyResolved = ticket.status === TicketStatus.resolved;
+  const data = alreadyResolved
+    ? {
         resolvedAt: ticket.resolvedAt ?? new Date(),
         assignmentRequestId: null,
-      },
-      include: ticketInclude,
+      }
+    : {
+        status: TicketStatus.resolved,
+        resolvedAt: new Date(),
+        assignmentRequestId: null,
+      };
+
+  const updatedTicket = await prisma.ticket.update({
+    where: { id: ticketId },
+    data,
+    include: ticketInclude,
+  });
+
+  if (!alreadyResolved) {
+    await logTicketActivity({
+      ticketId,
+      actorId: user.id,
+      type: TicketActivityType.status_change,
+      fromStatus: ticket.status,
+      toStatus: TicketStatus.resolved,
+      fromAssigneeId: ticket.assignedTo,
+      toAssigneeId: ticket.assignedTo,
     });
   }
 
-  return prisma.ticket.update({
-    where: { id: ticketId },
-    data: {
-      status: TicketStatus.resolved,
-      resolvedAt: new Date(),
-      assignmentRequestId: null,
-    },
-    include: ticketInclude,
-  });
+  return updatedTicket;
 }
 
 export async function requestAssignment(ticketId: string, user: RequestUser) {
@@ -238,7 +386,10 @@ export async function requestAssignment(ticketId: string, user: RequestUser) {
     throw createError(403, "Only agents can request assignments");
   }
 
-  const ticket = await prisma.ticket.findUnique({ where: { id: ticketId } });
+  const ticket = await prisma.ticket.findUnique({
+    where: { id: ticketId },
+    select: ticketCoreSelect,
+  });
   if (!ticket) {
     throw createError(404, "Ticket not found");
   }
@@ -272,6 +423,33 @@ export async function requestAssignment(ticketId: string, user: RequestUser) {
   });
 }
 
+export async function declineAssignmentRequest(
+  ticketId: string,
+  user: RequestUser,
+) {
+  if (user.role !== Role.admin) {
+    throw createError(403, "Only admins can decline assignment requests");
+  }
+
+  const ticket = await prisma.ticket.findUnique({
+    where: { id: ticketId },
+    select: ticketCoreSelect,
+  });
+  if (!ticket) {
+    throw createError(404, "Ticket not found");
+  }
+
+  if (!ticket.assignmentRequestId) {
+    throw createError(409, "No pending request to decline");
+  }
+
+  return prisma.ticket.update({
+    where: { id: ticketId },
+    data: { assignmentRequestId: null },
+    include: ticketInclude,
+  });
+}
+
 export async function appendAttachments(
   ticketId: string,
   attachmentPaths: string[],
@@ -281,7 +459,10 @@ export async function appendAttachments(
     throw createError(400, "No attachments provided");
   }
 
-  const ticket = await prisma.ticket.findUnique({ where: { id: ticketId } });
+  const ticket = await prisma.ticket.findUnique({
+    where: { id: ticketId },
+    select: ticketCoreSelect,
+  });
   if (!ticket) {
     throw createError(404, "Ticket not found");
   }
@@ -355,4 +536,84 @@ export async function getTicketDiff(since: Date, user: RequestUser) {
     orderBy: { updatedAt: "asc" },
     include: ticketInclude,
   });
+}
+
+export async function listTicketActivity(
+  ticketId: string,
+  user: RequestUser,
+  limit = 50,
+) {
+  await getTicket(ticketId, user);
+
+  const take = Math.min(Math.max(limit, 1), 200);
+
+  return prisma.ticketActivity.findMany({
+    where: { ticketId },
+    orderBy: { createdAt: "desc" },
+    take,
+    include: ticketActivityInclude,
+  });
+}
+
+export async function listRecentTicketActivity(
+  limit: number,
+  user: RequestUser,
+) {
+  if (user.role !== Role.admin) {
+    throw createError(403, "Only admins can view ticket activity reports");
+  }
+
+  const take = Math.min(Math.max((limit ?? 25) || 25, 1), 200);
+
+  return prisma.ticketActivity.findMany({
+    orderBy: { createdAt: "desc" },
+    take,
+    include: ticketActivityInclude,
+  });
+}
+
+export async function getTicketStatusSummary(user: RequestUser) {
+  if (user.role !== Role.admin) {
+    throw createError(403, "Only admins can view ticket reports");
+  }
+
+  const [statusBuckets, assignmentBuckets] = await prisma.$transaction([
+    prisma.ticket.groupBy({
+      by: ["status"],
+      _count: { _all: true },
+      orderBy: { status: "asc" },
+    }),
+    prisma.ticket.groupBy({
+      by: ["assignedTo"],
+      _count: { _all: true },
+      where: { assignedTo: { not: null } },
+      orderBy: { assignedTo: "asc" },
+    }),
+  ]);
+
+  const agentIds = assignmentBuckets
+    .map((bucket) => bucket.assignedTo)
+    .filter((value): value is string => Boolean(value));
+
+  const agents = agentIds.length
+    ? await prisma.user.findMany({
+        where: { id: { in: agentIds } },
+        select: { id: true, name: true, email: true },
+      })
+    : [];
+
+  return {
+    statuses: statusBuckets.map((bucket) => ({
+      status: bucket.status,
+      count: extractAggregateCount(bucket._count),
+    })),
+    assignments: assignmentBuckets
+      .filter((bucket) => bucket.assignedTo)
+      .map((bucket) => ({
+        agentId: bucket.assignedTo as string,
+        count: extractAggregateCount(bucket._count),
+        agent:
+          agents.find((agent) => agent.id === bucket.assignedTo) ?? null,
+      })),
+  };
 }

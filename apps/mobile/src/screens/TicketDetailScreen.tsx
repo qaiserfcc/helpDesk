@@ -15,6 +15,7 @@ import { RootStackParamList } from "@/navigation/AppNavigator";
 import { useAuthStore } from "@/store/useAuthStore";
 import {
   assignTicket,
+  declineAssignmentRequest,
   fetchTicket,
   requestAssignment,
   resolveTicket,
@@ -58,7 +59,6 @@ export function TicketDetailScreen({ route, navigation }: Props) {
 
   const isAdmin = authUser?.role === "admin";
   const isAgent = authUser?.role === "agent";
-  const isCreator = authUser?.id && ticket?.creator.id === authUser.id;
   const canAssign = isAdmin;
   const canEdit = Boolean(
     ticket &&
@@ -70,7 +70,16 @@ export function TicketDetailScreen({ route, navigation }: Props) {
     isAgent && pendingRequest?.id === authUser?.id;
   const otherAgentRequested =
     isAgent && !!pendingRequest && pendingRequest.id !== authUser?.id;
-  const canResolve = isAdmin || isAgent;
+  const isAssignedAgent =
+    isAgent && ticket?.assignee?.id === authUser?.id;
+  const canResolve = Boolean(isAssignedAgent && ticket?.status !== "resolved");
+  const canDeclineRequest = Boolean(canAssign && pendingRequest);
+  const canRequestAssignment = Boolean(
+    isAgent &&
+      !ticket?.assignee &&
+      ticket?.status !== "resolved" &&
+      !isAssignedAgent,
+  );
 
   const invalidateTickets = async () => {
     await queryClient.invalidateQueries({
@@ -95,6 +104,19 @@ export function TicketDetailScreen({ route, navigation }: Props) {
     } catch (error) {
       console.error("assign ticket failed", error);
       Alert.alert("Assignment failed", "Please try again in a moment.");
+    }
+  };
+
+  const handleDeclineRequest = async () => {
+    if (!pendingRequest) {
+      return;
+    }
+    try {
+      await declineAssignmentRequest(ticketId);
+      await invalidateTickets();
+    } catch (error) {
+      console.error("decline request failed", error);
+      Alert.alert("Decline failed", "Please try again in a moment.");
     }
   };
 
@@ -222,7 +244,15 @@ export function TicketDetailScreen({ route, navigation }: Props) {
             </Text>
           </Pressable>
         )}
-        {isAgent && !ticket.assignee && ticket.status !== "resolved" && (
+          {canDeclineRequest && ticket.status !== "resolved" && (
+            <Pressable
+              style={[styles.secondaryBtn, styles.dangerBtn]}
+              onPress={handleDeclineRequest}
+            >
+              <Text style={styles.dangerText}>Decline request</Text>
+            </Pressable>
+          )}
+          {canRequestAssignment && (
           <Pressable
             style={[
               styles.secondaryBtn,
@@ -241,7 +271,7 @@ export function TicketDetailScreen({ route, navigation }: Props) {
             </Text>
           </Pressable>
         )}
-        {canResolve && ticket.status !== "resolved" && (
+        {canResolve && (
           <Pressable
             style={[styles.primaryBtn, styles.resolveBtn]}
             onPress={handleResolve}
@@ -359,6 +389,13 @@ const styles = StyleSheet.create({
   },
   secondaryText: {
     color: "#E2E8F0",
+    fontWeight: "600",
+  },
+  dangerBtn: {
+    borderColor: "#DC2626",
+  },
+  dangerText: {
+    color: "#FCA5A5",
     fontWeight: "600",
   },
   assignmentNote: {

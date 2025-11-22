@@ -4,6 +4,7 @@ import {
   appendAttachments,
   assignTicket,
   createTicket,
+  declineAssignmentRequest,
   getTicket,
   ingestQueuedTickets,
   listTickets,
@@ -140,6 +141,42 @@ describe("updateTicket", () => {
       ),
     ).rejects.toMatchObject({ status: 403 });
   });
+
+  it("allows the assigned agent to update status", async () => {
+    prismaTicket.findUnique.mockResolvedValue({
+      ...ticketRecord,
+      assignedTo: agentUser.id,
+    });
+    prismaTicket.update.mockResolvedValue({
+      ...ticketWithRelations,
+      status: TicketStatus.in_progress,
+    });
+
+    const ticket = await updateTicket(
+      ticketRecord.id,
+      { status: TicketStatus.in_progress },
+      agentUser,
+    );
+
+    expect(ticket.status).toBe(TicketStatus.in_progress);
+    expect(prismaTicket.update).toHaveBeenCalled();
+  });
+
+  it("blocks agents from editing other fields", async () => {
+    prismaTicket.findUnique.mockResolvedValue({
+      ...ticketRecord,
+      assignedTo: agentUser.id,
+    });
+
+    await expect(
+      updateTicket(
+        ticketRecord.id,
+        { description: "Different" },
+        agentUser,
+      ),
+    ).rejects.toMatchObject({ status: 403 });
+    expect(prismaTicket.update).not.toHaveBeenCalled();
+  });
 });
 
 describe("assignTicket", () => {
@@ -214,9 +251,39 @@ describe("requestAssignment", () => {
   });
 });
 
+describe("declineAssignmentRequest", () => {
+  it("clears pending request for admins", async () => {
+    prismaTicket.findUnique.mockResolvedValue({
+      ...ticketRecord,
+      assignmentRequestId: agentUser.id,
+    });
+    prismaTicket.update.mockResolvedValue(ticketWithRelations);
+
+    const ticket = await declineAssignmentRequest(ticketRecord.id, adminUser);
+
+    expect(ticket.assignmentRequest).toBeNull();
+    expect(prismaTicket.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ assignmentRequestId: null }),
+      }),
+    );
+  });
+
+  it("rejects when there is no pending request", async () => {
+    prismaTicket.findUnique.mockResolvedValue(ticketRecord);
+
+    await expect(
+      declineAssignmentRequest(ticketRecord.id, adminUser),
+    ).rejects.toMatchObject({ status: 409 });
+  });
+});
+
 describe("resolveTicket", () => {
   it("sets status to resolved and stamps resolvedAt", async () => {
-    prismaTicket.findUnique.mockResolvedValue(ticketRecord);
+    prismaTicket.findUnique.mockResolvedValue({
+      ...ticketRecord,
+      assignedTo: agentUser.id,
+    });
     prismaTicket.update.mockResolvedValue({
       ...ticketWithRelations,
       status: TicketStatus.resolved,
@@ -227,6 +294,14 @@ describe("resolveTicket", () => {
 
     expect(ticket.status).toBe(TicketStatus.resolved);
     expect(prismaTicket.update).toHaveBeenCalled();
+  });
+
+  it("rejects resolving when agent is not assigned", async () => {
+    prismaTicket.findUnique.mockResolvedValue(ticketRecord);
+
+    await expect(
+      resolveTicket(ticketRecord.id, agentUser),
+    ).rejects.toMatchObject({ status: 403 });
   });
 });
 

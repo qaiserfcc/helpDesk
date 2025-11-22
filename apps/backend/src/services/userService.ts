@@ -55,3 +55,15 @@ export async function getUserProfile(id: string) {
   }
   return user;
 }
+
+export type ListUsersFilters = {
+  role?: Role;
+};
+
+export async function listUsers(filters: ListUsersFilters = {}) {
+  return prisma.user.findMany({
+    where: filters.role ? { role: filters.role } : undefined,
+    orderBy: { name: "asc" },
+    select: userSelect,
+  });
+}

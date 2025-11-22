@@ -103,6 +103,13 @@ export async function requestAssignment(ticketId: string) {
   return response.data.ticket;
 }
 
+export async function declineAssignmentRequest(ticketId: string) {
+  const response = await apiClient.post<{ ticket: Ticket }>(
+    `/tickets/${ticketId}/assignment-request/decline`,
+  );
+  return response.data.ticket;
+}
+
 export async function uploadTicketAttachments(
   ticketId: string,
   files: { uri: string; name: string; type: string }[],
