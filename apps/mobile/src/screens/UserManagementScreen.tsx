@@ -93,8 +93,7 @@ export function UserManagementScreen() {
     error: usersError,
   } = useQuery({
     queryKey: ["admin", "users", roleFilter],
-    queryFn: () =>
-      fetchUsers(roleFilter === "all" ? {} : { role: roleFilter }),
+    queryFn: () => fetchUsers(roleFilter === "all" ? {} : { role: roleFilter }),
     enabled: isAuthorized,
   });
 
@@ -164,8 +163,13 @@ export function UserManagementScreen() {
   });
 
   const updateUserMutation = useMutation({
-    mutationFn: ({ userId, payload }: { userId: string; payload: UpdateUserPayload }) =>
-      updateUser(userId, payload),
+    mutationFn: ({
+      userId,
+      payload,
+    }: {
+      userId: string;
+      payload: UpdateUserPayload;
+    }) => updateUser(userId, payload),
     onSuccess: (updated) => {
       invalidateUsers();
       closeForm();
@@ -282,7 +286,10 @@ export function UserManagementScreen() {
         }
       >
         <View style={styles.header}>
-          <Pressable style={styles.backIcon} onPress={() => navigation.goBack()}>
+          <Pressable
+            style={styles.backIcon}
+            onPress={() => navigation.goBack()}
+          >
             <Text style={styles.backGlyph}>←</Text>
           </Pressable>
           <View>
@@ -296,7 +303,8 @@ export function UserManagementScreen() {
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Active agents</Text>
           <Text style={styles.sectionSubtitle}>
-            {assignments.length} team member{assignments.length === 1 ? "" : "s"}
+            {assignments.length} team member
+            {assignments.length === 1 ? "" : "s"}
           </Text>
 
           {overviewInitialLoading ? (
@@ -316,7 +324,9 @@ export function UserManagementScreen() {
                     </Text>
                   </View>
                   <View style={styles.assignmentBadge}>
-                    <Text style={styles.assignmentCount}>{assignment.count}</Text>
+                    <Text style={styles.assignmentCount}>
+                      {assignment.count}
+                    </Text>
                     <Text style={styles.assignmentLabel}>Tickets</Text>
                   </View>
                 </View>
@@ -363,7 +373,9 @@ export function UserManagementScreen() {
           ) : usersError ? (
             <Text style={styles.sectionHint}>{usersErrorMessage}</Text>
           ) : memberList.length === 0 ? (
-            <Text style={styles.sectionHint}>No members match this filter.</Text>
+            <Text style={styles.sectionHint}>
+              No members match this filter.
+            </Text>
           ) : (
             <View style={styles.userList}>
               {memberList.map((entry) => (
@@ -407,7 +419,9 @@ export function UserManagementScreen() {
                             styles.actionButtonDangerText,
                           ]}
                         >
-                          {pendingDeleteId === entry.id ? "Removing..." : "Remove"}
+                          {pendingDeleteId === entry.id
+                            ? "Removing..."
+                            : "Remove"}
                         </Text>
                       </Pressable>
                     </View>
@@ -489,7 +503,9 @@ export function UserManagementScreen() {
 
               <View style={styles.fieldGroup}>
                 <Text style={styles.label}>
-                  {formMode === "create" ? "Temporary password" : "Reset password"}
+                  {formMode === "create"
+                    ? "Temporary password"
+                    : "Reset password"}
                 </Text>
                 <TextInput
                   style={styles.input}
@@ -512,12 +528,18 @@ export function UserManagementScreen() {
                   {roleFilters
                     .filter((filter) => filter.value !== "all")
                     .map((filter) => {
-                      const roleValue = filter.value as "admin" | "agent" | "user";
+                      const roleValue = filter.value as
+                        | "admin"
+                        | "agent"
+                        | "user";
                       const selected = formValues.role === roleValue;
                       return (
                         <Pressable
                           key={`role-${roleValue}`}
-                          style={[styles.roleCard, selected && styles.roleCardActive]}
+                          style={[
+                            styles.roleCard,
+                            selected && styles.roleCardActive,
+                          ]}
                           onPress={() =>
                             setFormValues((prev) => ({
                               ...prev,

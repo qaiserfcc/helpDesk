@@ -81,25 +81,30 @@ export function AgentWorkloadScreen() {
         }
       >
         <View style={styles.header}>
-          <Pressable style={styles.backIcon} onPress={() => navigation.goBack()}>
+          <Pressable
+            style={styles.backIcon}
+            onPress={() => navigation.goBack()}
+          >
             <Text style={styles.backGlyph}>←</Text>
           </Pressable>
           <View>
             <Text style={styles.title}>My workload</Text>
-            <Text style={styles.subtitle}>Assignments, requests, escalations</Text>
+            <Text style={styles.subtitle}>
+              Assignments, requests, escalations
+            </Text>
           </View>
         </View>
 
         <View style={styles.summaryHighlights}>
           {(["open", "in_progress", "resolved"] as const).map((status) => (
             <View key={status} style={styles.highlightCard}>
-              <Text style={styles.highlightLabel}>{
-                status === "open"
+              <Text style={styles.highlightLabel}>
+                {status === "open"
                   ? "Open"
                   : status === "in_progress"
                     ? "In progress"
-                    : "Resolved"
-              }</Text>
+                    : "Resolved"}
+              </Text>
               <Text style={styles.highlightValue}>{statusCounts[status]}</Text>
             </View>
           ))}

@@ -14,10 +14,7 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useQuery } from "@tanstack/react-query";
 import { RootStackParamList } from "@/navigation/AppNavigator";
 import { useAuthStore } from "@/store/useAuthStore";
-import {
-  ReportTicket,
-  fetchUserTicketReport,
-} from "@/services/tickets";
+import { ReportTicket, fetchUserTicketReport } from "@/services/tickets";
 import { formatTicketStatus } from "@/utils/ticketActivity";
 
 const defaultCounts = { open: 0, in_progress: 0, resolved: 0 };
@@ -75,7 +72,10 @@ export function UserReportScreen() {
         }
       >
         <View style={styles.header}>
-          <Pressable style={styles.backIcon} onPress={() => navigation.goBack()}>
+          <Pressable
+            style={styles.backIcon}
+            onPress={() => navigation.goBack()}
+          >
             <Text style={styles.backGlyph}>←</Text>
           </Pressable>
           <View>
@@ -87,13 +87,13 @@ export function UserReportScreen() {
         <View style={styles.summaryHighlights}>
           {(["open", "in_progress", "resolved"] as const).map((status) => (
             <View key={status} style={styles.highlightCard}>
-              <Text style={styles.highlightLabel}>{
-                status === "open"
+              <Text style={styles.highlightLabel}>
+                {status === "open"
                   ? "Open"
                   : status === "in_progress"
                     ? "In progress"
-                    : "Resolved"
-              }</Text>
+                    : "Resolved"}
+              </Text>
               <Text style={styles.highlightValue}>{statusCounts[status]}</Text>
             </View>
           ))}
@@ -138,9 +138,9 @@ function ReportTicketCard({
       <View style={styles.ticketCardHeader}>
         <Text style={styles.ticketId}>#{ticket.id.slice(0, 8)}</Text>
         <View style={[styles.statusPill, styles[`status_${ticket.status}`]]}>
-          <Text style={styles.statusText}>{
-            formatTicketStatus(ticket.status)
-          }</Text>
+          <Text style={styles.statusText}>
+            {formatTicketStatus(ticket.status)}
+          </Text>
         </View>
       </View>
       <Text style={styles.ticketDescription}>{ticket.description}</Text>

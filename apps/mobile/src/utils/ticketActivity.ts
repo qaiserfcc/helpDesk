@@ -1,7 +1,4 @@
-import type {
-  TicketActivityEntry,
-  TicketStatus,
-} from "@/services/tickets";
+import type { TicketActivityEntry, TicketStatus } from "@/services/tickets";
 
 export function formatTicketStatus(status: TicketStatus) {
   switch (status) {

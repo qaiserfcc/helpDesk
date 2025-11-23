@@ -29,9 +29,18 @@ describe("StatusSummaryScreen helpers", () => {
   });
 
   it("summarizes highlight counts and totals", () => {
-    const buckets = buildStatusBuckets({ open: 4, in_progress: 3, resolved: 1 });
+    const buckets = buildStatusBuckets({
+      open: 4,
+      in_progress: 3,
+      resolved: 1,
+    });
     const highlights = getHighlightCounts(buckets);
-    expect(highlights).toEqual({ total: 8, open: 4, inProgress: 3, resolved: 1 });
+    expect(highlights).toEqual({
+      total: 8,
+      open: 4,
+      inProgress: 3,
+      resolved: 1,
+    });
   });
 
   it("derives total tickets from buckets", () => {

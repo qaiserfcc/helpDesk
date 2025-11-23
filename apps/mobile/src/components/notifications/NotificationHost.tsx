@@ -73,7 +73,7 @@ export function NotificationHost() {
 
   return (
     <View pointerEvents="box-none" style={styles.host}>
-      <Animated.View style={[styles.toast, { opacity }]}> 
+      <Animated.View style={[styles.toast, { opacity }]}>
         <Pressable style={styles.toastCopy} onPress={handleNavigate}>
           <Text style={styles.toastActor}>{activeToast.actor}</Text>
           <Text style={styles.toastSummary}>{activeToast.summary}</Text>

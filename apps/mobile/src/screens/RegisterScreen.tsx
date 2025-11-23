@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -14,6 +14,7 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "@/navigation/AppNavigator";
 import { register } from "@/services/auth";
 import { useAuthStore, type UserRole } from "@/store/useAuthStore";
+import { useOfflineStore } from "@/store/useOfflineStore";
 import { demoAccounts } from "@/constants/demoAccounts";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Register">;
@@ -42,6 +43,12 @@ const roleOptions: Array<{
 
 export function RegisterScreen({ navigation }: Props) {
   const applySession = useAuthStore((state) => state.applySession);
+  const cacheSignupPayload = useAuthStore((state) => state.cacheSignupPayload);
+  const cacheLoginPayload = useAuthStore((state) => state.cacheLoginPayload);
+  const queueAuthIntent = useAuthStore((state) => state.queueAuthIntent);
+  const offlineSession = useAuthStore((state) => state.offlineSession);
+  const authQueueLength = useAuthStore((state) => state.authQueueLength);
+  const isOffline = useOfflineStore((state) => state.isOffline);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -49,15 +56,57 @@ export function RegisterScreen({ navigation }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const submitLabel = useMemo(() => {
+    if (submitting) {
+      return "Creating account…";
+    }
+    if (isOffline) {
+      return "Queue offline signup";
+    }
+    return "Create account";
+  }, [isOffline, submitting]);
+
   const handleSubmit = async () => {
     setSubmitting(true);
     setError(null);
     try {
-      const session = await register({
+      const normalizedPayload = {
         name: name.trim(),
-        email: email.trim(),
+        email: email.trim().toLowerCase(),
         password,
         role,
+      };
+
+      if (isOffline) {
+        const optimisticSession = {
+          user: {
+            id: `offline-${Date.now()}`,
+            name: normalizedPayload.name || "Offline user",
+            email: normalizedPayload.email,
+            role: normalizedPayload.role,
+          },
+          accessToken: "offline-access-token",
+          refreshToken: "offline-refresh-token",
+        };
+        await cacheSignupPayload(normalizedPayload);
+        await cacheLoginPayload({
+          email: normalizedPayload.email,
+          password: normalizedPayload.password,
+        });
+        await queueAuthIntent({ type: "register", payload: normalizedPayload });
+        await applySession(optimisticSession, { offline: true });
+        Alert.alert(
+          "Offline sign up",
+          "We'll finish creating your account once you're back online.",
+        );
+        return;
+      }
+
+      const session = await register(normalizedPayload);
+      await cacheSignupPayload(normalizedPayload);
+      await cacheLoginPayload({
+        email: normalizedPayload.email,
+        password: normalizedPayload.password,
       });
       await applySession(session);
     } catch (err) {
@@ -84,6 +133,23 @@ export function RegisterScreen({ navigation }: Props) {
         <View style={styles.form}>
           <Text style={styles.title}>Create your Help Desk account</Text>
           <Text style={styles.subtitle}>Access the workspace instantly.</Text>
+
+          {(isOffline || offlineSession) && (
+            <View style={styles.offlineHint}>
+              <Text style={styles.offlineHintText}>
+                {isOffline
+                  ? "Offline sign ups are queued and will sync automatically."
+                  : "Using cached session while offline."}
+              </Text>
+              {authQueueLength > 0 ? (
+                <Text style={styles.offlineHintMeta}>
+                  {authQueueLength === 1
+                    ? "1 auth action awaiting sync"
+                    : `${authQueueLength} auth actions awaiting sync`}
+                </Text>
+              ) : null}
+            </View>
+          )}
 
           <View style={styles.presetSection}>
             <Text style={styles.presetHeading}>Quick fill demo accounts</Text>
@@ -178,9 +244,7 @@ export function RegisterScreen({ navigation }: Props) {
             onPress={handleSubmit}
             disabled={submitting}
           >
-            <Text style={styles.primaryText}>
-              {submitting ? "Creating account…" : "Create account"}
-            </Text>
+            <Text style={styles.primaryText}>{submitLabel}</Text>
           </Pressable>
 
           <Pressable
@@ -212,6 +276,24 @@ const styles = StyleSheet.create({
     padding: 24,
     borderRadius: 24,
     backgroundColor: "#0F172A",
+  },
+  offlineHint: {
+    marginTop: 18,
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: "#0B1120",
+    borderWidth: 1,
+    borderColor: "#1E293B",
+  },
+  offlineHintText: {
+    color: "#F8FAFC",
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  offlineHintMeta: {
+    marginTop: 4,
+    color: "#94A3B8",
+    fontSize: 12,
   },
   title: {
     fontSize: 24,

@@ -1,4 +1,8 @@
-import { AdminOverviewReport, StatusCounts, TicketStatus } from "@/services/tickets";
+import {
+  AdminOverviewReport,
+  StatusCounts,
+  TicketStatus,
+} from "@/services/tickets";
 
 export type StatusBucket = {
   status: TicketStatus;

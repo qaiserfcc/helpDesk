@@ -22,13 +22,11 @@ function makeTicket(overrides: Partial<ReportTicket> = {}): ReportTicket {
     createdAt: overrides.createdAt ?? timestamp,
     updatedAt: timestamp,
     resolvedAt: overrides.resolvedAt ?? null,
-    creator:
-      overrides.creator ??
-      {
-        id: "creator-1",
-        name: "Creator One",
-        email: "creator@example.com",
-      },
+    creator: overrides.creator ?? {
+      id: "creator-1",
+      name: "Creator One",
+      email: "creator@example.com",
+    },
     assignee: overrides.assignee ?? null,
   };
 }
@@ -59,7 +57,9 @@ describe("ReportsTableScreen helpers", () => {
   });
 
   it("limits the number of table rows", () => {
-    const tickets = Array.from({ length: 5 }, (_, index) => makeTicket({ id: `${index}` }));
+    const tickets = Array.from({ length: 5 }, (_, index) =>
+      makeTicket({ id: `${index}` }),
+    );
     expect(sliceTableRows(tickets, 2)).toHaveLength(2);
   });
 
@@ -69,13 +69,21 @@ describe("ReportsTableScreen helpers", () => {
         id: "one",
         status: "open",
         creator: { id: "user-1", name: "A", email: "a@example.com" },
-        assignee: { id: "agent-1", name: "Agent A", email: "agent@example.com" },
+        assignee: {
+          id: "agent-1",
+          name: "Agent A",
+          email: "agent@example.com",
+        },
       }),
       makeTicket({
         id: "two",
         status: "resolved",
         creator: { id: "user-1", name: "A", email: "a@example.com" },
-        assignee: { id: "agent-1", name: "Agent A", email: "agent@example.com" },
+        assignee: {
+          id: "agent-1",
+          name: "Agent A",
+          email: "agent@example.com",
+        },
       }),
       makeTicket({
         id: "three",
@@ -109,7 +117,12 @@ describe("ReportsTableScreen helpers", () => {
   });
 
   it("selects admin aggregates by view", () => {
-    const aggregates: AdminAggregates = { user: [{ id: "u", label: "U", total: 1, open: 1, in_progress: 0, resolved: 0 }], agent: [] };
+    const aggregates: AdminAggregates = {
+      user: [
+        { id: "u", label: "U", total: 1, open: 1, in_progress: 0, resolved: 0 },
+      ],
+      agent: [],
+    };
     expect(selectAdminAggregate("user", aggregates)).toHaveLength(1);
     expect(selectAdminAggregate("agent", aggregates)).toEqual([]);
   });

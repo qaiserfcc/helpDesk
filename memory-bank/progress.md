@@ -44,7 +44,8 @@
 
 - **Milestone 6 kick-off (QA hardening + launch prep now in focus.)**
 - [ ] **Milestone 6 – QA & Launch (3–5 days)**
-  - [ ] Offline + E2E test passes
+  - [ ] full Offline , all tables , sign up sign in as well 
+  - [ ] E2E test passes
   - [ ] Performance/rate-limit/security checks
   - [ ] Production deployment (Vercel + mobile builds)
   - [ ] Documentation set (API, mobile setup, deployment)

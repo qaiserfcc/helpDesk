@@ -13,6 +13,8 @@ import { AgentWorkloadScreen } from "@/screens/AgentWorkloadScreen";
 import { UserManagementScreen } from "@/screens/UserManagementScreen";
 import { ReportsTableScreen } from "@/screens/ReportsTableScreen";
 import { AllocationDashboardScreen } from "@/screens/AllocationDashboardScreen";
+import { SettingsScreen } from "@/screens/SettingsScreen";
+import { CacheInspectorScreen } from "@/screens/CacheInspectorScreen";
 import { useAuthStore } from "@/store/useAuthStore";
 import { navigationRef } from "./navigationRef";
 
@@ -27,6 +29,8 @@ export type RootStackParamList = {
   ReportsTable: undefined;
   UserReport: undefined;
   AgentWorkload: undefined;
+  Settings: undefined;
+  CacheInspector: undefined;
   TicketDetail: { ticketId: string };
   TicketForm: { ticketId?: string } | undefined;
 };
@@ -70,14 +74,16 @@ export function AppNavigator() {
               name="UserManagement"
               component={UserManagementScreen}
             />
-            <Stack.Screen
-              name="ReportsTable"
-              component={ReportsTableScreen}
-            />
+            <Stack.Screen name="ReportsTable" component={ReportsTableScreen} />
             <Stack.Screen name="UserReport" component={UserReportScreen} />
             <Stack.Screen
               name="AgentWorkload"
               component={AgentWorkloadScreen}
+            />
+            <Stack.Screen name="Settings" component={SettingsScreen} />
+            <Stack.Screen
+              name="CacheInspector"
+              component={CacheInspectorScreen}
             />
             <Stack.Screen name="TicketDetail" component={TicketDetailScreen} />
             <Stack.Screen name="TicketForm" component={TicketFormScreen} />

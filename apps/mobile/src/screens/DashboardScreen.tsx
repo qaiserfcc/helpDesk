@@ -104,20 +104,13 @@ export function DashboardScreen() {
     queryFn: listQueuedTickets,
   });
 
-  const {
-    data: recentActivity = [],
-    refetch: refetchActivity,
-  } = useQuery({
+  const { data: recentActivity = [], refetch: refetchActivity } = useQuery({
     queryKey: ["reports", "activity"],
     queryFn: () => fetchRecentTicketActivity(10),
     enabled: Boolean(user),
   });
 
-  const {
-    data: statusSummary,
-    isLoading: summaryLoading,
-    refetch: refetchSummary,
-  } = useQuery({
+  const { data: statusSummary, refetch: refetchSummary } = useQuery({
     queryKey: ["reports", "status-summary"],
     queryFn: fetchTicketStatusSummary,
     enabled: user?.role === "admin",
@@ -278,6 +271,15 @@ export function DashboardScreen() {
         glyph: "📊",
         onPress: createDrawerHandler(() => navigation.navigate("ReportsTable")),
       },
+      {
+        key: "cache-inspector",
+        title: "Cache inspector",
+        subtitle: "Offline payload debug",
+        glyph: "🧪",
+        onPress: createDrawerHandler(() =>
+          navigation.navigate("CacheInspector"),
+        ),
+      },
     ];
 
     if (user?.role !== "user") {
@@ -286,7 +288,9 @@ export function DashboardScreen() {
         title: "Agent workload",
         subtitle: "Assignments heatmap",
         glyph: "📈",
-        onPress: createDrawerHandler(() => navigation.navigate("AgentWorkload")),
+        onPress: createDrawerHandler(() =>
+          navigation.navigate("AgentWorkload"),
+        ),
       });
     }
 
@@ -297,7 +301,9 @@ export function DashboardScreen() {
           title: "Org snapshot",
           subtitle: "Status & escalations",
           glyph: "🏢",
-          onPress: createDrawerHandler(() => navigation.navigate("StatusSummary")),
+          onPress: createDrawerHandler(() =>
+            navigation.navigate("StatusSummary"),
+          ),
         },
         {
           key: "allocation-dashboard",
@@ -313,18 +319,15 @@ export function DashboardScreen() {
           title: "User management",
           subtitle: "Manage members",
           glyph: "👥",
-          onPress: createDrawerHandler(() => navigation.navigate("UserManagement")),
+          onPress: createDrawerHandler(() =>
+            navigation.navigate("UserManagement"),
+          ),
         },
       );
     }
 
     return items;
-  }, [
-    createDrawerHandler,
-    navigation,
-    scrollToTicketsList,
-    user?.role,
-  ]);
+  }, [createDrawerHandler, navigation, scrollToTicketsList, user?.role]);
 
   const renderTicket = ({ item }: { item: Ticket }) => (
     <Pressable
@@ -347,6 +350,9 @@ export function DashboardScreen() {
       <Text style={styles.metaSubtext}>
         {item.assignee ? `Assigned to ${item.assignee.name}` : "Unassigned"}
       </Text>
+      {item.pendingSync && (
+        <Text style={styles.pendingSyncPill}>Pending sync</Text>
+      )}
     </Pressable>
   );
 
@@ -377,7 +383,7 @@ export function DashboardScreen() {
                 </View>
               )}
             </Pressable>
-            <Pressable style={styles.signOut} onPress={signOut}>
+            <Pressable style={styles.signOut} onPress={() => signOut()}>
               <Text style={styles.signOutText}>Sign out</Text>
             </Pressable>
           </View>
@@ -393,7 +399,11 @@ export function DashboardScreen() {
               value: summaryTotals.inProgress,
               hint: "Being handled",
             },
-            { label: "Resolved", value: summaryTotals.resolved, hint: "Closed" },
+            {
+              label: "Resolved",
+              value: summaryTotals.resolved,
+              hint: "Closed",
+            },
             { label: "Total", value: summaryTotals.total, hint: "Tracked" },
           ].map((stat) => (
             <View key={stat.label} style={styles.heroStatCard}>
@@ -505,7 +515,9 @@ export function DashboardScreen() {
                 return (
                   <View key={agent.id ?? index} style={styles.assignmentRow}>
                     <Text style={styles.assignmentName}>{agent.name}</Text>
-                    <Text style={styles.assignmentCount}>{assignment.count}</Text>
+                    <Text style={styles.assignmentCount}>
+                      {assignment.count}
+                    </Text>
                   </View>
                 );
               })}
@@ -524,7 +536,10 @@ export function DashboardScreen() {
               <Text style={styles.sectionHeading}>Live activity</Text>
               <Text style={styles.snapshotMeta}>Latest updates</Text>
             </View>
-            <Pressable style={styles.textLink} onPress={handleNotificationPress}>
+            <Pressable
+              style={styles.textLink}
+              onPress={handleNotificationPress}
+            >
               <Text style={styles.textLinkLabel}>Inbox</Text>
             </Pressable>
           </View>
@@ -627,7 +642,9 @@ export function DashboardScreen() {
                 <Text style={styles.navDrawerGlyph}>{item.glyph}</Text>
                 <View style={styles.navDrawerCopy}>
                   <Text style={styles.navDrawerItemTitle}>{item.title}</Text>
-                  <Text style={styles.navDrawerItemSubtitle}>{item.subtitle}</Text>
+                  <Text style={styles.navDrawerItemSubtitle}>
+                    {item.subtitle}
+                  </Text>
                 </View>
               </Pressable>
             ))}
@@ -681,10 +698,14 @@ export function DashboardScreen() {
                   >
                     <View style={styles.notificationCopy}>
                       <Text style={styles.notificationText}>{entry.actor}</Text>
-                      <Text style={styles.notificationSub}>{entry.summary}</Text>
+                      <Text style={styles.notificationSub}>
+                        {entry.summary}
+                      </Text>
                     </View>
                     <View style={styles.notificationMeta}>
-                      {!entry.read && <View style={styles.notificationUnreadDot} />}
+                      {!entry.read && (
+                        <View style={styles.notificationUnreadDot} />
+                      )}
                       <Text style={styles.notificationTime}>
                         {new Date(entry.createdAt).toLocaleTimeString()}
                       </Text>
@@ -702,7 +723,6 @@ export function DashboardScreen() {
           <Text style={styles.primaryText}>Create Ticket</Text>
         </Pressable>
       )}
-
     </SafeAreaView>
   );
 }
@@ -1432,6 +1452,19 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     marginTop: 12,
+  },
+  pendingSyncPill: {
+    alignSelf: "flex-start",
+    marginTop: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#FBBF24",
+    backgroundColor: "#422006",
+    color: "#FDE68A",
+    fontSize: 12,
+    fontWeight: "600",
   },
   metaText: {
     color: "#94A3B8",

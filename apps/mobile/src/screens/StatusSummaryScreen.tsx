@@ -238,8 +238,7 @@ export function StatusSummaryScreen() {
                   <View style={styles.ticketTextGroup}>
                     <Text style={styles.ticketTitle}>{ticket.description}</Text>
                     <Text style={styles.ticketMeta}>
-                      Opened {new Date(ticket.createdAt).toLocaleDateString()} •
-                      {" "}
+                      Opened {new Date(ticket.createdAt).toLocaleDateString()} •{" "}
                       {ticket.creator.name}
                     </Text>
                   </View>
@@ -268,8 +267,7 @@ export function StatusSummaryScreen() {
                   <View style={styles.ticketTextGroup}>
                     <Text style={styles.ticketTitle}>{ticket.description}</Text>
                     <Text style={styles.ticketMeta}>
-                      {formatStatus(ticket.status)} •
-                      {" "}
+                      {formatStatus(ticket.status)} •{" "}
                       <Text style={styles.ticketMetaEmphasis}>
                         {ticket.priority.toUpperCase()} priority
                       </Text>
@@ -300,9 +298,8 @@ export function StatusSummaryScreen() {
                   <View style={styles.ticketTextGroup}>
                     <Text style={styles.ticketTitle}>{ticket.description}</Text>
                     <Text style={styles.ticketMeta}>
-                      Updated {new Date(ticket.updatedAt).toLocaleDateString()} •
-                      {" "}
-                      Assigned to {ticket.assignee?.name ?? "unassigned"}
+                      Updated {new Date(ticket.updatedAt).toLocaleDateString()}{" "}
+                      • Assigned to {ticket.assignee?.name ?? "unassigned"}
                     </Text>
                   </View>
                   <Text style={styles.ticketNavigate}>›</Text>

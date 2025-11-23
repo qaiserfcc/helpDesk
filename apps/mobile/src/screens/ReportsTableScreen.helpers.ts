@@ -19,11 +19,16 @@ const DEFAULT_STATUS_COUNTS: Record<TicketStatus, number> = {
   resolved: 0,
 };
 
-export function countTicketStatuses(tickets: ReportTicket[]): Record<TicketStatus, number> {
-  return tickets.reduce<Record<TicketStatus, number>>((acc, ticket) => {
-    acc[ticket.status] += 1;
-    return acc;
-  }, { ...DEFAULT_STATUS_COUNTS });
+export function countTicketStatuses(
+  tickets: ReportTicket[],
+): Record<TicketStatus, number> {
+  return tickets.reduce<Record<TicketStatus, number>>(
+    (acc, ticket) => {
+      acc[ticket.status] += 1;
+      return acc;
+    },
+    { ...DEFAULT_STATUS_COUNTS },
+  );
 }
 
 export function filterTicketsByStatus(
@@ -75,7 +80,8 @@ export function buildAdminAggregates(tickets: ReportTicket[]): AdminAggregates {
   return {
     user: build(
       (ticket) => ticket.creator.id,
-      (ticket) => ticket.creator.name ?? ticket.creator.email ?? ticket.creator.id,
+      (ticket) =>
+        ticket.creator.name ?? ticket.creator.email ?? ticket.creator.id,
     ),
     agent: build(
       (ticket) => ticket.assignee?.id ?? "unassigned",
@@ -99,7 +105,14 @@ export function buildSectionSubtitle(params: {
   aggregateLength: number;
   adminView: "user" | "agent";
 }): string {
-  const { role, statusFilter, tableLength, filteredLength, aggregateLength, adminView } = params;
+  const {
+    role,
+    statusFilter,
+    tableLength,
+    filteredLength,
+    aggregateLength,
+    adminView,
+  } = params;
   if (role === "admin" && statusFilter === "all") {
     return `${aggregateLength} ${adminView === "user" ? "users" : "agents"} tracked`;
   }

@@ -29,7 +29,6 @@ import {
 } from "@/services/tickets";
 import { queueTicket } from "@/storage/offline-db";
 import { syncQueuedTickets } from "@/services/syncService";
-import { useAuthStore } from "@/store/useAuthStore";
 
 const priorityOptions: TicketPriority[] = ["low", "medium", "high"];
 const issueOptions: IssueType[] = [
@@ -65,7 +64,6 @@ export function TicketFormScreen({ route, navigation }: Props) {
   const ticketId = route.params?.ticketId;
   const isEdit = Boolean(ticketId);
   const queryClient = useQueryClient();
-  const authUser = useAuthStore((state) => state.session?.user);
   const { data: ticket } = useQuery({
     queryKey: ["ticket", ticketId],
     enabled: isEdit,
@@ -217,7 +215,10 @@ export function TicketFormScreen({ route, navigation }: Props) {
             Reopen the ticket from the detail screen before making changes.
             Contact support if you need additional help.
           </Text>
-          <Pressable style={styles.lockedBtn} onPress={() => navigation.goBack()}>
+          <Pressable
+            style={styles.lockedBtn}
+            onPress={() => navigation.goBack()}
+          >
             <Text style={styles.lockedBtnText}>Back to ticket</Text>
           </Pressable>
         </View>

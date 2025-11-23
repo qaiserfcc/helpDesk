@@ -28,20 +28,29 @@ describe("validateUserForm", () => {
   });
 
   it("requires a password when flagged", () => {
-    const result = validateUserForm({ ...baseForm, password: "   " }, { requirePassword: true });
+    const result = validateUserForm(
+      { ...baseForm, password: "   " },
+      { requirePassword: true },
+    );
     expect(result.valid).toBe(false);
     expect(result.errors.password).toBe("Password is required for new users.");
   });
 
   it("allows empty password when optional", () => {
-    const result = validateUserForm({ ...baseForm, password: "" }, { requirePassword: false });
+    const result = validateUserForm(
+      { ...baseForm, password: "" },
+      { requirePassword: false },
+    );
     expect(result.valid).toBe(true);
     expect(result.errors.password).toBeUndefined();
   });
 
   it("validates optional password length when provided", () => {
     const tooShort = "x".repeat(MIN_PASSWORD_LENGTH - 1);
-    const result = validateUserForm({ ...baseForm, password: tooShort }, { requirePassword: false });
+    const result = validateUserForm(
+      { ...baseForm, password: tooShort },
+      { requirePassword: false },
+    );
     expect(result.valid).toBe(false);
     expect(result.errors.password).toMatch(/Password must be at least/);
   });

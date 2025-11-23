@@ -21,8 +21,6 @@ import {
   requestAssignment,
   resolveTicket,
   updateTicket,
-  TicketStatus,
-  TicketActivityEntry,
 } from "@/services/tickets";
 import { fetchUsers, UserSummary } from "@/services/users";
 import { env } from "@/config/env";
@@ -135,8 +133,22 @@ export function TicketDetailScreen({ route, navigation }: Props) {
       );
       return;
     }
+
+    const snapshot = selectedAgent
+      ? {
+          id: selectedAgent.id,
+          name: selectedAgent.name,
+          email: selectedAgent.email,
+        }
+      : fallbackRequest && ticket.assignmentRequest
+        ? {
+            id: ticket.assignmentRequest.id,
+            name: ticket.assignmentRequest.name,
+            email: ticket.assignmentRequest.email,
+          }
+        : null;
     try {
-      await assignTicket(ticketId, targetAssignee);
+      await assignTicket(ticketId, targetAssignee, { assignee: snapshot });
       await invalidateTickets();
     } catch (error) {
       console.error("assign ticket failed", error);
@@ -250,6 +262,15 @@ export function TicketDetailScreen({ route, navigation }: Props) {
         <Text style={styles.sectionLabel}>Creator</Text>
         <Text style={styles.sectionValue}>{ticket.creator.name}</Text>
       </View>
+
+      {ticket.pendingSync && (
+        <View style={styles.pendingSyncBanner}>
+          <Text style={styles.pendingSyncTitle}>Pending sync</Text>
+          <Text style={styles.pendingSyncText}>
+            This change will be sent automatically once you are back online.
+          </Text>
+        </View>
+      )}
 
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>Assignee</Text>
@@ -612,5 +633,23 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 12,
     fontSize: 13,
+  },
+  pendingSyncBanner: {
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#FBBF24",
+    backgroundColor: "#1F1302",
+    padding: 16,
+    marginTop: 20,
+  },
+  pendingSyncTitle: {
+    color: "#FBBF24",
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+  pendingSyncText: {
+    color: "#FDE68A",
+    fontSize: 13,
+    lineHeight: 18,
   },
 });

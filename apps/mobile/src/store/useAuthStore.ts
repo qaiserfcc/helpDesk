@@ -1,7 +1,32 @@
 import { create } from "zustand";
-import * as SecureStore from "expo-secure-store";
+import * as LocalAuthentication from "expo-local-authentication";
+import * as Network from "expo-network";
+import {
+  login,
+  refresh,
+  register,
+  type LoginInput,
+  type RegisterInput,
+} from "@/services/auth";
+import {
+  cacheLoginPayload,
+  cacheSignupPayload,
+  clearAuthIntent,
+  countAuthIntents,
+  enqueueAuthIntent,
+  hashPassword,
+  listAuthIntents,
+  readCachedLoginPayload,
+} from "@/storage/auth-cache";
+import {
+  clearSecureKey,
+  readSecureJSON,
+  writeSecureJSON,
+} from "@/storage/secureStore";
+import { useOfflineStore } from "@/store/useOfflineStore";
 
 const SESSION_KEY = "helpdesk_session";
+const OFFLINE_SESSION_KEY = "helpdesk_offline_session";
 
 export type UserRole = "user" | "agent" | "admin";
 
@@ -21,72 +46,235 @@ export type AuthSession = {
 type AuthState = {
   initialized: boolean;
   session: AuthSession | null;
+  offlineSession: boolean;
+  staleSession: boolean;
+  authQueueLength: number;
   bootstrap: () => Promise<void>;
-  applySession: (session: AuthSession) => Promise<void>;
-  signOut: () => Promise<void>;
+  applySession: (
+    session: AuthSession,
+    options?: { offline?: boolean },
+  ) => Promise<void>;
+  signOut: (options?: { forgetOfflineSnapshot?: boolean }) => Promise<void>;
+  forgetOfflineSnapshot: () => Promise<void>;
+  resumeOfflineSession: (payload: LoginInput) => Promise<boolean>;
+  cacheLoginPayload: (payload: LoginInput) => Promise<void>;
+  cacheSignupPayload: (
+    payload: RegisterInput & { role: UserRole },
+  ) => Promise<void>;
+  queueAuthIntent: (
+    intent: Parameters<typeof enqueueAuthIntent>[0],
+  ) => Promise<void>;
+  refreshAuthQueueSize: () => Promise<void>;
+  flushAuthIntents: () => Promise<void>;
+  refreshSession: () => Promise<void>;
+  markSessionStale: () => void;
 };
 
-async function isSecureStoreAvailable() {
+async function persistSession(session: AuthSession | null) {
+  if (!session) {
+    await clearSecureKey(SESSION_KEY);
+    return;
+  }
+  await writeSecureJSON(SESSION_KEY, session);
+}
+
+async function readPersistedSession() {
+  return readSecureJSON<AuthSession>(SESSION_KEY);
+}
+
+async function persistOfflineSnapshot(session: AuthSession | null) {
+  if (!session) {
+    return;
+  }
+  await writeSecureJSON(OFFLINE_SESSION_KEY, session);
+}
+
+async function readOfflineSnapshot() {
+  return readSecureJSON<AuthSession>(OFFLINE_SESSION_KEY);
+}
+
+async function clearOfflineSnapshot() {
+  await clearSecureKey(OFFLINE_SESSION_KEY);
+}
+
+async function requireBiometricUnlock() {
   try {
-    return await SecureStore.isAvailableAsync();
+    const hasHardware = await LocalAuthentication.hasHardwareAsync();
+    if (!hasHardware) {
+      return true;
+    }
+    const enrolled = await LocalAuthentication.isEnrolledAsync();
+    if (!enrolled) {
+      return true;
+    }
+    const result = await LocalAuthentication.authenticateAsync({
+      promptMessage: "Unlock Help Desk",
+      fallbackLabel: "Use device passcode",
+      cancelLabel: "Cancel",
+    });
+    return result.success;
   } catch (error) {
-    console.warn("SecureStore availability check failed", error);
+    console.warn("Biometric unlock failed", error);
     return false;
   }
 }
 
-async function persistSession(session: AuthSession | null) {
+async function deviceLooksOffline() {
   try {
-    if (!(await isSecureStoreAvailable())) {
-      return;
-    }
-    if (session) {
-      await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(session));
-    } else {
-      await SecureStore.deleteItemAsync(SESSION_KEY);
-    }
-  } catch (error) {
-    console.warn("Failed to persist auth session", error);
-  }
-}
-
-function safeParseSession(raw: string | null): AuthSession | null {
-  if (!raw) {
-    return null;
-  }
-  try {
-    return JSON.parse(raw) as AuthSession;
+    const state = await Network.getNetworkStateAsync();
+    return !(state.isConnected && state.isInternetReachable);
   } catch {
-    return null;
+    return false;
   }
 }
 
-async function readPersistedSession() {
-  try {
-    if (!(await isSecureStoreAvailable())) {
-      return null;
-    }
-    const storedSession = await SecureStore.getItemAsync(SESSION_KEY);
-    return safeParseSession(storedSession);
-  } catch (error) {
-    console.warn("Failed to load auth session", error);
-    return null;
-  }
-}
-
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   initialized: false,
   session: null,
+  offlineSession: false,
+  staleSession: false,
+  authQueueLength: 0,
   bootstrap: async () => {
-    const session = await readPersistedSession();
-    set({ session, initialized: true });
+    let session = await readPersistedSession();
+    const queueLength = await countAuthIntents();
+    let offlineSession = false;
+
+    if (!session) {
+      const cachedPayload = await readCachedLoginPayload();
+      const snapshot = await readOfflineSnapshot();
+      if (cachedPayload && snapshot) {
+        let offlineState = useOfflineStore.getState().isOffline;
+        if (!offlineState) {
+          offlineState = await deviceLooksOffline();
+        }
+        if (offlineState) {
+          const approved = await requireBiometricUnlock();
+          if (approved) {
+            session = snapshot;
+            offlineSession = true;
+            await persistSession(snapshot);
+          }
+        }
+      }
+    }
+    set({
+      session,
+      initialized: true,
+      offlineSession,
+      staleSession: false,
+      authQueueLength: queueLength,
+    });
   },
-  applySession: async (session: AuthSession) => {
+  applySession: async (
+    session: AuthSession,
+    options?: { offline?: boolean },
+  ) => {
     await persistSession(session);
-    set({ session, initialized: true });
+    if (!options?.offline) {
+      await persistOfflineSnapshot(session);
+    }
+    set({
+      session,
+      initialized: true,
+      offlineSession: options?.offline ?? false,
+      staleSession: false,
+    });
   },
-  signOut: async () => {
+  signOut: async (options) => {
     await persistSession(null);
-    set({ session: null, initialized: true });
+    if (options?.forgetOfflineSnapshot) {
+      await clearOfflineSnapshot();
+    }
+    set({
+      session: null,
+      initialized: true,
+      offlineSession: false,
+      staleSession: false,
+    });
   },
+  forgetOfflineSnapshot: async () => {
+    await clearOfflineSnapshot();
+  },
+  resumeOfflineSession: async (payload: LoginInput) => {
+    const cached = await readCachedLoginPayload();
+    if (!cached) {
+      return false;
+    }
+    const normalizedEmail = payload.email.trim().toLowerCase();
+    if (cached.email !== normalizedEmail) {
+      return false;
+    }
+    const hashedPassword = await hashPassword(payload.password);
+    if (hashedPassword !== cached.passwordHash) {
+      return false;
+    }
+    const storedSession =
+      (await readPersistedSession()) ?? (await readOfflineSnapshot());
+    if (!storedSession) {
+      return false;
+    }
+    const approved = await requireBiometricUnlock();
+    if (!approved) {
+      return false;
+    }
+    set({ session: storedSession, initialized: true, offlineSession: true });
+    return true;
+  },
+  cacheLoginPayload: (payload: LoginInput) => cacheLoginPayload(payload),
+  cacheSignupPayload: (payload: RegisterInput & { role: UserRole }) =>
+    cacheSignupPayload(payload),
+  queueAuthIntent: async (intent: Parameters<typeof enqueueAuthIntent>[0]) => {
+    await enqueueAuthIntent(intent);
+    await get().refreshAuthQueueSize();
+  },
+  refreshAuthQueueSize: async () => {
+    const authQueueLength = await countAuthIntents();
+    set({ authQueueLength });
+  },
+  flushAuthIntents: async () => {
+    const intents = await listAuthIntents();
+    if (!intents.length) {
+      set({ authQueueLength: 0 });
+      return;
+    }
+    for (const intent of intents) {
+      try {
+        if (intent.type === "login") {
+          const session = await login(intent.payload);
+          await get().cacheLoginPayload(intent.payload);
+          await get().applySession(session);
+        } else {
+          const normalizedRole = intent.payload.role ?? "user";
+          const session = await register(intent.payload);
+          await get().cacheSignupPayload({
+            ...intent.payload,
+            role: normalizedRole,
+          });
+          await get().cacheLoginPayload({
+            email: intent.payload.email,
+            password: intent.payload.password,
+          });
+          await get().applySession(session);
+        }
+        await clearAuthIntent(intent.id);
+      } catch (error) {
+        console.warn(`Failed to replay ${intent.type} intent`, error);
+      }
+    }
+    await get().refreshAuthQueueSize();
+  },
+  refreshSession: async () => {
+    const current = get().session;
+    if (!current?.refreshToken) {
+      return;
+    }
+    try {
+      const nextSession = await refresh(current.refreshToken);
+      await get().applySession(nextSession);
+    } catch (error) {
+      console.warn("Background token refresh failed", error);
+      set({ staleSession: true });
+    }
+  },
+  markSessionStale: () => set({ staleSession: true }),
 }));

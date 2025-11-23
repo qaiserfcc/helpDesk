@@ -15,11 +15,7 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { RootStackParamList } from "@/navigation/AppNavigator";
 import { useAuthStore } from "@/store/useAuthStore";
-import {
-  ReportTicket,
-  TicketStatus,
-  fetchTicketExportDataset,
-} from "@/services/tickets";
+import { ReportTicket, fetchTicketExportDataset } from "@/services/tickets";
 import { formatTicketStatus } from "@/utils/ticketActivity";
 import {
   AdminAggregates,
@@ -45,7 +41,8 @@ export function ReportsTableScreen() {
   const navigation = useNavigation<Navigation>();
   const user = useAuthStore((state) => state.session?.user);
   const role = (user?.role ?? "user") as "admin" | "agent" | "user";
-  const datasetScope = role === "admin" ? "admin" : role === "agent" ? "agent" : "user";
+  const datasetScope =
+    role === "admin" ? "admin" : role === "agent" ? "agent" : "user";
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [adminAllView, setAdminAllView] = useState<"user" | "agent">("user");
@@ -93,7 +90,10 @@ export function ReportsTableScreen() {
     [tickets, statusFilter],
   );
 
-  const tableRows = useMemo(() => sliceTableRows(filteredTickets), [filteredTickets]);
+  const tableRows = useMemo(
+    () => sliceTableRows(filteredTickets),
+    [filteredTickets],
+  );
   const refreshing = isLoading || isRefetching;
 
   const adminAggregates = useMemo<AdminAggregates>(() => {
@@ -103,7 +103,10 @@ export function ReportsTableScreen() {
     return buildAdminAggregates(tickets);
   }, [role, tickets]);
 
-  const activeAdminAggregate = selectAdminAggregate(adminAllView, adminAggregates);
+  const activeAdminAggregate = selectAdminAggregate(
+    adminAllView,
+    adminAggregates,
+  );
 
   const handleExport = () => {
     if (!exportMutation.isPending) {
@@ -119,7 +122,10 @@ export function ReportsTableScreen() {
           <Text style={styles.unauthorizedCopy}>
             A valid session is required to view reporting data.
           </Text>
-          <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
+          <Pressable
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
             <Text style={styles.backButtonText}>Back</Text>
           </Pressable>
         </View>
@@ -151,13 +157,21 @@ export function ReportsTableScreen() {
         }
       >
         <View style={styles.header}>
-          <Pressable style={styles.backIcon} onPress={() => navigation.goBack()}>
+          <Pressable
+            style={styles.backIcon}
+            onPress={() => navigation.goBack()}
+          >
             <Text style={styles.backGlyph}>←</Text>
           </Pressable>
           <View>
             <Text style={styles.title}>Reporting</Text>
             <Text style={styles.subtitle}>
-              Status snapshots for {role === "admin" ? "the organization" : role === "agent" ? "your queue" : "your tickets"}
+              Status snapshots for{" "}
+              {role === "admin"
+                ? "the organization"
+                : role === "agent"
+                  ? "your queue"
+                  : "your tickets"}
             </Text>
           </View>
         </View>
@@ -187,7 +201,10 @@ export function ReportsTableScreen() {
                 onPress={() => setStatusFilter(filter.value)}
               >
                 <Text
-                  style={[styles.filterChipText, isActive && styles.filterChipTextActive]}
+                  style={[
+                    styles.filterChipText,
+                    isActive && styles.filterChipTextActive,
+                  ]}
                 >
                   {filter.label}
                 </Text>
@@ -200,12 +217,17 @@ export function ReportsTableScreen() {
           <View style={styles.sectionHeader}>
             <View>
               <Text style={styles.sectionTitle}>
-                {role === "admin" && statusFilter === "all" ? "All tickets overview" : "Ticket table"}
+                {role === "admin" && statusFilter === "all"
+                  ? "All tickets overview"
+                  : "Ticket table"}
               </Text>
               <Text style={styles.sectionSubtitle}>{sectionSubtitle}</Text>
             </View>
             <Pressable
-              style={[styles.exportButton, exportMutation.isPending && styles.exportButtonDisabled]}
+              style={[
+                styles.exportButton,
+                exportMutation.isPending && styles.exportButtonDisabled,
+              ]}
               onPress={handleExport}
               disabled={exportMutation.isPending}
             >
@@ -224,11 +246,17 @@ export function ReportsTableScreen() {
                 return (
                   <Pressable
                     key={key}
-                    style={[styles.adminToggleButton, isActive && styles.adminToggleButtonActive]}
+                    style={[
+                      styles.adminToggleButton,
+                      isActive && styles.adminToggleButtonActive,
+                    ]}
                     onPress={() => setAdminAllView(key as "user" | "agent")}
                   >
                     <Text
-                      style={[styles.adminToggleText, isActive && styles.adminToggleTextActive]}
+                      style={[
+                        styles.adminToggleText,
+                        isActive && styles.adminToggleTextActive,
+                      ]}
                     >
                       {key === "user" ? "User wise" : "Agent wise"}
                     </Text>
@@ -246,19 +274,39 @@ export function ReportsTableScreen() {
             ) : (
               <View style={styles.table}>
                 <View style={[styles.tableRow, styles.tableHeaderRow]}>
-                  <Text style={[styles.tableCell, styles.cellTicket]}>Name</Text>
-                  <Text style={[styles.tableCell, styles.cellNumeric]}>Total</Text>
-                  <Text style={[styles.tableCell, styles.cellNumeric]}>Open</Text>
-                  <Text style={[styles.tableCell, styles.cellNumeric]}>In progress</Text>
-                  <Text style={[styles.tableCell, styles.cellNumeric]}>Resolved</Text>
+                  <Text style={[styles.tableCell, styles.cellTicket]}>
+                    Name
+                  </Text>
+                  <Text style={[styles.tableCell, styles.cellNumeric]}>
+                    Total
+                  </Text>
+                  <Text style={[styles.tableCell, styles.cellNumeric]}>
+                    Open
+                  </Text>
+                  <Text style={[styles.tableCell, styles.cellNumeric]}>
+                    In progress
+                  </Text>
+                  <Text style={[styles.tableCell, styles.cellNumeric]}>
+                    Resolved
+                  </Text>
                 </View>
                 {activeAdminAggregate.map((row) => (
                   <View key={row.id} style={styles.tableRow}>
-                    <Text style={[styles.tableCell, styles.cellTicket]}>{row.label}</Text>
-                    <Text style={[styles.tableCell, styles.cellNumeric]}>{row.total}</Text>
-                    <Text style={[styles.tableCell, styles.cellNumeric]}>{row.open}</Text>
-                    <Text style={[styles.tableCell, styles.cellNumeric]}>{row.in_progress}</Text>
-                    <Text style={[styles.tableCell, styles.cellNumeric]}>{row.resolved}</Text>
+                    <Text style={[styles.tableCell, styles.cellTicket]}>
+                      {row.label}
+                    </Text>
+                    <Text style={[styles.tableCell, styles.cellNumeric]}>
+                      {row.total}
+                    </Text>
+                    <Text style={[styles.tableCell, styles.cellNumeric]}>
+                      {row.open}
+                    </Text>
+                    <Text style={[styles.tableCell, styles.cellNumeric]}>
+                      {row.in_progress}
+                    </Text>
+                    <Text style={[styles.tableCell, styles.cellNumeric]}>
+                      {row.resolved}
+                    </Text>
                   </View>
                 ))}
               </View>
@@ -268,27 +316,48 @@ export function ReportsTableScreen() {
           ) : (
             <View style={styles.table}>
               <View style={[styles.tableRow, styles.tableHeaderRow]}>
-                <Text style={[styles.tableCell, styles.cellTicket]}>Ticket</Text>
-                <Text style={[styles.tableCell, styles.cellStatus]}>Status</Text>
-                <Text style={[styles.tableCell, styles.cellPriority]}>Priority</Text>
-                <Text style={[styles.tableCell, styles.cellUpdated]}>Updated</Text>
+                <Text style={[styles.tableCell, styles.cellTicket]}>
+                  Ticket
+                </Text>
+                <Text style={[styles.tableCell, styles.cellStatus]}>
+                  Status
+                </Text>
+                <Text style={[styles.tableCell, styles.cellPriority]}>
+                  Priority
+                </Text>
+                <Text style={[styles.tableCell, styles.cellUpdated]}>
+                  Updated
+                </Text>
               </View>
               {tableRows.map((ticket: ReportTicket) => (
                 <View key={ticket.id} style={styles.tableRow}>
                   <View style={[styles.tableCell, styles.cellTicket]}>
-                    <Text style={styles.tableTicketId}>#{ticket.id.slice(0, 8)}</Text>
+                    <Text style={styles.tableTicketId}>
+                      #{ticket.id.slice(0, 8)}
+                    </Text>
                     <Text style={styles.tableTicketText} numberOfLines={1}>
                       {ticket.description}
                     </Text>
                   </View>
                   <View style={[styles.tableCell, styles.cellStatus]}>
-                    <View style={[styles.statusPill, styles[`status_${ticket.status}`]]}>
-                      <Text style={styles.statusText}>{formatTicketStatus(ticket.status)}</Text>
+                    <View
+                      style={[
+                        styles.statusPill,
+                        styles[`status_${ticket.status}`],
+                      ]}
+                    >
+                      <Text style={styles.statusText}>
+                        {formatTicketStatus(ticket.status)}
+                      </Text>
                     </View>
                   </View>
-                  <Text style={[styles.tableCell, styles.cellPriority]}>{ticket.priority}</Text>
+                  <Text style={[styles.tableCell, styles.cellPriority]}>
+                    {ticket.priority}
+                  </Text>
                   <Text style={[styles.tableCell, styles.cellUpdated]}>
-                    {new Date(ticket.updatedAt ?? ticket.createdAt).toLocaleDateString()}
+                    {new Date(
+                      ticket.updatedAt ?? ticket.createdAt,
+                    ).toLocaleDateString()}
                   </Text>
                 </View>
               ))}

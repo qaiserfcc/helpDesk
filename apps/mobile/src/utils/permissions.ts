@@ -11,7 +11,9 @@ export type DerivedPermissions = {
   canAccessAgentTools: boolean;
 };
 
-export function derivePermissions(role: UserRole | null | undefined): DerivedPermissions {
+export function derivePermissions(
+  role: UserRole | null | undefined,
+): DerivedPermissions {
   const normalizedRole = role ?? null;
   const isAdmin = normalizedRole === "admin";
   const isAgent = normalizedRole === "agent";

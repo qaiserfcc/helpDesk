@@ -96,7 +96,10 @@ export function AllocationDashboardScreen() {
 
   const statusBuckets = buildStatusBuckets(statusCounts);
 
-  const totalTickets = statusBuckets.reduce((acc, bucket) => acc + bucket.count, 0);
+  const totalTickets = statusBuckets.reduce(
+    (acc, bucket) => acc + bucket.count,
+    0,
+  );
 
   const workloadStats = useMemo(
     () => deriveWorkloadStats(assignments),
@@ -146,12 +149,13 @@ export function AllocationDashboardScreen() {
             <View style={styles.ticketTextGroup}>
               <Text style={styles.ticketTitle}>{ticket.description}</Text>
               <Text style={styles.ticketMeta}>
-                Opened {new Date(ticket.createdAt).toLocaleDateString()} •
-                {" "}
+                Opened {new Date(ticket.createdAt).toLocaleDateString()} •{" "}
                 {ticket.creator.name}
               </Text>
             </View>
-            <Text style={styles.ticketStatus}>{formatStatus(ticket.status)}</Text>
+            <Text style={styles.ticketStatus}>
+              {formatStatus(ticket.status)}
+            </Text>
           </View>
         ))}
       </View>
@@ -188,7 +192,10 @@ export function AllocationDashboardScreen() {
         }
       >
         <View style={styles.header}>
-          <Pressable style={styles.backIcon} onPress={() => navigation.goBack()}>
+          <Pressable
+            style={styles.backIcon}
+            onPress={() => navigation.goBack()}
+          >
             <Text style={styles.backGlyph}>←</Text>
           </Pressable>
           <View>
@@ -200,13 +207,15 @@ export function AllocationDashboardScreen() {
         <View style={styles.summaryHighlights}>
           {statusBuckets.map((bucket) => (
             <View key={bucket.status} style={styles.highlightCard}>
-              <Text style={styles.highlightLabel}>{formatStatus(bucket.status)}</Text>
+              <Text style={styles.highlightLabel}>
+                {formatStatus(bucket.status)}
+              </Text>
               <Text style={styles.highlightValue}>{bucket.count}</Text>
               <Text style={styles.highlightHint}>
                 {totalTickets
                   ? `${Math.round((bucket.count / totalTickets) * 100)}%`
-                  : "0%"}
-                {" "}of tracked
+                  : "0%"}{" "}
+                of tracked
               </Text>
             </View>
           ))}
@@ -215,17 +224,22 @@ export function AllocationDashboardScreen() {
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Allocation snapshot</Text>
           <Text style={styles.sectionSubtitle}>
-            {workloadStats.totalAgents} active agent{workloadStats.totalAgents === 1 ? "" : "s"}
+            {workloadStats.totalAgents} active agent
+            {workloadStats.totalAgents === 1 ? "" : "s"}
           </Text>
           <View style={styles.snapshotRow}>
             <View style={styles.snapshotCard}>
               <Text style={styles.snapshotLabel}>Avg load</Text>
-              <Text style={styles.snapshotValue}>{workloadStats.averageLoad}</Text>
+              <Text style={styles.snapshotValue}>
+                {workloadStats.averageLoad}
+              </Text>
               <Text style={styles.snapshotHint}>tickets / agent</Text>
             </View>
             <View style={styles.snapshotCard}>
               <Text style={styles.snapshotLabel}>Total assigned</Text>
-              <Text style={styles.snapshotValue}>{workloadStats.totalAssignments}</Text>
+              <Text style={styles.snapshotValue}>
+                {workloadStats.totalAssignments}
+              </Text>
               <Text style={styles.snapshotHint}>tickets</Text>
             </View>
             <View style={styles.snapshotCard}>
@@ -258,7 +272,10 @@ export function AllocationDashboardScreen() {
                 return (
                   <Pressable
                     key={tab.value}
-                    style={[styles.filterChip, active && styles.filterChipActive]}
+                    style={[
+                      styles.filterChip,
+                      active && styles.filterChipActive,
+                    ]}
                     onPress={() =>
                       dispatchInsightView({ type: "select", view: tab.value })
                     }
@@ -284,7 +301,8 @@ export function AllocationDashboardScreen() {
             <View>
               <Text style={styles.sectionTitle}>Resolution trend</Text>
               <Text style={styles.sectionSubtitle}>
-                Last {trendSummary.window || 0} days • {trendSummary.total} tickets
+                Last {trendSummary.window || 0} days • {trendSummary.total}{" "}
+                tickets
               </Text>
             </View>
           </View>
@@ -300,7 +318,10 @@ export function AllocationDashboardScreen() {
                     </Text>
                     <View style={styles.progressTrack}>
                       <View
-                        style={[styles.progressFill, { width: `${Math.min(entry.count * 8, 100)}%` }]}
+                        style={[
+                          styles.progressFill,
+                          { width: `${Math.min(entry.count * 8, 100)}%` },
+                        ]}
                       />
                     </View>
                   </View>
@@ -309,7 +330,9 @@ export function AllocationDashboardScreen() {
               ))}
             </View>
           ) : (
-            <Text style={styles.sectionHint}>No resolution data captured yet.</Text>
+            <Text style={styles.sectionHint}>
+              No resolution data captured yet.
+            </Text>
           )}
         </View>
 

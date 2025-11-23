@@ -10,8 +10,7 @@ export type InsightAction =
   | { type: "select"; view: InsightView }
   | { type: "toggle" };
 
-export type AssignmentLoadEntry =
-  AdminOverviewReport["assignmentLoad"][number];
+export type AssignmentLoadEntry = AdminOverviewReport["assignmentLoad"][number];
 export type ResolutionTrendEntry =
   AdminProductivityReport["resolutionTrend"][number];
 
