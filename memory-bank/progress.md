@@ -39,9 +39,9 @@
   - [x] Backend: admin user CRUD + role assignment APIs
   - [x] Backend: allocation/reporting endpoints for dashboards
   - [x] In-app user management screens
-  - [ ] Ticket allocation dashboard + reporting views
-  - [ ] Shared: permission hooks, components, and tests
-  - [ ] Role-aware UI guards/components
+  - [x] Ticket allocation dashboard + reporting views
+  - [x] Shared: permission hooks, components, and tests
+  - [x] Role-aware UI guards/components
 
 ## Next
 
