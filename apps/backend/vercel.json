@@ -1,8 +1,0 @@
-{
-  "version": 2,
-  "buildCommand": "prisma generate && prisma migrate deploy && npm run build",
-  "outputDirectory": "api",
-  "routes": [
-    { "src": "/(.*)", "dest": "/api/index.ts" }
-  ]
-}

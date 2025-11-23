@@ -59,7 +59,6 @@ const apiUrl =
   DEFAULT_API_URL;
 
 const apiBaseUrl = apiUrl.replace(/\/api\/?$/, "");
-
 export const env = {
   apiUrl,
   apiBaseUrl,
