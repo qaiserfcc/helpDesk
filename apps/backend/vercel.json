@@ -1,7 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "prisma generate && prisma migrate deploy && npm run build",
-  "outputDirectory": "dist",
+  "buildCommand": "npx prisma generate",
   "routes": [
     { "src": "/(.*)", "dest": "/api/index.js" }
   ]
