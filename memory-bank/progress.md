@@ -32,10 +32,7 @@
   - [x] Backend triggers for ticket events
   - [x] Mobile: sockets event handling
 
-## Doing
-
-- **Milestone 5 kick-off (Unit tests are mandatory for every code change in this milestone.)**
-- [ ] **Milestone 5 – Admin Features (3–4 days)**
+- [x] **Milestone 5 – Admin Features (3–4 days)**
   - [x] Backend: admin user CRUD + role assignment APIs
   - [x] Backend: allocation/reporting endpoints for dashboards
   - [x] In-app user management screens
@@ -43,10 +40,17 @@
   - [x] Shared: permission hooks, components, and tests
   - [x] Role-aware UI guards/components
 
-## Next
+## Doing
 
+- **Milestone 6 kick-off (QA hardening + launch prep now in focus.)**
 - [ ] **Milestone 6 – QA & Launch (3–5 days)**
   - [ ] Offline + E2E test passes
   - [ ] Performance/rate-limit/security checks
   - [ ] Production deployment (Vercel + mobile builds)
   - [ ] Documentation set (API, mobile setup, deployment)
+
+## Next
+
+- [ ] **Milestone 7 – Post-launch Enhancements (TBD)**
+  - [ ] Prioritize backlog items after launch readiness sign-off
+  - [ ] Capture customer feedback loops for next iteration
