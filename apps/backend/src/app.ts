@@ -31,7 +31,10 @@ app.get("/docs.json", (_req, res) => {
 
 app.use("/tmp/attachments", express.static(attachmentsDir));
 
+// Mount the router at both `/api` and the root path to support different path rewrites
+// that can occur in serverless platforms (e.g., Vercel).
 app.use("/api", router);
+app.use("/", router);
 
 app.use((_req, _res, next) => {
   next(createError(404, "Resource not found"));
