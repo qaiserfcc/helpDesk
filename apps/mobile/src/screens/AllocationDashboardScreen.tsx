@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useReducer } from "react";
 import {
   ActivityIndicator,
   RefreshControl,
@@ -17,18 +17,22 @@ import {
   fetchAdminOverviewReport,
   fetchAdminProductivityReport,
   fetchAdminEscalationReport,
-  type TicketStatus,
   type ReportTicket,
+  type StatusCounts,
 } from "@/services/tickets";
 import { formatTicketStatus } from "@/utils/ticketActivity";
 import { useRoleGuard } from "@/hooks/useRoleGuard";
 import { RoleRestrictedView } from "@/components/RoleRestrictedView";
-
-const defaultCounts = { open: 0, in_progress: 0, resolved: 0 };
-const insightTabs: Array<{ label: string; value: "agents" | "aging" }> = [
-  { label: "Agents", value: "agents" },
-  { label: "Aging", value: "aging" },
-];
+import {
+  buildStatusBuckets,
+  deriveTrendSummary,
+  deriveWorkloadStats,
+  insightViewReducer,
+  INSIGHT_TABS,
+  DEFAULT_STATUS_COUNTS,
+  type AssignmentLoadEntry,
+  type ResolutionTrendEntry,
+} from "./AllocationDashboardScreen.helpers";
 
 const formatStatus = formatTicketStatus;
 
@@ -40,7 +44,8 @@ type Navigation = NativeStackNavigationProp<
 export function AllocationDashboardScreen() {
   const navigation = useNavigation<Navigation>();
   const { isAuthorized } = useRoleGuard(["admin"]);
-  const [insightView, setInsightView] = useState<"agents" | "aging">(
+  const [insightView, dispatchInsightView] = useReducer(
+    insightViewReducer,
     "agents",
   );
 
@@ -80,47 +85,28 @@ export function AllocationDashboardScreen() {
   const refreshing =
     overviewRefetching || productivityRefetching || escalationsRefetching;
 
-  const statusCounts = overview?.statusCounts ?? defaultCounts;
-  const assignments = overview?.assignmentLoad ?? [];
+  const statusCounts: StatusCounts =
+    overview?.statusCounts ?? DEFAULT_STATUS_COUNTS;
+  const assignments: AssignmentLoadEntry[] = overview?.assignmentLoad ?? [];
   const oldestOpen = overview?.oldestOpen ?? [];
-  const resolutionTrend = productivity?.resolutionTrend ?? [];
+  const resolutionTrend: ResolutionTrendEntry[] =
+    productivity?.resolutionTrend ?? [];
   const highPriority = escalations?.highPriority ?? [];
   const staleTickets = escalations?.staleTickets ?? [];
 
-  const statusBuckets = Object.entries(statusCounts).map(([status, count]) => ({
-    status: status as TicketStatus,
-    count: count ?? 0,
-  }));
+  const statusBuckets = buildStatusBuckets(statusCounts);
 
   const totalTickets = statusBuckets.reduce((acc, bucket) => acc + bucket.count, 0);
 
-  const workloadStats = useMemo(() => {
-    if (assignments.length === 0) {
-      return {
-        averageLoad: 0,
-        busiestAgent: null as (typeof assignments)[0] | null,
-        totalAgents: 0,
-        totalAssignments: 0,
-      };
-    }
-    const sorted = [...assignments].sort((a, b) => b.count - a.count);
-    const totalAssignments = sorted.reduce((acc, item) => acc + item.count, 0);
-    return {
-      averageLoad: Math.round(totalAssignments / sorted.length) || 0,
-      busiestAgent: sorted[0],
-      totalAgents: sorted.length,
-      totalAssignments,
-    };
-  }, [assignments]);
+  const workloadStats = useMemo(
+    () => deriveWorkloadStats(assignments),
+    [assignments],
+  );
 
-  const trendSummary = useMemo(() => {
-    if (resolutionTrend.length === 0) {
-      return { window: 0, total: 0 };
-    }
-    const lastSeven = resolutionTrend.slice(-7);
-    const total = lastSeven.reduce((acc, entry) => acc + entry.count, 0);
-    return { window: lastSeven.length, total };
-  }, [resolutionTrend]);
+  const trendSummary = useMemo(
+    () => deriveTrendSummary(resolutionTrend),
+    [resolutionTrend],
+  );
 
   const insightContent =
     insightView === "agents" ? (
@@ -267,13 +253,15 @@ export function AllocationDashboardScreen() {
               </Text>
             </View>
             <View style={styles.filterRow}>
-              {insightTabs.map((tab) => {
+              {INSIGHT_TABS.map((tab) => {
                 const active = insightView === tab.value;
                 return (
                   <Pressable
                     key={tab.value}
                     style={[styles.filterChip, active && styles.filterChipActive]}
-                    onPress={() => setInsightView(tab.value)}
+                    onPress={() =>
+                      dispatchInsightView({ type: "select", view: tab.value })
+                    }
                   >
                     <Text
                       style={[

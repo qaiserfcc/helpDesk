@@ -16,7 +16,6 @@ import { RootStackParamList } from "@/navigation/AppNavigator";
 import {
   ReportTicket,
   TicketActivityEntry,
-  TicketStatus,
   fetchAdminEscalationReport,
   fetchAdminOverviewReport,
   fetchRecentTicketActivity,
@@ -26,9 +25,14 @@ import {
   describeTicketActivity,
   formatTicketStatus,
 } from "@/utils/ticketActivity";
+import {
+  buildStatusBuckets,
+  getHighlightCounts,
+  getStatusShare,
+  rankAssignments,
+} from "./StatusSummaryScreen.helpers";
 
 const formatStatus = formatTicketStatus;
-const defaultCounts = { open: 0, in_progress: 0, resolved: 0 };
 
 type Navigation = NativeStackNavigationProp<
   RootStackParamList,
@@ -73,23 +77,16 @@ export function StatusSummaryScreen() {
     enabled: user?.role === "admin",
   });
 
-  const statusCounts = overview?.statusCounts ?? defaultCounts;
-  const statusBuckets = (Object.keys(statusCounts) as TicketStatus[]).map(
-    (status) => ({
-      status,
-      count: statusCounts[status],
-    }),
-  );
+  const statusBuckets = buildStatusBuckets(overview?.statusCounts);
+  const highlights = getHighlightCounts(statusBuckets);
   const assignments = overview?.assignmentLoad ?? [];
   const oldestOpen = overview?.oldestOpen ?? [];
   const highPriority = escalations?.highPriority ?? [];
   const staleTickets = escalations?.staleTickets ?? [];
-  const totalTickets = statusBuckets.reduce((acc, bucket) => acc + bucket.count, 0);
+  const totalTickets = highlights.total;
   const refreshing = overviewLoading || escalationsLoading || activityLoading;
 
-  const topAgents = useMemo(() => {
-    return [...assignments].sort((a, b) => b.count - a.count);
-  }, [assignments]);
+  const topAgents = useMemo(() => rankAssignments(assignments), [assignments]);
 
   const onRefresh = () => {
     refetchOverview();
@@ -148,24 +145,15 @@ export function StatusSummaryScreen() {
           </View>
           <View style={styles.highlightCard}>
             <Text style={styles.highlightLabel}>Open</Text>
-            <Text style={styles.highlightValue}>
-              {statusBuckets.find((bucket) => bucket.status === "open")
-                ?.count ?? 0}
-            </Text>
+            <Text style={styles.highlightValue}>{highlights.open}</Text>
           </View>
           <View style={styles.highlightCard}>
             <Text style={styles.highlightLabel}>In progress</Text>
-            <Text style={styles.highlightValue}>
-              {statusBuckets.find((bucket) => bucket.status === "in_progress")
-                ?.count ?? 0}
-            </Text>
+            <Text style={styles.highlightValue}>{highlights.inProgress}</Text>
           </View>
           <View style={styles.highlightCard}>
             <Text style={styles.highlightLabel}>Resolved</Text>
-            <Text style={styles.highlightValue}>
-              {statusBuckets.find((bucket) => bucket.status === "resolved")
-                ?.count ?? 0}
-            </Text>
+            <Text style={styles.highlightValue}>{highlights.resolved}</Text>
           </View>
         </View>
 
@@ -176,9 +164,7 @@ export function StatusSummaryScreen() {
           ) : statusBuckets.length > 0 ? (
             <View style={styles.statusList}>
               {statusBuckets.map((bucket) => {
-                const share = totalTickets
-                  ? Math.round((bucket.count / totalTickets) * 100)
-                  : 0;
+                const share = getStatusShare(bucket.count, totalTickets);
                 return (
                   <View key={bucket.status} style={styles.statusRow}>
                     <View>

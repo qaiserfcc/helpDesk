@@ -21,9 +21,19 @@ import {
   fetchTicketExportDataset,
 } from "@/services/tickets";
 import { formatTicketStatus } from "@/utils/ticketActivity";
+import {
+  AdminAggregates,
+  StatusFilter,
+  buildAdminAggregates,
+  buildNoDataMessage,
+  buildSectionSubtitle,
+  countTicketStatuses,
+  filterTicketsByStatus,
+  selectAdminAggregate,
+  sliceTableRows,
+} from "./ReportsTableScreen.helpers";
 
-const defaultCounts = { open: 0, in_progress: 0, resolved: 0 };
-const statusFilters: Array<{ label: string; value: "all" | TicketStatus }> = [
+const statusFilters: Array<{ label: string; value: StatusFilter }> = [
   { label: "All", value: "all" },
   { label: "Open", value: "open" },
   { label: "In progress", value: "in_progress" },
@@ -31,19 +41,13 @@ const statusFilters: Array<{ label: string; value: "all" | TicketStatus }> = [
 ];
 
 type Navigation = NativeStackNavigationProp<RootStackParamList, "ReportsTable">;
-type AdminAggregateRow = {
-  id: string;
-  label: string;
-  total: number;
-} & Record<TicketStatus, number>;
-
 export function ReportsTableScreen() {
   const navigation = useNavigation<Navigation>();
   const user = useAuthStore((state) => state.session?.user);
-  const role = user?.role ?? "user";
+  const role = (user?.role ?? "user") as "admin" | "agent" | "user";
   const datasetScope = role === "admin" ? "admin" : role === "agent" ? "agent" : "user";
 
-  const [statusFilter, setStatusFilter] = useState<"all" | TicketStatus>("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [adminAllView, setAdminAllView] = useState<"user" | "agent">("user");
 
   const {
@@ -82,73 +86,24 @@ export function ReportsTableScreen() {
   });
 
   const tickets = dataset?.tickets ?? [];
-  const statusCounts = useMemo(() => {
-    return tickets.reduce(
-      (acc, ticket) => {
-        acc[ticket.status] += 1;
-        return acc;
-      },
-      { ...defaultCounts },
-    );
-  }, [tickets]);
+  const statusCounts = useMemo(() => countTicketStatuses(tickets), [tickets]);
 
-  const filteredTickets = useMemo(() => {
-    if (statusFilter === "all") {
-      return tickets;
-    }
-    return tickets.filter((ticket) => ticket.status === statusFilter);
-  }, [tickets, statusFilter]);
+  const filteredTickets = useMemo(
+    () => filterTicketsByStatus(tickets, statusFilter),
+    [tickets, statusFilter],
+  );
 
-  const tableRows = useMemo(() => filteredTickets.slice(0, 200), [filteredTickets]);
+  const tableRows = useMemo(() => sliceTableRows(filteredTickets), [filteredTickets]);
   const refreshing = isLoading || isRefetching;
 
-  const adminAggregates = useMemo(() => {
+  const adminAggregates = useMemo<AdminAggregates>(() => {
     if (role !== "admin") {
-      return { user: [], agent: [] } as { user: AdminAggregateRow[]; agent: AdminAggregateRow[] };
+      return { user: [], agent: [] };
     }
-
-    const buildAggregate = (
-      keyFn: (ticket: ReportTicket) => string,
-      labelFn: (ticket: ReportTicket) => string,
-    ) => {
-      const map = new Map<string, AdminAggregateRow>();
-      tickets.forEach((ticket) => {
-        const key = keyFn(ticket);
-        const label = labelFn(ticket);
-        if (!key) {
-          return;
-        }
-        if (!map.has(key)) {
-          map.set(key, {
-            id: key,
-            label,
-            total: 0,
-            open: 0,
-            in_progress: 0,
-            resolved: 0,
-          });
-        }
-        const row = map.get(key)!;
-        const statusKey = ticket.status as TicketStatus;
-        row[statusKey] += 1;
-        row.total += 1;
-      });
-      return Array.from(map.values()).sort((a, b) => b.total - a.total);
-    };
-
-    const userAgg = buildAggregate(
-      (ticket) => ticket.creator.id,
-      (ticket) => ticket.creator.name ?? ticket.creator.email ?? ticket.creator.id,
-    );
-    const agentAgg = buildAggregate(
-      (ticket) => ticket.assignee?.id ?? "unassigned",
-      (ticket) => ticket.assignee?.name ?? "Unassigned",
-    );
-
-    return { user: userAgg, agent: agentAgg };
+    return buildAdminAggregates(tickets);
   }, [role, tickets]);
 
-  const activeAdminAggregate = adminAllView === "user" ? adminAggregates.user : adminAggregates.agent;
+  const activeAdminAggregate = selectAdminAggregate(adminAllView, adminAggregates);
 
   const handleExport = () => {
     if (!exportMutation.isPending) {
@@ -172,15 +127,16 @@ export function ReportsTableScreen() {
     );
   }
 
-  const sectionSubtitle =
-    role === "admin" && statusFilter === "all"
-      ? `${activeAdminAggregate.length} ${adminAllView === "user" ? "users" : "agents"} tracked`
-      : `Showing ${tableRows.length} of ${filteredTickets.length} ticket${filteredTickets.length === 1 ? "" : "s"}`;
+  const sectionSubtitle = buildSectionSubtitle({
+    role,
+    statusFilter,
+    tableLength: tableRows.length,
+    filteredLength: filteredTickets.length,
+    aggregateLength: activeAdminAggregate.length,
+    adminView: adminAllView,
+  });
 
-  const noDataMessage =
-    role === "admin" && statusFilter === "all"
-      ? "No ticket activity to summarize yet."
-      : "No tickets available for this filter.";
+  const noDataMessage = buildNoDataMessage({ role, statusFilter });
 
   return (
     <SafeAreaView style={styles.safeArea}>
