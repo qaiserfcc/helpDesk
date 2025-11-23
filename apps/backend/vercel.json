@@ -3,7 +3,7 @@
   "buildCommand": "prisma generate && prisma migrate deploy && npm run build",
   "functions": {
     "api/index.ts": {
-      "runtime": "@vercel/node"
+      "runtime": "@vercel/node@20"
     }
   },
   "routes": [
