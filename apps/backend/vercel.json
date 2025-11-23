@@ -1,12 +1,11 @@
 {
   "version": 2,
-  "buildCommand": "prisma generate && prisma migrate deploy && npm run build",
   "functions": {
     "api/index.ts": {
-      "runtime": "@vercel/node@20"
+      "runtime": "vercel-node@3"
     }
   },
   "routes": [
-    { "src": "/(.*)", "dest": "/api/index.ts" }
+    { "src": "/(.*)", "dest": "/dist/api/index.ts" }
   ]
 }
