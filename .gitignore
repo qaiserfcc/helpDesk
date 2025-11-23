@@ -49,6 +49,9 @@ prisma/dev.db-journal
 *.expo
 *.xcworkspace
 *.xcuserstate
+# Expo prebuild native projects (generated locally)
+apps/mobile/android/
+apps/mobile/ios/
 
 # Cache directories
 .npm/

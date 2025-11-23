@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -12,6 +12,7 @@ import {
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { login } from "@/services/auth";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useOfflineStore } from "@/store/useOfflineStore";
 import { demoAccounts } from "@/constants/demoAccounts";
 import { RootStackParamList } from "@/navigation/AppNavigator";
 
@@ -19,24 +20,87 @@ type Props = NativeStackScreenProps<RootStackParamList, "Login">;
 
 export function LoginScreen({ navigation }: Props) {
   const applySession = useAuthStore((state) => state.applySession);
+  const cacheLoginPayload = useAuthStore((state) => state.cacheLoginPayload);
+  const resumeOfflineSession = useAuthStore(
+    (state) => state.resumeOfflineSession,
+  );
+  const queueAuthIntent = useAuthStore((state) => state.queueAuthIntent);
+  const offlineSession = useAuthStore((state) => state.offlineSession);
+  const authQueueLength = useAuthStore((state) => state.authQueueLength);
+  const isOffline = useOfflineStore((state) => state.isOffline);
   const [email, setEmail] = useState("admin@helpdesk.local");
   const [password, setPassword] = useState("ChangeMe123!");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const submitCtaLabel = useMemo(() => {
+    if (submitting) {
+      return "Signing in…";
+    }
+    if (isOffline) {
+      return "Resume offline";
+    }
+    return "Sign in";
+  }, [isOffline, submitting]);
+
   const handleSubmit = async () => {
     setSubmitting(true);
     setError(null);
     try {
-      const session = await login({ email: email.trim(), password });
+      const normalizedEmail = email.trim().toLowerCase();
+      const payload = { email: normalizedEmail, password };
+
+      const handleOfflineFallback = async (forceAttempt = false) => {
+        if (!isOffline && !forceAttempt) {
+          return false;
+        }
+        const restored = await resumeOfflineSession(payload);
+        if (restored) {
+          await queueAuthIntent({ type: "login", payload });
+          Alert.alert(
+            "Offline mode",
+            "You're working offline. We'll verify this sign-in when the network returns.",
+          );
+          return true;
+        }
+        return false;
+      };
+
+      if (isOffline) {
+        const success = await handleOfflineFallback();
+        if (!success) {
+          throw new Error("OFFLINE_UNAVAILABLE");
+        }
+        return;
+      }
+
+      const session = await login(payload);
+      await cacheLoginPayload(payload);
       await applySession(session);
     } catch (err) {
       console.error("Login failed", err);
-      setError("Invalid email or password");
-      Alert.alert(
-        "Login failed",
-        "Please verify your credentials and try again.",
-      );
+      const normalizedEmail = email.trim().toLowerCase();
+      const payload = { email: normalizedEmail, password };
+      const offlineRecovered = await resumeOfflineSession(payload);
+      if (offlineRecovered) {
+        await queueAuthIntent({ type: "login", payload });
+        Alert.alert(
+          "Offline mode",
+          "Network is unavailable, but we restored your cached session.",
+        );
+      } else {
+        setError(
+          isOffline
+            ? "Offline sign-in is only available for cached sessions."
+            : "Invalid email or password",
+        );
+        Alert.alert(
+          "Login failed",
+          isOffline
+            ? "We couldn't verify cached credentials for this account."
+            : "Please verify your credentials and try again.",
+        );
+      }
     } finally {
       setSubmitting(false);
     }
@@ -52,6 +116,23 @@ export function LoginScreen({ navigation }: Props) {
         <Text style={styles.subtitle}>
           Use your workspace credentials to continue.
         </Text>
+
+        {(isOffline || offlineSession) && (
+          <View style={styles.offlineHint}>
+            <Text style={styles.offlineHintText}>
+              {isOffline
+                ? "No connection detected. We'll restore cached access if available."
+                : "Signed in with cached session."}
+            </Text>
+            {authQueueLength > 0 ? (
+              <Text style={styles.offlineHintMeta}>
+                {authQueueLength === 1
+                  ? "1 auth action awaiting sync"
+                  : `${authQueueLength} auth actions awaiting sync`}
+              </Text>
+            ) : null}
+          </View>
+        )}
 
         <View style={styles.presetSection}>
           <Text style={styles.presetHeading}>Quick fill demo accounts</Text>
@@ -105,9 +186,7 @@ export function LoginScreen({ navigation }: Props) {
           onPress={handleSubmit}
           disabled={submitting}
         >
-          <Text style={styles.primaryText}>
-            {submitting ? "Signing in…" : "Sign in"}
-          </Text>
+          <Text style={styles.primaryText}>{submitCtaLabel}</Text>
         </Pressable>
 
         <Pressable
@@ -141,6 +220,24 @@ const styles = StyleSheet.create({
   subtitle: {
     marginTop: 4,
     color: "#94A3B8",
+  },
+  offlineHint: {
+    marginTop: 18,
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: "#0B1120",
+    borderWidth: 1,
+    borderColor: "#1E293B",
+  },
+  offlineHintText: {
+    color: "#F8FAFC",
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  offlineHintMeta: {
+    marginTop: 4,
+    color: "#94A3B8",
+    fontSize: 12,
   },
   fieldGroup: {
     marginTop: 18,

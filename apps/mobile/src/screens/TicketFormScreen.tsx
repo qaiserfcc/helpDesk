@@ -75,6 +75,8 @@ export function TicketFormScreen({ route, navigation }: Props) {
   const [issueType, setIssueType] = useState<IssueType>("other");
   const [submitting, setSubmitting] = useState(false);
   const [attachments, setAttachments] = useState<AttachmentDraft[]>([]);
+  const isResolvedTicket = Boolean(ticket && ticket.status === "resolved");
+  const lockedFromEditing = Boolean(isEdit && isResolvedTicket);
 
   useEffect(() => {
     if (ticket) {
@@ -203,6 +205,26 @@ export function TicketFormScreen({ route, navigation }: Props) {
       setSubmitting(false);
     }
   };
+
+  if (lockedFromEditing) {
+    return (
+      <View style={styles.lockedContainer}>
+        <View style={styles.lockedCard}>
+          <Text style={styles.lockedTitle}>Ticket is resolved</Text>
+          <Text style={styles.lockedMessage}>
+            Reopen the ticket from the detail screen before making changes.
+            Contact support if you need additional help.
+          </Text>
+          <Pressable
+            style={styles.lockedBtn}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.lockedBtnText}>Back to ticket</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <KeyboardAvoidingView
@@ -452,6 +474,43 @@ const styles = StyleSheet.create({
   },
   cancelText: {
     color: "#E2E8F0",
+    fontWeight: "600",
+  },
+  lockedContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#020617",
+    padding: 24,
+  },
+  lockedCard: {
+    width: "100%",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#1E293B",
+    backgroundColor: "#0F172A",
+    padding: 24,
+    gap: 16,
+  },
+  lockedTitle: {
+    color: "#F8FAFC",
+    fontSize: 20,
+    fontWeight: "700",
+  },
+  lockedMessage: {
+    color: "#CBD5F5",
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  lockedBtn: {
+    borderRadius: 14,
+    paddingVertical: 12,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#22D3EE",
+  },
+  lockedBtnText: {
+    color: "#22D3EE",
     fontWeight: "600",
   },
 });

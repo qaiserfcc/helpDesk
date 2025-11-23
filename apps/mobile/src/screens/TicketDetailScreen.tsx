@@ -20,24 +20,17 @@ import {
   fetchTicketActivity,
   requestAssignment,
   resolveTicket,
-  TicketStatus,
-  TicketActivityEntry,
+  updateTicket,
 } from "@/services/tickets";
 import { fetchUsers, UserSummary } from "@/services/users";
 import { env } from "@/config/env";
+import {
+  describeTicketActivity,
+  formatTicketStatus,
+} from "@/utils/ticketActivity";
+import { useNotificationStore } from "@/store/useNotificationStore";
 
-function formatStatus(status: TicketStatus) {
-  switch (status) {
-    case "open":
-      return "Open";
-    case "in_progress":
-      return "In Progress";
-    case "resolved":
-      return "Resolved";
-    default:
-      return status;
-  }
-}
+const formatStatus = formatTicketStatus;
 
 type Props = NativeStackScreenProps<RootStackParamList, "TicketDetail">;
 
@@ -69,19 +62,20 @@ export function TicketDetailScreen({ route, navigation }: Props) {
 
   const isAdmin = authUser?.role === "admin";
   const isAgent = authUser?.role === "agent";
-  const canAssign = isAdmin;
+  const isTicketResolved = ticket?.status === "resolved";
+  const isTicketOwner = Boolean(ticket && ticket.creator.id === authUser?.id);
+  const canAssign = Boolean(isAdmin && !isTicketResolved);
   const canEdit = Boolean(
     ticket &&
+      !isTicketResolved &&
       ((isAdmin && authUser?.id) ||
-        (authUser?.role === "user" && ticket.creator.id === authUser.id)),
+        (authUser?.role === "user" && isTicketOwner)),
   );
   const pendingRequest = ticket?.assignmentRequest;
-  const agentHasPendingRequest =
-    isAgent && pendingRequest?.id === authUser?.id;
+  const agentHasPendingRequest = isAgent && pendingRequest?.id === authUser?.id;
   const otherAgentRequested =
     isAgent && !!pendingRequest && pendingRequest.id !== authUser?.id;
-  const isAssignedAgent =
-    isAgent && ticket?.assignee?.id === authUser?.id;
+  const isAssignedAgent = isAgent && ticket?.assignee?.id === authUser?.id;
   const canResolve = Boolean(isAssignedAgent && ticket?.status !== "resolved");
   const canDeclineRequest = Boolean(canAssign && pendingRequest);
   const canRequestAssignment = Boolean(
@@ -90,12 +84,18 @@ export function TicketDetailScreen({ route, navigation }: Props) {
       ticket?.status !== "resolved" &&
       !isAssignedAgent,
   );
+  const canReopen = Boolean(isAdmin && isTicketResolved);
   const { data: agents = [], isLoading: agentsLoading } = useQuery({
     queryKey: ["users", "agents"],
     queryFn: () => fetchUsers({ role: "agent" }),
     enabled: canAssign,
     staleTime: 60_000,
   });
+  const markTicketRead = useNotificationStore((state) => state.markTicketRead);
+
+  useEffect(() => {
+    markTicketRead(ticketId);
+  }, [ticketId, markTicketRead]);
 
   useEffect(() => {
     if (!ticket) {
@@ -133,8 +133,22 @@ export function TicketDetailScreen({ route, navigation }: Props) {
       );
       return;
     }
+
+    const snapshot = selectedAgent
+      ? {
+          id: selectedAgent.id,
+          name: selectedAgent.name,
+          email: selectedAgent.email,
+        }
+      : fallbackRequest && ticket.assignmentRequest
+        ? {
+            id: ticket.assignmentRequest.id,
+            name: ticket.assignmentRequest.name,
+            email: ticket.assignmentRequest.email,
+          }
+        : null;
     try {
-      await assignTicket(ticketId, targetAssignee);
+      await assignTicket(ticketId, targetAssignee, { assignee: snapshot });
       await invalidateTickets();
     } catch (error) {
       console.error("assign ticket failed", error);
@@ -165,6 +179,16 @@ export function TicketDetailScreen({ route, navigation }: Props) {
     }
   };
 
+  const handleReopen = async () => {
+    try {
+      await updateTicket(ticketId, { status: "open" });
+      await invalidateTickets();
+    } catch (error) {
+      console.error("reopen ticket failed", error);
+      Alert.alert("Reopen failed", "Please try again in a moment.");
+    }
+  };
+
   const handleEdit = () => {
     navigation.navigate("TicketForm", { ticketId });
   };
@@ -175,10 +199,7 @@ export function TicketDetailScreen({ route, navigation }: Props) {
       await invalidateTickets();
     } catch (error) {
       console.error("request assignment failed", error);
-      Alert.alert(
-        "Request failed",
-        "Unable to request this ticket right now.",
-      );
+      Alert.alert("Request failed", "Unable to request this ticket right now.");
     }
   };
 
@@ -208,22 +229,6 @@ export function TicketDetailScreen({ route, navigation }: Props) {
       </View>
     );
   }
-
-  const describeActivity = (entry: TicketActivityEntry) => {
-    if (entry.type === "assignment_change") {
-      if (entry.toAssignee && entry.fromAssignee) {
-        return `${entry.actor.name} reassigned from ${entry.fromAssignee.name} to ${entry.toAssignee.name}`;
-      }
-      if (entry.toAssignee) {
-        return `${entry.actor.name} assigned ${entry.toAssignee.name}`;
-      }
-      return `${entry.actor.name} cleared the assignment`;
-    }
-    if (entry.fromStatus && entry.toStatus) {
-      return `${entry.actor.name} changed status ${formatStatus(entry.fromStatus)} → ${formatStatus(entry.toStatus)}`;
-    }
-    return `${entry.actor.name} updated the ticket`;
-  };
 
   const formatActivityTime = (iso: string) => {
     try {
@@ -257,6 +262,15 @@ export function TicketDetailScreen({ route, navigation }: Props) {
         <Text style={styles.sectionLabel}>Creator</Text>
         <Text style={styles.sectionValue}>{ticket.creator.name}</Text>
       </View>
+
+      {ticket.pendingSync && (
+        <View style={styles.pendingSyncBanner}>
+          <Text style={styles.pendingSyncTitle}>Pending sync</Text>
+          <Text style={styles.pendingSyncText}>
+            This change will be sent automatically once you are back online.
+          </Text>
+        </View>
+      )}
 
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>Assignee</Text>
@@ -341,7 +355,7 @@ export function TicketDetailScreen({ route, navigation }: Props) {
             {activities.map((entry) => (
               <View key={entry.id} style={styles.activityItem}>
                 <Text style={styles.activityDescription}>
-                  {describeActivity(entry)}
+                  {describeTicketActivity(entry)}
                 </Text>
                 <Text style={styles.activityMeta}>
                   {formatActivityTime(entry.createdAt)}
@@ -352,13 +366,22 @@ export function TicketDetailScreen({ route, navigation }: Props) {
         )}
       </View>
 
+      {isTicketResolved && !isAdmin && (
+        <View style={styles.section}>
+          <Text style={styles.resolvedNotice}>
+            This ticket is resolved. Contact support if you need further
+            changes.
+          </Text>
+        </View>
+      )}
+
       <View style={styles.actions}>
         {canEdit && (
           <Pressable style={styles.secondaryBtn} onPress={handleEdit}>
             <Text style={styles.secondaryText}>Edit ticket</Text>
           </Pressable>
         )}
-        {canAssign && ticket.status !== "resolved" && (
+        {canAssign && (
           <Pressable
             style={[
               styles.primaryBtn,
@@ -376,15 +399,15 @@ export function TicketDetailScreen({ route, navigation }: Props) {
             </Text>
           </Pressable>
         )}
-          {canDeclineRequest && ticket.status !== "resolved" && (
-            <Pressable
-              style={[styles.secondaryBtn, styles.dangerBtn]}
-              onPress={handleDeclineRequest}
-            >
-              <Text style={styles.dangerText}>Decline request</Text>
-            </Pressable>
-          )}
-          {canRequestAssignment && (
+        {canDeclineRequest && (
+          <Pressable
+            style={[styles.secondaryBtn, styles.dangerBtn]}
+            onPress={handleDeclineRequest}
+          >
+            <Text style={styles.dangerText}>Decline request</Text>
+          </Pressable>
+        )}
+        {canRequestAssignment && (
           <Pressable
             style={[
               styles.secondaryBtn,
@@ -409,6 +432,14 @@ export function TicketDetailScreen({ route, navigation }: Props) {
             onPress={handleResolve}
           >
             <Text style={styles.primaryText}>Resolve</Text>
+          </Pressable>
+        )}
+        {canReopen && (
+          <Pressable
+            style={[styles.secondaryBtn, styles.reopenBtn]}
+            onPress={handleReopen}
+          >
+            <Text style={styles.reopenText}>Reopen ticket</Text>
           </Pressable>
         )}
       </View>
@@ -523,6 +554,13 @@ const styles = StyleSheet.create({
     color: "#E2E8F0",
     fontWeight: "600",
   },
+  reopenBtn: {
+    borderColor: "#22D3EE",
+  },
+  reopenText: {
+    color: "#22D3EE",
+    fontWeight: "600",
+  },
   dangerBtn: {
     borderColor: "#DC2626",
   },
@@ -588,5 +626,30 @@ const styles = StyleSheet.create({
     marginTop: 4,
     color: "#94A3B8",
     fontSize: 12,
+  },
+  resolvedNotice: {
+    backgroundColor: "#1D4ED8",
+    color: "#E0F2FE",
+    padding: 12,
+    borderRadius: 12,
+    fontSize: 13,
+  },
+  pendingSyncBanner: {
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#FBBF24",
+    backgroundColor: "#1F1302",
+    padding: 16,
+    marginTop: 20,
+  },
+  pendingSyncTitle: {
+    color: "#FBBF24",
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+  pendingSyncText: {
+    color: "#FDE68A",
+    fontSize: 13,
+    lineHeight: 18,
   },
 });

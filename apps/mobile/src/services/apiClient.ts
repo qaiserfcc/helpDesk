@@ -1,4 +1,8 @@
-import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
+import axios, {
+  AxiosError,
+  AxiosHeaders,
+  InternalAxiosRequestConfig,
+} from "axios";
 import { env } from "@/config/env";
 import { useAuthStore } from "@/store/useAuthStore";
 
@@ -7,13 +11,19 @@ export const apiClient = axios.create({
   timeout: 10000,
 });
 
+function applyAuthHeader(
+  headers: InternalAxiosRequestConfig["headers"],
+  token: string,
+) {
+  const nextHeaders = AxiosHeaders.from(headers ?? {});
+  nextHeaders.set("Authorization", `Bearer ${token}`);
+  return nextHeaders;
+}
+
 apiClient.interceptors.request.use((config) => {
   const session = useAuthStore.getState().session;
   if (session?.accessToken) {
-    config.headers = {
-      ...config.headers,
-      Authorization: `Bearer ${session.accessToken}`,
-    };
+    config.headers = applyAuthHeader(config.headers, session.accessToken);
   }
   return config;
 });
@@ -48,10 +58,10 @@ apiClient.interceptors.response.use(
         };
 
         await store.applySession(newSession);
-        originalRequest.headers = {
-          ...originalRequest.headers,
-          Authorization: `Bearer ${newSession.accessToken}`,
-        };
+        originalRequest.headers = applyAuthHeader(
+          originalRequest.headers,
+          newSession.accessToken,
+        );
 
         return apiClient(originalRequest);
       } catch (refreshError) {

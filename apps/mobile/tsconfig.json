@@ -17,6 +17,9 @@
       "@/screens/*": [
         "screens/*"
       ],
+      "@/components/*": [
+        "components/*"
+      ],
       "@/theme/*": [
         "theme/*"
       ],
@@ -29,11 +32,20 @@
       "@/providers/*": [
         "providers/*"
       ],
+      "@/realtime/*": [
+        "realtime/*"
+      ],
       "@/storage/*": [
         "storage/*"
       ],
       "@/services/*": [
         "services/*"
+      ],
+      "@/utils/*": [
+        "utils/*"
+      ],
+      "@/lib/*": [
+        "lib/*"
       ],
       "@/config/*": [
         "config/*"
