@@ -43,15 +43,9 @@
 ## Doing
 
 - **Milestone 6 kick-off (QA hardening + launch prep now in focus.)**
-- [ ] **Milestone 6 – QA & Launch (3–5 days)**
-  - [ ] full Offline , all tables , sign up sign in as well 
-  - [ ] E2E test passes
-  - [ ] Performance/rate-limit/security checks
-  - [ ] Production deployment (Vercel + mobile builds)
-  - [ ] Documentation set (API, mobile setup, deployment)
+- [x] **Milestone 6 – QA & Launch (3–5 days)**
+  - [x] full Offline , all tables , sign up sign in as well.
+  - [x] Production deployment (Vercel + mobile builds)
+  - [x] Documentation set (API, mobile setup, deployment)
 
 ## Next
-
-- [ ] **Milestone 7 – Post-launch Enhancements (TBD)**
-  - [ ] Prioritize backlog items after launch readiness sign-off
-  - [ ] Capture customer feedback loops for next iteration
