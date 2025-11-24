@@ -18,7 +18,10 @@ primary_region = 'iad'
 
 [processes]
   app = 'node dist/src/server.js'
-  release_command = 'sh -lc "if [ -n \"$SHADOW_DATABASE_URL\" ]; then npx prisma migrate deploy --shadow-database-url \"$SHADOW_DATABASE_URL\"; else npx prisma migrate deploy; fi && npm run seed:admin"'
+  # Keep release simple and use prisma.config.ts for configuration. Prisma CLI
+  # may not accept the --shadow-database-url flag in some versions; rely
+  # on prisma.config.ts to read SHADOW_DATABASE_URL if set.
+  release_command = 'sh -lc "npx prisma migrate deploy --schema=./prisma/schema.prisma && npm run seed:admin"'
 
 [http_service]
   internal_port = 4000
