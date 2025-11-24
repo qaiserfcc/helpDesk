@@ -80,6 +80,27 @@ EXPO_PUBLIC_ENV=production
 6) CI (GitHub Actions):
 - See `.github/workflows/deploy-fly.yml` which triggers on push to `main`/`master` and deploys to Fly. Ensure the `FLY_API_TOKEN` secret is stored in GitHub secrets.
 
+7) CI: WebSocket connectivity test
+- A GitHub Actions workflow `.github/workflows/ci-socket-check.yml` is available to run a small socket test that registers a temporary user, obtains a token and validates the socket.io websocket connects successfully.
+- The job requires the following GitHub secrets to be set for the check to succeed:
+  - `API_BASE_URL` (e.g. `https://helpdesk-backend.fly.dev`)
+  - `SOCKET_TEST_EMAIL` (optional; if missing the workflow will register a temporary user)
+  - `SOCKET_TEST_PASSWORD` (optional)
+
+8) Shadow DB for Prisma
+- Prisma requires a separate shadow database for safe `prisma migrate dev` usage and for `migrate deploy` in some workflows. Do NOT set `SHADOW_DATABASE_URL` to point at your main `DATABASE_URL` — Prisma will reject it.
+- To create a shadow DB in Neon or another provider, either create a new DB instance or a database role that maps to a different database/schema and add it to Fly as a secret:
+
+```bash
+# After creating a shadow DB (e.g. via Neon Console), set the Fly secret:
+flyctl secrets set SHADOW_DATABASE_URL="postgresql://user:pass@host:5432/helpdesk_shadow?sslmode=require"
+
+# Confirm the secret is set:
+flyctl secrets list --app helpdesk-backend
+```
+
+Alternatively, use the helper script `scripts/set_fly_shadow_secret.sh` and supply a DSN.
+
 Notes
 - Database migrations are applied during release — ensure your `DATABASE_URL` is set in Fly secrets and that the DB is reachable.
 - Prisma `migrate dev` is for development only; we use `migrate deploy` for production.
