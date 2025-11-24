@@ -18,7 +18,7 @@ primary_region = 'iad'
 
 [processes]
   app = 'node dist/src/server.js'
-  release_command = 'if [ -n "$SHADOW_DATABASE_URL" ]; then npx prisma migrate deploy --shadow-database-url "$SHADOW_DATABASE_URL"; else npx prisma migrate deploy; fi && npm run seed:admin'
+  release_command = 'sh -lc "if [ -n \"$SHADOW_DATABASE_URL\" ]; then npx prisma migrate deploy --shadow-database-url \"$SHADOW_DATABASE_URL\"; else npx prisma migrate deploy; fi && npm run seed:admin"'
 
 [http_service]
   internal_port = 4000
