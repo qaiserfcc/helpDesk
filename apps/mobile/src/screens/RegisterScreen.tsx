@@ -110,12 +110,14 @@ export function RegisterScreen({ navigation }: Props) {
       });
       await applySession(session);
     } catch (err) {
-      console.error("Registration failed", err);
-      setError("We couldn't create your account");
-      Alert.alert(
-        "Sign up failed",
-        "Please review your details and try again.",
-      );
+        console.error("Registration failed", err);
+        let message = "We couldn't create your account";
+        // Provide a more helpful message when the email is already registered.
+        if ((err as any)?.response?.status === 409) {
+          message = 'An account with that email already exists.';
+        }
+        setError(message);
+        Alert.alert("Sign up failed", message);
     } finally {
       setSubmitting(false);
     }

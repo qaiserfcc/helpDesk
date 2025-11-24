@@ -19,6 +19,8 @@ type ServerToClientEvents = {
 let socket: Socket<ServerToClientEvents> | null = null;
 let currentToken: string | null = null;
 let socketRefreshPromise: Promise<boolean> | null = null;
+let realtimeOfflineNotified = false;
+let pollingFallbackId: NodeJS.Timeout | null = null;
 
 type RefreshResponse = {
   user: AuthSession["user"];
@@ -142,9 +144,42 @@ function attachListeners(instance: Socket<ServerToClientEvents>) {
   instance.on("connect_error", (error) => {
     const message = getErrorMessage(error);
     console.warn("Realtime socket failed", message || error);
+    // If the error is authentication related, attempt to refresh token and reconnect.
     if (isAuthRelatedError(message)) {
       void refreshSocketSession();
+      return;
     }
+    // Non-auth related errors likely indicate platform limitations (e.g., websocket upgrade failure).
+    // Begin polling fallback so the UI continues to receive updates and inform the user.
+    if (!pollingFallbackId) {
+      startPollingFallback();
+    }
+    if (!realtimeOfflineNotified) {
+      realtimeOfflineNotified = true;
+      const notificationStore = useNotificationStore.getState();
+      notificationStore.addNotification({
+        id: `realtime-offline-${Date.now()}`,
+        ticketId: 'system',
+        actor: "System",
+        summary: "Realtime unavailable — updates will arrive via periodic polling",
+        createdAt: new Date().toISOString(),
+        type: "activity",
+      });
+    }
+  });
+
+  instance.on("disconnect", (reason) => {
+    console.info("Realtime socket disconnected", reason);
+    // On disconnect, start polling fallback until reconnect
+    if (!pollingFallbackId) {
+      startPollingFallback();
+    }
+  });
+  instance.on('connect', () => {
+    // We have an active socket — stop the polling fallback if it was running.
+    stopPollingFallback();
+    realtimeOfflineNotified = false;
+    console.info('Realtime socket connected via', instance.io.engine.transport.name);
   });
 }
 
@@ -176,8 +211,10 @@ export function syncTicketSocketSession(accessToken: string | null) {
   teardownSocket();
 
   const instance = io(env.apiBaseUrl, {
-    transports: ["websocket"],
+    // Allow polling fallback — some serverless platforms (Vercel) may not support WebSocket upgrades.
+    transports: ["websocket", "polling"],
     auth: { token: `Bearer ${accessToken}` },
+    // Use the default socket.io path; explicit path can be set if needed: path: '/socket.io'
   });
 
   socket = instance;
@@ -187,4 +224,24 @@ export function syncTicketSocketSession(accessToken: string | null) {
 
 export function shutdownTicketSocket() {
   teardownSocket();
+  stopPollingFallback();
+}
+
+function startPollingFallback() {
+  // basic 15-second poll to refresh ticket lists
+  stopPollingFallback();
+  pollingFallbackId = setInterval(async () => {
+    try {
+      await queryClient.invalidateQueries({ queryKey: ['tickets'], exact: false });
+    } catch (err) {
+      // intentionally ignore
+    }
+  }, 15_000);
+}
+
+function stopPollingFallback() {
+  if (pollingFallbackId) {
+    clearInterval(pollingFallbackId);
+    pollingFallbackId = null;
+  }
 }

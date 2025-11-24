@@ -7,11 +7,13 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
+    "fly:build": "npm ci && npx prisma generate && npm run build",
     "lint": "eslint \"src/**/*.{ts,tsx}\" --max-warnings=0",
     "test": "cross-env NODE_ENV=test PORT=0 DATABASE_URL=\"postgresql://localhost:5432/helpdesk_test\" JWT_ACCESS_SECRET=\"test-access-secret\" JWT_REFRESH_SECRET=\"test-refresh-secret\" vitest run",
     "seed:admin": "tsx scripts/seedAdmin.ts",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev"
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:deploy": "prisma migrate deploy"
   },
   "engines": {
     "node": ">=20.19.0"
@@ -36,6 +38,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@flydotio/dockerfile": "^0.7.10",
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",

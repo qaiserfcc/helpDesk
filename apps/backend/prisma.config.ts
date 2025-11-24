@@ -12,6 +12,7 @@ if (!databaseUrl) {
 export default defineConfig({
   schema: './prisma/schema.prisma',
   datasource: {
-    url: databaseUrl
+    url: databaseUrl,
+    shadowDatabaseUrl: process.env.SHADOW_DATABASE_URL ?? undefined
   }
 });
