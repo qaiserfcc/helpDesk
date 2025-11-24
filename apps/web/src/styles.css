@@ -1,0 +1,31 @@
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+}
+
+header {
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+}
+header .auth {
+  float: right;
+}
+header .auth span { margin-right: 10px }
+
+main {
+  padding: 20px;
+}
+
+.ticket-list {
+  display:flex; flex-direction: column; gap: 8px;
+}
+
+.ticket-card {
+  padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; display:flex; justify-content: space-between; align-items:center;
+}
+
+.ticket-card .title { font-weight: 600 }
+.form-card { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.04)}
+.form-card label { display:block; margin-bottom: 6px; font-size: 14px}
+.form-card input, .form-card textarea { padding: 8px; border: 1px solid #ddd; border-radius: 6px; width: 100%; margin-bottom: 10px }
