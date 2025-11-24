@@ -47,7 +47,22 @@ Note: If you store a file like `serviceAccount.json`, consider storing the JSON 
 3) Deploy (this will run the `release_command` in `fly.toml` which runs `npx prisma migrate deploy` and `npm run seed:admin`):
 
 ```bash
+# Optionally use the automated helper script which creates and attaches DB, sets secrets and deploys
+```bash
+# dry run (will only print commands, safe to run without `flyctl` credentials)
+./scripts/create-fly-db-and-deploy.sh --app helpdesk-backend --dry-run
+
+# interactive run (will prompt for confirmation and values)
+./scripts/create-fly-db-and-deploy.sh --app helpdesk-backend
+
+# non-interactively create database, attach, set secrets and deploy
+FLY_API_TOKEN="${FLY_API_TOKEN}" ./scripts/create-fly-db-and-deploy.sh --app helpdesk-backend --db-name helpdesk-db --region iad
+```
+
+# or deploy directly
+```bash
 flyctl deploy --config ./fly.toml
+```
 ```
 
 4) Access your app:
