@@ -9,7 +9,7 @@ services:
       npx prisma generate
       npm run build
     startCommand: cd apps/backend && npm run start
-    postDeployCommand: |
+    preDeployCommand: |
       cd apps/backend
       npx prisma migrate deploy --schema=./prisma/schema.prisma
       npm run seed:admin
