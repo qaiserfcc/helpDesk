@@ -29,16 +29,3 @@ services:
         sync: false
       - key: ALLOWED_ORIGINS
         sync: false
-  - type: web
-    name: helpdesk-web
-    env: static
-    plan: starter
-    buildCommand: |
-      cd apps/web
-      npm install
-      npm run build
-    staticPublishPath: apps/web/dist
-    autoDeploy: true
-    envVars:
-      - key: VITE_API_BASE_URL
-        value: https://helpdesk-backend.onrender.com
