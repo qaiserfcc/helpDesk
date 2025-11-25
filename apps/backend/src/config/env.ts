@@ -17,6 +17,7 @@ const envSchema = z.object({
     .transform((value) => value === "true" || value === "1"),
   EMAIL_FROM: z.string().optional(),
   RESEND_API_KEY: z.string().optional(),
+  ALLOWED_ORIGINS: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
