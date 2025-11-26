@@ -28,44 +28,85 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="settings">
-      <h2>Settings</h2>
+    <div className="settings-page">
+      <div className="page-header">
+        <h1>Settings</h1>
+        <p>Manage your account preferences and profile information</p>
+      </div>
 
-      <form onSubmit={handleSubmit} className="form-card">
-        <div>
-          <label>Name</label>
-          <Input
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            required
-          />
+      <div className="settings-content">
+        <div className="settings-card">
+          <div className="card-header">
+            <h2>Profile Information</h2>
+            <p>Update your personal details</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="settings-form">
+            <div className="form-group">
+              <label htmlFor="name">Full Name</label>
+              <Input
+                id="name"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                placeholder="Enter your full name"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="email">Email Address</label>
+              <Input
+                id="email"
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                placeholder="Enter your email address"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={form.notifications}
+                  onChange={(e) => setForm({ ...form, notifications: e.target.checked })}
+                />
+                <span className="checkmark"></span>
+                Enable email notifications for ticket updates
+              </label>
+            </div>
+
+            <div className="form-actions">
+              <Button type="submit" disabled={loading} className="primary">
+                {loading ? 'Updating...' : 'Save Changes'}
+              </Button>
+            </div>
+          </form>
         </div>
 
-        <div>
-          <label>Email</label>
-          <Input
-            type="email"
-            value={form.email}
-            onChange={(e) => setForm({ ...form, email: e.target.value })}
-            required
-          />
-        </div>
+        <div className="settings-card">
+          <div className="card-header">
+            <h2>Account Information</h2>
+            <p>Your account details</p>
+          </div>
 
-        <div>
-          <label>
-            <input
-              type="checkbox"
-              checked={form.notifications}
-              onChange={(e) => setForm({ ...form, notifications: e.target.checked })}
-            />
-            Enable Notifications
-          </label>
+          <div className="account-info">
+            <div className="info-item">
+              <span className="label">Role:</span>
+              <span className="value">{session?.user?.role}</span>
+            </div>
+            <div className="info-item">
+              <span className="label">Member since:</span>
+              <span className="value">{session?.user?.createdAt ? new Date(session.user.createdAt).toLocaleDateString() : 'N/A'}</span>
+            </div>
+            <div className="info-item">
+              <span className="label">Last login:</span>
+              <span className="value">{session?.user?.lastLogin ? new Date(session.user.lastLogin).toLocaleDateString() : 'N/A'}</span>
+            </div>
+          </div>
         </div>
-
-        <Button type="submit" disabled={loading}>
-          {loading ? 'Updating...' : 'Update Settings'}
-        </Button>
-      </form>
+      </div>
     </div>
   )
 }

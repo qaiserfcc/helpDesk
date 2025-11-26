@@ -44,7 +44,7 @@ export default function RegisterPage(){
     try{
       const res = await apiClient.post('/auth/register',{ name, email, password, role })
       setSession({ user: res.data.user, accessToken: res.data.tokens.accessToken, refreshToken: res.data.tokens.refreshToken })
-      nav('/tickets')
+      nav('/dashboard')
     }catch(err: any){
       let message = "We couldn't create your account"
       if (err?.response?.status === 409) {
