@@ -40,6 +40,12 @@
   - [x] Shared: permission hooks, components, and tests
   - [x] Role-aware UI guards/components
 
+- [x] **Web App Implementation**
+  - [x] Implemented all mobile screens in web app: Dashboard, AgentWorkload, AllocationDashboard, Settings, StatusSummary, UserReport
+  - [x] Added role-based navigation and access controls
+  - [x] Integrated with existing backend APIs and real-time features
+  - [x] Applied web design with glassy theme and responsive layout
+
 ## Doing
 
 - **Milestone 6 kick-off (QA hardening + launch prep now in focus.)**

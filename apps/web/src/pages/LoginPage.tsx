@@ -4,6 +4,8 @@ import axios from 'axios'
 import { env } from '@/services/env'
 import { useAuth } from '@/store/auth'
 import apiClient from '@/services/apiClient'
+import Button from '@/components/Button'
+import Input from '@/components/Input'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -25,14 +27,12 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="form-card" style={{maxWidth: 420}}>
+    <div className="form-card login-card">
       <h2>Login</h2>
       <form onSubmit={submit}>
-        <div><label htmlFor="email">Email</label>
-          <input id="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} type="email" /></div>
-        <div><label htmlFor="password">Password</label>
-          <input id="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} type="password" /></div>
-        <div><button type="submit" disabled={loading}>Login</button></div>
+        <Input label="Email" id="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} type="email" />
+        <Input label="Password" id="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} type="password" />
+        <Button type="submit" disabled={loading}>Login</Button>
       </form>
     </div>
   )

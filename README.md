@@ -22,3 +22,27 @@ The Render blueprint (`render.yaml`) now provisions **only** the backend so it s
 - [Direct Download](https://render.com/docs/cli#direct-download)
 
 Documentation: <https://render.com/docs/cli>
+
+## Render MCP Server
+
+Use Render's hosted MCP server to manage infrastructure from compatible AI tools (Cursor, Claude Code, etc.). The server URL is `https://mcp.render.com/mcp`.
+
+1. **Create an API key**: Visit <https://dashboard.render.com/settings#api-keys> and generate a key. Treat it like any production secret—it grants access to every workspace you can access. The MCP server only performs read operations plus env-var updates, but protecting the key is still critical.
+2. **Configure your MCP host**: Add the server definition to your tool's MCP config. Example for Cursor (`~/.cursor/mcp.json`):
+
+```json
+{
+	"mcpServers": {
+		"render": {
+			"url": "https://mcp.render.com/mcp",
+			"headers": {
+				"Authorization": "Bearer <YOUR_API_KEY>"
+			}
+		}
+	}
+}
+```
+
+3. **Select the workspace**: Prompt your tool with `Set my Render workspace to <workspace-name>` so future MCP calls target the correct environment.
+
+Once configured, you can issue prompts like "List my Render services" or "Update the env vars for helpdesk-backend" and the MCP server will call the Render API on your behalf. For advanced capabilities or self-hosting instructions, see <https://render.com/docs/mcp-server>.
