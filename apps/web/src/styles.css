@@ -109,4 +109,129 @@ main {
 .user-card { background: var(--glass-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--glass-border); }
 .user-info .name { font-weight: 600; color: white; }
 .user-info .email { color: #94a3b8; }
-.user-info .stats { color: #94a3b8; font-size: 14px; margin-top: 5px; }
+.bl {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+}
+
+.bl-1 {
+  background: #ff5fa3;
+  width: 200px;
+  height: 200px;
+  top: 10%;
+  left: 10%;
+}
+
+.bl-2 {
+  background: #7e22ce;
+  width: 300px;
+  height: 300px;
+  top: 50%;
+  right: 10%;
+}
+
+.bl-3 {
+  background: #2b6cf2;
+  width: 150px;
+  height: 150px;
+  bottom: 10%;
+  left: 50%;
+}
+
+.landing-root {
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+.landing-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.register-container {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.role-selection {
+  margin-top: 18px;
+}
+
+.role-options {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.role-card {
+  flex: 1;
+  min-width: 120px;
+  padding: 14px;
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  background: var(--glass-accent);
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.role-card.active {
+  border-color: #22d3ee;
+  background: var(--glass-bg);
+}
+
+.role-label {
+  font-weight: 600;
+  color: white;
+}
+
+.role-card.active .role-label {
+  color: #22d3ee;
+}
+
+.role-description {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-top: 6px;
+}
+
+.prefill-btn {
+  margin-top: 18px;
+  padding: 10px 16px;
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  background: var(--glass-accent);
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.register-subtitle {
+  color: #94a3b8;
+  margin-bottom: 18px;
+}
+
+.register-role-label {
+  display: block;
+  margin-bottom: 6px;
+  color: #94a3b8;
+}
+
+.register-error {
+  color: #f87171;
+  margin-top: 12px;
+}
+
+.register-link {
+  margin-top: 16px;
+  text-align: center;
+}

@@ -14,7 +14,8 @@
     "ci:test:socket": "npm run build && node dist/src/scripts/ciSocketTest.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:deploy": "prisma migrate deploy"
+    "prisma:deploy": "prisma migrate deploy",
+    "prisma:reset": "prisma migrate reset"
   },
   "engines": {
     "node": ">=20.19.0"
