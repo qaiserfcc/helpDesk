@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useAuthStore } from "@/store/useAuthStore";
 import { RoleRestrictedView } from "@/components/RoleRestrictedView";
 
@@ -53,12 +54,12 @@ export default function Dashboard() {
               </div>
               <div className="bg-gray-50 px-5 py-3">
                 <div className="text-sm">
-                  <a
+                  <Link
                     href="/tickets"
                     className="font-medium text-blue-600 hover:text-blue-500"
                   >
                     View all
-                  </a>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -84,12 +85,12 @@ export default function Dashboard() {
                 </div>
                 <div className="bg-gray-50 px-5 py-3">
                   <div className="text-sm">
-                    <a
-                      href="/agent/tickets"
+                    <Link
+                      href="/tickets"
                       className="font-medium text-green-600 hover:text-green-500"
                     >
                       Manage tickets
-                    </a>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -117,12 +118,44 @@ export default function Dashboard() {
                 </div>
                 <div className="bg-gray-50 px-5 py-3">
                   <div className="text-sm">
-                    <a
-                      href="/admin/users"
+                    <Link
+                      href="/user-management"
                       className="font-medium text-purple-600 hover:text-purple-500"
                     >
                       Manage users
-                    </a>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </RoleRestrictedView>
+
+            <RoleRestrictedView permission="reports:view">
+              <div className="bg-white overflow-hidden shadow rounded-lg">
+                <div className="p-5">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0">
+                      <div className="w-8 h-8 bg-orange-500 rounded-md flex items-center justify-center">
+                        <span className="text-white text-sm font-medium">A</span>
+                      </div>
+                    </div>
+                    <div className="ml-5 w-0 flex-1">
+                      <dl>
+                        <dt className="text-sm font-medium text-gray-500 truncate">
+                          Allocation Dashboard
+                        </dt>
+                        <dd className="text-lg font-medium text-gray-900">Live Workload</dd>
+                      </dl>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-gray-50 px-5 py-3">
+                  <div className="text-sm">
+                    <Link
+                      href="/allocation-dashboard"
+                      className="font-medium text-orange-600 hover:text-orange-500"
+                    >
+                      Manage workload
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -133,13 +166,19 @@ export default function Dashboard() {
           <div className="mt-8">
             <h2 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium">
+              <Link
+                href="/ticket/new"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium text-center"
+              >
                 Create Ticket
-              </button>
+              </Link>
               <RoleRestrictedView permission="reports:view">
-                <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium">
+                <Link
+                  href="/status-summary"
+                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium text-center"
+                >
                   View Reports
-                </button>
+                </Link>
               </RoleRestrictedView>
               <RoleRestrictedView permission="admin:manage_users">
                 <button className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md text-sm font-medium">
