@@ -5,7 +5,7 @@ import { config } from 'dotenv';
 config();
 
 async function main() {
-  const baseUrl = process.env.API_BASE_URL || 'https://helpdesk-backend.fly.dev';
+  const baseUrl = process.env.API_BASE_URL || 'http://localhost:4000/api';
   const email = process.env.EMAIL || process.env.ADMIN_EMAIL || 'admin@helpdesk.local';
   const password = process.env.PASSWORD || process.env.ADMIN_PASSWORD || 'ChangeMe123!';
 

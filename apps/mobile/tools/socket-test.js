@@ -1,7 +1,7 @@
 const axios = require('axios');
 const { io } = require('socket.io-client');
 
-const baseUrl = process.env.BASE_URL || 'https://helpdesk-backend.fly.dev';
+const baseUrl = process.env.BASE_URL || 'http://localhost:4000/api';
 const email = process.env.EMAIL || 'user3@helpdesk.local';
 const password = process.env.PASSWORD || 'Password1!';
 

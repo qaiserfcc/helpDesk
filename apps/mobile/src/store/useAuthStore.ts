@@ -9,6 +9,10 @@ import {
   type RegisterInput,
 } from "@/services/auth";
 import {
+  registerAuthTokenProvider,
+  registerAuthHandlers,
+} from "@/services/apiClient";
+import {
   cacheLoginPayload,
   cacheSignupPayload,
   clearAuthIntent,
@@ -163,6 +167,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       offlineSession,
       staleSession: false,
       authQueueLength: queueLength,
+    });
+
+    // Register token provider + handlers with apiClient to avoid importing the
+    // store from the api client and creating a require cycle.
+    registerAuthTokenProvider(() => get().session?.accessToken);
+    registerAuthHandlers({
+      applySession: async (s) => await get().applySession(s as AuthSession),
+      signOut: async () => await get().signOut(),
+      getSession: () => get().session as AuthSession | null,
     });
   },
   applySession: async (
