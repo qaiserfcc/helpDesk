@@ -75,3 +75,17 @@ apps/backend/tmp/
 render
 
 /generated/prisma
+
+# Backend runtime artifacts
+apps/backend/dist/
+apps/backend/logs/
+apps/backend/*.log
+apps/backend/*.sqlite
+apps/backend/tmp/
+
+# Temporary Expo project artifacts
+tmp-expo-*/
+
+# Local development artifacts
+**/.DS_Store
+**/.env.local

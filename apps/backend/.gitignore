@@ -1,1 +1,14 @@
 .vercel
+
+# Backend ignore patterns
+node_modules/
+dist/
+logs/
+*.log
+tmp/
+.env
+.env.*
+*.sqlite
+__tests__/
+.cache/
+.turbo/
