@@ -9,6 +9,8 @@ import {
   fetchAdminOverviewReport,
   fetchAdminProductivityReport,
   fetchAdminEscalationReport,
+  fetchAgentWorkloadReport,
+  fetchUserTicketReport,
   type ReportTicket,
   type StatusCounts,
 } from "@/services/tickets";
@@ -20,8 +22,6 @@ import {
   insightViewReducer,
   INSIGHT_TABS,
   DEFAULT_STATUS_COUNTS,
-  type AssignmentLoadEntry,
-  type ResolutionTrendEntry,
 } from "./helpers";
 
 const formatStatus = formatTicketStatus;
@@ -43,6 +43,18 @@ export default function AllocationDashboardPage() {
     queryKey: ["reports", "allocation", "overview"],
     queryFn: fetchAdminOverviewReport,
     enabled: user?.role === "admin",
+  });
+
+  const { data: agentOverview } = useQuery({
+    queryKey: ["reports", "allocation", "agent"],
+    queryFn: fetchAgentWorkloadReport,
+    enabled: user?.role === "agent",
+  });
+
+  const { data: userOverview } = useQuery({
+    queryKey: ["reports", "allocation", "user"],
+    queryFn: fetchUserTicketReport,
+    enabled: user?.role === "user",
   });
 
   const {
@@ -107,22 +119,7 @@ export default function AllocationDashboardPage() {
     refetchEscalations();
   };
 
-  if (user?.role !== "admin") {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="max-w-md mx-auto card rounded-lg shadow p-8 text-center">
-          <h1 className="text-2xl font-bold text-white mb-4">Admins Only</h1>
-          <p className="text-white/90 mb-6">You need admin access to inspect allocation reports.</p>
-          <button
-            onClick={() => router.back()}
-            className="bg-white/10 text-white px-4 py-2 rounded-lg hover:bg-white/20"
-          >
-            Back
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // Allow all role access; adapt content below based on role.
 
   return (
     <div className="min-h-screen">
@@ -136,7 +133,7 @@ export default function AllocationDashboardPage() {
           </button>
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-white">Allocation Dashboard</h1>
+              <h1 className="text-3xl font-bold text-white">{user?.role === 'admin' ? 'Allocation Dashboard' : user?.role === 'agent' ? 'My Allocation' : 'Allocation Overview'}</h1>
                 <p className="text-white/90 mt-2">Live workload + reporting</p>
             </div>
             <button
@@ -150,10 +147,11 @@ export default function AllocationDashboardPage() {
         </div>
 
         {/* Status Highlights */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {user?.role === "admin" ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           {statusBuckets.map((bucket) => (
             <div key={bucket.status} className="card rounded-lg shadow p-6">
-              <p className="text-sm text-gray-500 uppercase">
+              <p className="text-sm text-white/80 uppercase">
                 {formatStatus(bucket.status)}
               </p>
               <p className="text-3xl font-bold text-white mt-2">{bucket.count}</p>
@@ -165,10 +163,30 @@ export default function AllocationDashboardPage() {
               </p>
             </div>
           ))}
-        </div>
+          </div>
+        ) : user?.role === 'agent' && agentOverview ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            {buildStatusBuckets(agentOverview?.statusCounts).map((bucket) => (
+              <div key={bucket.status} className="card rounded-lg shadow p-6">
+                <p className="text-sm text-white/80 uppercase">{formatStatus(bucket.status)}</p>
+                <p className="text-3xl font-bold text-white mt-2">{bucket.count}</p>
+              </div>
+            ))}
+          </div>
+        ) : user?.role === 'user' && userOverview ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            {buildStatusBuckets(userOverview?.statusCounts).map((bucket) => (
+              <div key={bucket.status} className="card rounded-lg shadow p-6">
+                <p className="text-sm text-white/80 uppercase">{formatStatus(bucket.status)}</p>
+                <p className="text-3xl font-bold text-white mt-2">{bucket.count}</p>
+              </div>
+            ))}
+          </div>
+        ) : null}
 
         {/* Allocation Snapshot */}
-        <div className="card rounded-lg shadow p-6 mb-8">
+        {user?.role === 'admin' ? (
+          <div className="card rounded-lg shadow p-6 mb-8">
           <h2 className="text-xl font-semibold text-white mb-2">Allocation Snapshot</h2>
           <p className="text-white/90 mb-6">
             {workloadStats.totalAgents} active agent{workloadStats.totalAgents === 1 ? "" : "s"}
@@ -200,7 +218,46 @@ export default function AllocationDashboardPage() {
               </p>
             </div>
           </div>
-        </div>
+          </div>
+        ) : user?.role === 'agent' && agentOverview ? (
+          <div className="card rounded-lg shadow p-6 mb-8">
+            <h2 className="text-xl font-semibold text-white mb-2">My Snapshot</h2>
+            <p className="text-white/90 mb-6">Assignment summary for you</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="card p-4">
+                <p className="text-sm text-white/80">Assigned</p>
+                <p className="text-2xl font-bold text-white mt-1">{agentOverview?.assigned?.length ?? 0}</p>
+              </div>
+              <div className="card p-4">
+                <p className="text-sm text-white/80">Open</p>
+                <p className="text-2xl font-bold text-white mt-1">{agentOverview?.statusCounts?.open ?? 0}</p>
+              </div>
+              <div className="card p-4">
+                <p className="text-sm text-white/80">In progress</p>
+                <p className="text-2xl font-bold text-white mt-1">{agentOverview?.statusCounts?.in_progress ?? 0}</p>
+              </div>
+            </div>
+          </div>
+        ) : user?.role === 'user' && userOverview ? (
+          <div className="card rounded-lg shadow p-6 mb-8">
+            <h2 className="text-xl font-semibold text-white mb-2">My Tickets Snapshot</h2>
+            <p className="text-white/90 mb-6">Summary of your tickets</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="card p-4">
+                <p className="text-sm text-white/80">My tickets</p>
+                <p className="text-2xl font-bold text-white mt-1">{Object.values(userOverview?.statusCounts ?? {}).reduce((s, n) => s + n, 0)}</p>
+              </div>
+              <div className="card p-4">
+                <p className="text-sm text-white/80">Open</p>
+                <p className="text-2xl font-bold text-white mt-1">{userOverview?.statusCounts?.open ?? 0}</p>
+              </div>
+              <div className="card p-4">
+                <p className="text-sm text-white/80">In progress</p>
+                <p className="text-2xl font-bold text-white mt-1">{userOverview?.statusCounts?.in_progress ?? 0}</p>
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         {/* Live Backlog */}
         <div className="card rounded-lg shadow p-6 mb-8">
@@ -274,14 +331,14 @@ export default function AllocationDashboardPage() {
                       Opened {new Date(ticket.createdAt).toLocaleDateString()} • {ticket.creator.name}
                     </p>
                   </div>
-                  <span className="text-sm font-medium text-gray-700">
+                  <span className="text-sm font-medium text-white/80">
                     {formatStatus(ticket.status)}
                   </span>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-gray-500">No aging backlog entries.</p>
+            <p className="text-white/80">No aging backlog entries.</p>
           )}
         </div>
 
@@ -289,7 +346,7 @@ export default function AllocationDashboardPage() {
         <div className="card rounded-lg shadow p-6 mb-8">
           <div className="mb-6">
             <h2 className="text-xl font-semibold text-white">Resolution Trend</h2>
-            <p className="text-gray-600 mt-1">
+            <p className="text-white/80 mt-1">
               Last {trendSummary.window} days • {trendSummary.total} tickets
             </p>
           </div>
@@ -304,12 +361,16 @@ export default function AllocationDashboardPage() {
                     <p className="font-medium text-white">
                       {new Date(entry.date).toLocaleDateString()}
                     </p>
-                    <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                      <div
-                        className={`bg-blue-600 h-2 rounded-full transition-all duration-300`}
-                        style={{ width: `${Math.min(entry.count * 8, 100)}%` }}
-                      ></div>
-                    </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                            {(() => {
+                              const pct = Math.min(entry.count * 8, 100);
+                              const idx = Math.min(12, Math.max(1, Math.ceil((pct / 100) * 12)));
+                              const widthClass = `w-${idx}/12`;
+                              return (
+                                <div className={`${widthClass} bg-blue-600 h-2 rounded-full transition-all duration-300`} />
+                              );
+                            })()}
+                          </div>
                   </div>
                   <span className="text-lg font-bold text-blue-600 ml-4">
                     {entry.count}
@@ -318,21 +379,21 @@ export default function AllocationDashboardPage() {
               ))}
             </div>
           ) : (
-            <p className="text-gray-500">No resolution data captured yet.</p>
+            <p className="text-white/80">No resolution data captured yet.</p>
           )}
         </div>
 
         {/* Escalation Alerts */}
         <div className="card rounded-lg shadow p-6">
           <h2 className="text-xl font-semibold text-white mb-2">Escalation Alerts</h2>
-          <p className="text-gray-600 mb-6">High priority + stale</p>
+          <p className="text-white/80 mb-6">High priority + stale</p>
 
           {escalationsLoading &&
           highPriority.length === 0 &&
           staleTickets.length === 0 ? (
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           ) : highPriority.length === 0 && staleTickets.length === 0 ? (
-            <p className="text-gray-500">No escalations detected.</p>
+            <p className="text-white/80">No escalations detected.</p>
           ) : (
             <div className="space-y-4">
               {highPriority.slice(0, 3).map((ticket) => (
@@ -343,7 +404,7 @@ export default function AllocationDashboardPage() {
                   >
                   <div className="flex-1">
                     <p className="font-medium text-white">{ticket.description}</p>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-sm text-white/80 mt-1">
                       {formatStatus(ticket.status)} • HIGH PRIORITY
                     </p>
                   </div>
@@ -358,7 +419,7 @@ export default function AllocationDashboardPage() {
                   >
                   <div className="flex-1">
                     <p className="font-medium text-white">{ticket.description}</p>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-sm text-white/80 mt-1">
                       Updated {new Date(ticket.updatedAt).toLocaleDateString()}
                     </p>
                   </div>

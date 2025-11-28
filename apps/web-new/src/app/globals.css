@@ -116,9 +116,9 @@ select, option, select:focus, option:focus {
 /* Notification popover needs high z-index and strong contrast */
 .notification-popover {
   z-index: 9999 !important;
-  position: fixed; /* render above flow to avoid parent overflow hiding */
-  right: 1rem;
-  top: 3.6rem;
+  position: fixed;
+  left: var(--notif-left, auto);
+  top: var(--notif-top, 3.6rem);
   width: 20rem; /* default width for the popover */
   background: rgba(12, 12, 12, 0.92) !important;
   border: 1px solid rgba(255,255,255,0.06) !important;

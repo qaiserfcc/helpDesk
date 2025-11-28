@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useLayoutEffect } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { useNotificationStore } from "@/store/useNotificationStore";
 
@@ -8,9 +9,10 @@ export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const { notifications, unreadCount, markAllRead, dismissNotification } = useNotificationStore();
   const router = useRouter();
-
-import { useRef, useLayoutEffect } from "react";
-import { createPortal } from "react-dom";
+  
+  // Render popover inline within the header so it anchors to the bell.
+  // Use absolute positioning relative to this container so we do not
+  // need to compute inline top/left values or create a portal.
   const bellRef = useRef<HTMLButtonElement | null>(null);
   const [anchor, setAnchor] = useState<null | { left: number; top: number }>(null);
 
@@ -25,7 +27,7 @@ import { createPortal } from "react-dom";
   useLayoutEffect(() => {
     if (open && bellRef.current) {
       const rect = bellRef.current.getBoundingClientRect();
-      const width = 320;
+      const width = 320; // matches w-80
       const maxRight = window.innerWidth - 8; // 8px margin
       let left = rect.right - width;
       if (left < 8) left = rect.left; // fallback to left side of button if near the edge
@@ -45,8 +47,8 @@ import { createPortal } from "react-dom";
 
   return (
     <div className="relative">
-      <button
-          ref={bellRef}
+          <button
+            ref={bellRef}
         onClick={handleOpen}
         aria-label="Open notifications"
         className="p-2 rounded-md hover:bg-white/5 relative"
@@ -59,14 +61,13 @@ import { createPortal } from "react-dom";
         )}
       </button>
 
-      {open && (
-        <div className="absolute right-0 mt-2 w-80 bg-white/5 border border-white/10 rounded-md shadow-lg notification-popover overflow-hidden">
-                  // Render via portal so floating container isn't clipped by overflow on parents
-                  anchor && createPortal(
-                    <div
-                      className="w-80 bg-white/5 border border-white/10 rounded-md shadow-lg notification-popover overflow-hidden"
-                      style={{ left: anchor.left, top: anchor.top, position: "fixed" }}
-                    >
+      {open && anchor && createPortal(
+          <div
+            className="w-80 bg-white/5 border border-white/10 rounded-md shadow-lg notification-popover overflow-hidden z-50"
+            style={{ ['--notif-left' as any]: `${anchor.left}px`, ['--notif-top' as any]: `${anchor.top}px` }}
+            role="dialog"
+            aria-label="Notifications drawer"
+          >
           <div className="p-2 border-b border-white/6 flex justify-between items-center">
             <strong className="text-white">Notifications</strong>
             <div className="flex items-center space-x-2">
@@ -120,11 +121,7 @@ import { createPortal } from "react-dom";
               Close
             </button>
           </div>
-        </div>
-          </div>,
-          document.body,
-        )
-      )}
+        </div>, document.body)}
     </div>
   );
 }

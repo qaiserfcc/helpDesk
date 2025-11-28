@@ -44,7 +44,7 @@ const listTicketSchema = z.object({
     .enum(["true", "false"])
     .optional()
     .transform((value) => (value === undefined ? undefined : value === "true")),
-  limit: z.coerce.number().int().positive().max(100).optional(),
+  limit: z.coerce.number().int().positive().max(1000).optional(),
 });
 
 const assignSchema = z.object({

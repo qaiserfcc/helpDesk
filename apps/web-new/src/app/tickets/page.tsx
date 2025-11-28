@@ -61,7 +61,7 @@ export default function TicketsPage() {
         <div className="card shadow rounded-lg p-6 mb-6">
           <div className="flex flex-wrap items-center gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-white/80 mb-2">
                 Status
               </label>
               <div className="flex space-x-2">
@@ -90,7 +90,7 @@ export default function TicketsPage() {
                   onChange={(e) => setAssignedOnly(e.target.checked)}
                   className="mr-2"
                 />
-                <label htmlFor="assignedOnly" className="text-sm text-gray-700">
+                <label htmlFor="assignedOnly" className="text-sm text-white/80">
                   Assigned to me
                 </label>
               </div>
@@ -103,11 +103,11 @@ export default function TicketsPage() {
           {isLoading ? (
             <div className="p-8 text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-4 text-gray-500">Loading tickets...</p>
+              <p className="mt-4 text-white/80">Loading tickets...</p>
             </div>
           ) : tickets.length === 0 ? (
             <div className="p-8 text-center">
-              <p className="text-gray-500">No tickets found.</p>
+              <p className="text-white/80">No tickets found.</p>
               {canCreate && (
                 <Link
                   href="/ticket/new"
@@ -119,7 +119,7 @@ export default function TicketsPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
+              <table className="min-w-full divide-y divide-white/6">
                 <thead className="bg-white/5">
                   <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-white/80 uppercase tracking-wider">
@@ -159,7 +159,7 @@ export default function TicketsPage() {
                               ? "bg-green-100 text-green-800"
                               : ticket.status === "in_progress"
                               ? "bg-yellow-100 text-yellow-800"
-                              : "bg-gray-100 text-gray-800"
+                              : "bg-white/6 text-white/80"
                           }`}
                         >
                           {formatTicketStatus(ticket.status)}
@@ -171,7 +171,7 @@ export default function TicketsPage() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <TableRowMenu
                           ticketId={ticket.id}
-                          canEdit={session.user.role === 'admin'}
+                          canEdit={session.user.id === ticket.creator?.id && ticket.status !== 'resolved'}
                           canAssign={session.user.role === 'admin'}
                           canRequestAssignment={session.user.role === 'agent'}
                         />

@@ -9,6 +9,8 @@ import {
   fetchAdminEscalationReport,
   fetchAdminOverviewReport,
   fetchRecentTicketActivity,
+  fetchUserTicketReport,
+  fetchAgentWorkloadReport,
   type ReportTicket,
   type TicketActivityEntry,
 } from "@/services/tickets";
@@ -105,6 +107,18 @@ export default function StatusSummaryPage() {
     enabled: user?.role === "admin",
   });
 
+  const { data: userReportData } = useQuery({
+    queryKey: ["reports", "user-report"],
+    queryFn: fetchUserTicketReport,
+    enabled: user?.role === "user",
+  });
+
+  const { data: agentReport } = useQuery({
+    queryKey: ["reports", "agent-workload"],
+    queryFn: fetchAgentWorkloadReport,
+    enabled: user?.role === "agent",
+  });
+
   const {
     data: escalations,
     isLoading: escalationsLoading,
@@ -122,7 +136,7 @@ export default function StatusSummaryPage() {
   } = useQuery({
     queryKey: ["reports", "activity"],
     queryFn: () => fetchRecentTicketActivity(25),
-    enabled: user?.role === "admin",
+    enabled: !!user,
   });
 
   const statusBuckets = buildStatusBuckets(overview?.statusCounts);
@@ -144,22 +158,7 @@ export default function StatusSummaryPage() {
     refetchActivity();
   };
 
-  if (user?.role !== "admin") {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="max-w-md mx-auto card rounded-lg shadow p-8 text-center">
-          <h1 className="text-2xl font-bold text-white mb-4">Admins Only</h1>
-          <p className="text-white/90 mb-6">You need admin access to see the organization-wide status summary.</p>
-          <button
-            onClick={() => router.back()}
-            className="bg-white/10 text-white px-4 py-2 rounded-lg hover:bg-white/20"
-          >
-            Back
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // allow all roles to view the page; contents adapt based on role
 
   return (
     <div className="min-h-screen">
@@ -173,7 +172,7 @@ export default function StatusSummaryPage() {
           </button>
           <div className="flex justify-between items-center">
             <div>
-                <h1 className="text-3xl font-bold text-white">Organization Report</h1>
+                <h1 className="text-3xl font-bold text-white">{user?.role === "admin" ? "Organization Report" : user?.role === "agent" ? "Agent Report" : "My Report"}</h1>
                   <p className="text-white/90 mt-2">Live ticket overview</p>
             </div>
             <button
@@ -187,26 +186,69 @@ export default function StatusSummaryPage() {
         </div>
 
         {/* Summary Highlights */}
+        {user?.role === "admin" ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="card rounded-lg shadow p-6">
             <p className="text-sm text-white/80">Total tickets</p>
             <p className="text-3xl font-bold text-white">{highlights.total}</p>
           </div>
           <div className="card rounded-lg shadow p-6">
-            <p className="text-sm text-gray-500">Open</p>
+            <p className="text-sm text-white/80">Open</p>
             <p className="text-3xl font-bold text-white">{highlights.open}</p>
           </div>
             <div className="card rounded-lg shadow p-6">
-            <p className="text-sm text-gray-500">In progress</p>
+            <p className="text-sm text-white/80">In progress</p>
             <p className="text-3xl font-bold text-white">{highlights.inProgress}</p>
           </div>
             <div className="card rounded-lg shadow p-6">
-            <p className="text-sm text-gray-500">Resolved</p>
+            <p className="text-sm text-white/80">Resolved</p>
             <p className="text-3xl font-bold text-white">{highlights.resolved}</p>
           </div>
-        </div>
+          </div>
+        ) : user?.role === "agent" && agentReport ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="card rounded-lg shadow p-6">
+              <p className="text-sm text-white/80">My assigned tickets</p>
+              <p className="text-3xl font-bold text-white">{Object.values(agentReport?.statusCounts ?? {}).reduce((s, n) => s + n, 0)}</p>
+            </div>
+            <div className="card rounded-lg shadow p-6">
+              <p className="text-sm text-white/80">Open</p>
+              <p className="text-3xl font-bold text-white">{agentReport?.statusCounts?.open ?? 0}</p>
+            </div>
+            <div className="card rounded-lg shadow p-6">
+              <p className="text-sm text-white/80">In progress</p>
+              <p className="text-3xl font-bold text-white">{agentReport?.statusCounts?.in_progress ?? 0}</p>
+            </div>
+            <div className="card rounded-lg shadow p-6">
+              <p className="text-sm text-white/80">Resolved</p>
+              <p className="text-3xl font-bold text-white">{agentReport?.statusCounts?.resolved ?? 0}</p>
+            </div>
+          </div>
+        ) : user?.role === "user" && userReportData ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="card rounded-lg shadow p-6">
+              <p className="text-sm text-white/80">My tickets</p>
+              <p className="text-3xl font-bold text-white">{Object.values(userReportData?.statusCounts ?? {}).reduce((s, n) => s + n, 0)}</p>
+            </div>
+            <div className="card rounded-lg shadow p-6">
+              <p className="text-sm text-white/80">Open</p>
+              <p className="text-3xl font-bold text-white">{userReportData?.statusCounts?.open ?? 0}</p>
+            </div>
+            <div className="card rounded-lg shadow p-6">
+              <p className="text-sm text-white/80">In progress</p>
+              <p className="text-3xl font-bold text-white">{userReportData?.statusCounts?.in_progress ?? 0}</p>
+            </div>
+            <div className="card rounded-lg shadow p-6">
+              <p className="text-sm text-white/80">Resolved</p>
+              <p className="text-3xl font-bold text-white">{userReportData?.statusCounts?.resolved ?? 0}</p>
+            </div>
+          </div>
+        ) : (
+          <div className="text-white/80 mb-8">No summary available for your role.</div>
+        )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {user?.role === "admin" && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Status Distribution */}
           <div className="card rounded-lg shadow p-6">
             <h2 className="text-xl font-semibold text-white mb-4">Status Distribution</h2>
@@ -216,6 +258,12 @@ export default function StatusSummaryPage() {
               <div className="space-y-4">
                 {statusBuckets.map((bucket) => {
                   const share = getStatusShare(bucket.count, totalTickets);
+                  const widthClass = (() => {
+                    // Map share % to one of tailwind fraction classes 0/12..12/12
+                    const idx = Math.min(12, Math.max(0, Math.ceil((share / 100) * 12)));
+                    if (idx === 0) return "w-0";
+                    return `w-${idx}/12`;
+                  })();
                   return (
                     <div key={bucket.status} className="flex items-center justify-between">
                       <div className="flex-1">
@@ -228,8 +276,7 @@ export default function StatusSummaryPage() {
                         <span className="text-lg font-bold text-white">{bucket.count}</span>
                         <div className="w-24 bg-gray-200 rounded-full h-2">
                           <div
-                            className={`bg-white/10 h-2 rounded-full transition-all duration-300`}
-                            style={{ width: `${Math.max(share, 5)}%` }}
+                            className={`${widthClass} bg-white/10 h-2 rounded-full transition-all duration-300`}
                           ></div>
                         </div>
                       </div>
@@ -238,7 +285,7 @@ export default function StatusSummaryPage() {
                 })}
               </div>
             ) : (
-              <p className="text-gray-500">No summary data yet.</p>
+              <p className="text-white/80">No summary data yet.</p>
             )}
           </div>
 
@@ -252,10 +299,10 @@ export default function StatusSummaryPage() {
                 {topAgents.map((assignment) => (
                   <div key={assignment.agentId} className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium text-gray-900">
+                      <p className="font-medium text-white">
                         {assignment.agent?.name ?? "Unknown agent"}
                       </p>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-white/80">
                         {assignment.agent?.email ?? "N/A"}
                       </p>
                     </div>
@@ -266,16 +313,18 @@ export default function StatusSummaryPage() {
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500">No active assignments.</p>
+              <p className="text-white/80">No active assignments.</p>
             )}
           </div>
-        </div>
+          </div>
+        )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+        {user?.role === "admin" && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
           {/* Oldest Open Tickets */}
           <div className="card rounded-lg shadow p-6">
             <h2 className="text-xl font-semibold text-white mb-2">Oldest Open Tickets</h2>
-            <p className="text-sm text-gray-500 mb-4">Longest waiting issues</p>
+            <p className="text-sm text-white/80 mb-4">Longest waiting issues</p>
             {overviewLoading && oldestOpen.length === 0 ? (
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             ) : oldestOpen.length > 0 ? (
@@ -286,22 +335,22 @@ export default function StatusSummaryPage() {
                     href={`/ticket/${ticket.id}`}
                     className="block p-3 border border-white/10 rounded-lg hover:bg-white/6 transition-colors"
                   >
-                    <p className="font-medium text-gray-900">{ticket.description}</p>
-                    <p className="text-sm text-gray-500 mt-1">
+                    <p className="font-medium text-white">{ticket.description}</p>
+                      <p className="text-sm text-white/80 mt-1">
                       Opened {new Date(ticket.createdAt).toLocaleDateString()} • {ticket.creator.name}
                     </p>
                   </Link>
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500">No pending open tickets.</p>
+              <p className="text-white/80">No pending open tickets.</p>
             )}
           </div>
 
           {/* High Priority Alerts */}
           <div className="card rounded-lg shadow p-6">
             <h2 className="text-xl font-semibold text-white mb-2">High Priority Alerts</h2>
-            <p className="text-sm text-gray-500 mb-4">Requires immediate action</p>
+            <p className="text-sm text-white/80 mb-4">Requires immediate action</p>
             {escalationsLoading && highPriority.length === 0 ? (
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             ) : highPriority.length > 0 ? (
@@ -312,8 +361,8 @@ export default function StatusSummaryPage() {
                     href={`/ticket/${ticket.id}`}
                     className="block p-3 border border-red-600 bg-red-700/10 rounded-lg hover:bg-red-700/20 transition-colors"
                   >
-                    <p className="font-medium text-gray-900">{ticket.description}</p>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="font-medium text-white">{ticket.description}</p>
+                    <p className="text-sm text-white/80 mt-1">
                       {formatStatus(ticket.status)} •{" "}
                       <span className="font-semibold text-red-600">
                         {ticket.priority.toUpperCase()} PRIORITY
@@ -323,16 +372,18 @@ export default function StatusSummaryPage() {
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500">No high priority tickets.</p>
+              <p className="text-white/80">No high priority tickets.</p>
             )}
           </div>
-        </div>
+          </div>
+        )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+        {user?.role === "admin" && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
           {/* Stale Tickets */}
           <div className="card rounded-lg shadow p-6">
             <h2 className="text-xl font-semibold text-white mb-2">Stale Tickets</h2>
-            <p className="text-sm text-gray-500 mb-4">No updates in 3+ days</p>
+            <p className="text-sm text-white/80 mb-4">No updates in 3+ days</p>
             {escalationsLoading && staleTickets.length === 0 ? (
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             ) : staleTickets.length > 0 ? (
@@ -343,8 +394,8 @@ export default function StatusSummaryPage() {
                     href={`/ticket/${ticket.id}`}
                     className="block p-3 border border-yellow-600 bg-yellow-700/10 rounded-lg hover:bg-yellow-700/20 transition-colors"
                   >
-                    <p className="font-medium text-gray-900">{ticket.description}</p>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="font-medium text-white">{ticket.description}</p>
+                    <p className="text-sm text-white/80 mt-1">
                       Updated {new Date(ticket.updatedAt).toLocaleDateString()} • Assigned to{" "}
                       {ticket.assignee?.name ?? "unassigned"}
                     </p>
@@ -352,7 +403,7 @@ export default function StatusSummaryPage() {
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500">No stale tickets detected.</p>
+              <p className="text-white/80">No stale tickets detected.</p>
             )}
           </div>
 
@@ -364,24 +415,25 @@ export default function StatusSummaryPage() {
             ) : recentActivity.length > 0 ? (
               <div className="space-y-4">
                 {recentActivity.map((entry: TicketActivityEntry) => (
-                  <div key={entry.id} className="flex justify-between items-start border-b border-gray-200 pb-3">
+                    <div key={entry.id} className="flex justify-between items-start border-b border-white/10 pb-3">
                     <div className="flex-1">
-                      <p className="font-medium text-gray-900">{entry.actor.name}</p>
-                      <p className="text-sm text-gray-600 mt-1">
+                      <p className="font-medium text-white">{entry.actor.name}</p>
+                      <p className="text-sm text-white/80 mt-1">
                         {describeTicketActivity(entry)}
                       </p>
                     </div>
-                    <p className="text-sm text-gray-500 ml-4">
+                    <p className="text-sm text-white/80 ml-4">
                       {new Date(entry.createdAt).toLocaleTimeString()}
                     </p>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500">No recent activity logged.</p>
+              <p className="text-white/80">No recent activity logged.</p>
             )}
           </div>
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

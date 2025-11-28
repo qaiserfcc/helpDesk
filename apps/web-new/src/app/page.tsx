@@ -69,6 +69,8 @@ export default function Dashboard() {
     return null;
   }
 
+  const canCreate = session.user.role === "user" || session.user.role === "admin";
+
   return (
     <div className="min-h-screen">
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
@@ -85,10 +87,10 @@ export default function Dashboard() {
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">
+                      <dt className="text-sm font-medium text-white/80 truncate">
                         My Tickets
                       </dt>
-                      <dd className="text-lg font-medium text-gray-900">{Object.values(userReport?.statusCounts ?? {}).reduce((s, n) => s + n, 0)}</dd>
+                      <dd className="text-lg font-medium text-white">{Object.values(userReport?.statusCounts ?? {}).reduce((s, n) => s + n, 0)}</dd>
                       <dd className="text-sm mt-1 text-white/70">Open: {userReport?.statusCounts?.open ?? 0} • In progress: {userReport?.statusCounts?.in_progress ?? 0} • Resolved: {userReport?.statusCounts?.resolved ?? 0}</dd>
                     </dl>
                   </div>
@@ -117,10 +119,10 @@ export default function Dashboard() {
                     </div>
                     <div className="ml-5 w-0 flex-1">
                       <dl>
-                        <dt className="text-sm font-medium text-gray-500 truncate">
+                        <dt className="text-sm font-medium text-white/80 truncate">
                           Assigned Tickets
                         </dt>
-                        <dd className="text-lg font-medium text-gray-900">{Object.values(agentReport?.statusCounts ?? {}).reduce((s, n) => s + n, 0)}</dd>
+                        <dd className="text-lg font-medium text-white">{Object.values(agentReport?.statusCounts ?? {}).reduce((s, n) => s + n, 0)}</dd>
                         <dd className="text-sm mt-1 text-white/70">Pending requests: {agentReport?.pendingRequests?.length ?? 0}</dd>
                       </dl>
                     </div>
@@ -147,8 +149,8 @@ export default function Dashboard() {
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">By Priority</dt>
-                      <dd className="text-lg font-medium text-gray-900">{allTickets ? allTickets.length : (userReport ? Object.values(userReport.statusCounts).reduce((s, n) => s + n, 0) : 0)}</dd>
+                      <dt className="text-sm font-medium text-white/80 truncate">By Priority</dt>
+                      <dd className="text-lg font-medium text-white">{allTickets ? allTickets.length : (userReport ? Object.values(userReport.statusCounts).reduce((s, n) => s + n, 0) : 0)}</dd>
                       <dd className="text-sm mt-1 text-white/70">Low: {(allTickets ?? []).filter(t => t.priority === 'low').length} • Medium: {(allTickets ?? []).filter(t => t.priority === 'medium').length} • High: {(allTickets ?? []).filter(t => t.priority === 'high').length}</dd>
                     </dl>
                   </div>
@@ -167,8 +169,8 @@ export default function Dashboard() {
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">By Issue Type</dt>
-                      <dd className="text-lg font-medium text-gray-900">{allTickets ? allTickets.length : (userReport ? Object.values(userReport.statusCounts).reduce((s, n) => s + n, 0) : 0)}</dd>
+                      <dt className="text-sm font-medium text-white/80 truncate">By Issue Type</dt>
+                      <dd className="text-lg font-medium text-white">{allTickets ? allTickets.length : (userReport ? Object.values(userReport.statusCounts).reduce((s, n) => s + n, 0) : 0)}</dd>
                       <dd className="text-sm mt-1 text-white/70">{['hardware','software','network','access','other'].map((it) => `${it[0].toUpperCase()+it.slice(1)}: ${(allTickets ?? []).filter(t => t.issueType === it).length}`).join(' • ')}</dd>
                     </dl>
                   </div>
@@ -188,10 +190,10 @@ export default function Dashboard() {
                     </div>
                     <div className="ml-5 w-0 flex-1">
                       <dl>
-                        <dt className="text-sm font-medium text-gray-500 truncate">
+                        <dt className="text-sm font-medium text-white/80 truncate">
                           Total Users
                         </dt>
-                        <dd className="text-lg font-medium text-gray-900">{usersList ? usersList.length : 0}</dd>
+                        <dd className="text-lg font-medium text-white">{usersList ? usersList.length : 0}</dd>
                         <dd className="text-sm mt-1 text-white/70">Agents: {adminReport?.assignmentLoad?.length ?? 0}</dd>
                       </dl>
                     </div>
@@ -218,10 +220,10 @@ export default function Dashboard() {
                     </div>
                     <div className="ml-5 w-0 flex-1">
                       <dl>
-                        <dt className="text-sm font-medium text-gray-500 truncate">
+                        <dt className="text-sm font-medium text-white/80 truncate">
                           Allocation Dashboard
                         </dt>
-                        <dd className="text-lg font-medium text-gray-900">Live Workload</dd>
+                        <dd className="text-lg font-medium text-white">Live Workload</dd>
                       </dl>
                     </div>
                   </div>
@@ -241,12 +243,17 @@ export default function Dashboard() {
           <div className="mt-8">
             <h2 className="text-lg font-medium text-white mb-4">Quick Actions</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Link href="/ticket/new" className="primary-btn px-4 py-2 rounded-md text-sm font-medium text-center">
-                Create Ticket
-              </Link>
+              {canCreate && (
+                <Link href="/ticket/new" className="primary-btn px-4 py-2 rounded-md text-sm font-medium text-center">
+                  Create Ticket
+                </Link>
+              )}
               <RoleRestrictedView permission="reports:view">
                 <Link href="/status-summary" className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-md text-sm font-medium text-center">
                   View Reports
+                </Link>
+                <Link href="/reports" className="ml-2 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-md text-sm font-medium text-center">
+                  View Reports (Table)
                 </Link>
               </RoleRestrictedView>
               <RoleRestrictedView permission="admin:manage_users">
@@ -281,7 +288,7 @@ export default function Dashboard() {
                   ))}
                 </ul>
               ) : (
-                <p className="text-gray-500">No recent activity</p>
+                <p className="text-white/80">No recent activity</p>
               )}
             </div>
           </div>
@@ -297,10 +304,13 @@ export default function Dashboard() {
                   <div className="flex items-end gap-2 h-24">
                     {(productivityReport?.resolutionTrend ?? []).map((row) => {
                       const max = Math.max(...(productivityReport?.resolutionTrend?.map(r => r.count)||[1]));
-                      const w = Math.max(6, Math.round((row.count / (max||1)) * 100));
+                      const pct = Math.max(6, Math.round((row.count / (max||1)) * 100));
+                      const heightMap = ["h-2","h-3","h-4","h-6","h-8","h-10","h-12"];
+                      const idx = Math.min(heightMap.length - 1, Math.max(0, Math.ceil((pct / 100) * (heightMap.length - 1))));
+                      const heightClass = heightMap[idx];
                       return (
                         <div key={row.date} className="flex-1 flex items-end">
-                          <div style={{height: `${Math.max(6, Math.round((row.count / (max||1))*100))}%`}} className="w-full bg-blue-500"></div>
+                          <div className={`${heightClass} w-full bg-blue-500`}></div>
                         </div>
                       );
                     })}
@@ -323,9 +333,13 @@ export default function Dashboard() {
                             <span className="capitalize">{p}</span>
                             <span>{count} ({pct}%)</span>
                           </div>
-                          <div className="w-full bg-white/6 rounded h-2 mt-1">
-                            <div style={{width: `${pct}%`}} className="bg-blue-500 h-2 rounded"></div>
-                          </div>
+                            <div className="w-full bg-white/6 rounded h-2 mt-1">
+                              {(() => {
+                                const idx = Math.min(12, Math.max(0, Math.ceil((pct / 100) * 12)));
+                                const wclass = idx === 12 ? "w-full" : idx === 0 ? "w-0" : `w-${idx}/12`;
+                                return <div className={`${wclass} bg-blue-500 h-2 rounded`} />;
+                              })()}
+                            </div>
                         </div>
                       );
                     })}

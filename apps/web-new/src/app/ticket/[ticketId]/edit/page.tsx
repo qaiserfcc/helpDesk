@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useAuthStore } from "@/store/useAuthStore";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchTicket, updateTicket, type UpdateTicketPayload, type IssueType, type TicketPriority } from "@/services/tickets";
@@ -34,6 +35,8 @@ export default function EditTicketPage({ params }: EditTicketPageProps) {
     queryKey: ["ticket", ticketId],
     queryFn: () => fetchTicket(ticketId),
   });
+
+  const authUser = useAuthStore((s) => s.session?.user);
 
   useEffect(() => {
     if (ticket) {
@@ -77,7 +80,7 @@ export default function EditTicketPage({ params }: EditTicketPageProps) {
 
   if (isLoading || !ticket) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
       </div>
     );
@@ -85,14 +88,29 @@ export default function EditTicketPage({ params }: EditTicketPageProps) {
 
   const isResolved = ticket.status === "resolved";
 
+  // Authorization: only the ticket owner can edit when not resolved
+  if (ticket && authUser && authUser.id !== ticket.creator.id) {
+    return (
+      <div className="min-h-screen">
+        <div className="max-w-2xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+          <div className="card shadow rounded-lg p-6 text-center">
+            <h1 className="text-2xl font-bold text-white mb-4">Not authorized</h1>
+            <p className="text-white/90 mb-6">Only the ticket owner can edit this ticket.</p>
+            <button onClick={() => router.back()} className="bg-white/10 text-white px-4 py-2 rounded-lg hover:bg-white/20">Back</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (isResolved) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen">
         <div className="max-w-2xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
           <div className="card shadow rounded-lg p-6">
             <div className="text-center">
-              <h1 className="text-2xl font-bold text-gray-900 mb-4">Ticket is Resolved</h1>
-              <p className="text-gray-600 mb-6">
+              <h1 className="text-2xl font-bold text-white mb-4">Ticket is Resolved</h1>
+              <p className="text-white/80 mb-6">
                 This ticket has been resolved. To make changes, first reopen the ticket from the detail page.
               </p>
               <button
@@ -109,7 +127,7 @@ export default function EditTicketPage({ params }: EditTicketPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+  <div className="min-h-screen">
       <div className="max-w-2xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           <button
@@ -118,14 +136,14 @@ export default function EditTicketPage({ params }: EditTicketPageProps) {
           >
             ← Back
           </button>
-          <h1 className="text-3xl font-bold text-gray-900">Edit Ticket</h1>
-          <p className="text-gray-600">Ticket #{ticket.id.slice(0, 8)}</p>
+          <h1 className="text-3xl font-bold text-white">Edit Ticket</h1>
+          <p className="text-white/80">Ticket #{ticket.id.slice(0, 8)}</p>
         </div>
 
         <div className="card shadow rounded-lg p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="description" className="block text-sm font-medium text-white/80 mb-2">
                 Description *
               </label>
               <textarea
@@ -133,14 +151,14 @@ export default function EditTicketPage({ params }: EditTicketPageProps) {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={6}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-white/10 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/5 text-white"
                 placeholder="Describe the issue in detail..."
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-white/80 mb-2">
                 Priority
               </label>
               <div className="flex space-x-3">
@@ -161,7 +179,7 @@ export default function EditTicketPage({ params }: EditTicketPageProps) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-white/80 mb-2">
                 Issue Type
               </label>
               <div className="flex flex-wrap gap-3">
@@ -182,8 +200,8 @@ export default function EditTicketPage({ params }: EditTicketPageProps) {
             </div>
 
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <p className="text-red-600">{error}</p>
+              <div className="bg-red-700/10 border border-red-600 rounded-lg p-4">
+                <p className="text-red-400">{error}</p>
               </div>
             )}
 
@@ -198,7 +216,7 @@ export default function EditTicketPage({ params }: EditTicketPageProps) {
               <button
                 type="button"
                 onClick={() => router.back()}
-                className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                className="px-6 py-2 border border-white/10 rounded-lg hover:bg-white/6"
               >
                 Cancel
               </button>

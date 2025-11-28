@@ -32,15 +32,15 @@ export function TableRowMenu({ ticketId, canEdit, canAssign, canRequestAssignmen
         ⋯
       </button>
       {open && (
-        <div className="absolute right-0 mt-2 w-44 bg-white/5 border border-white/10 rounded shadow-lg p-2 table-row-menu">
-          <Link href={`/ticket/${ticketId}`} className="block px-3 py-2 rounded hover:bg-white/6">View</Link>
+        <div className="absolute right-0 mt-2 w-44 card border border-white/10 rounded shadow-lg p-2 table-row-menu">
+          <Link href={`/ticket/${ticketId}`} className="block px-3 py-2 text-white rounded hover:bg-white/6">View</Link>
           {canEdit && <Link href={`/ticket/${ticketId}/edit`} className="block px-3 py-2 rounded hover:bg-white/6">Edit</Link>}
           {canRequestAssignment && (
-            <button onClick={handleRequestAssignment} disabled={loading} className="block w-full text-left px-3 py-2 rounded hover:bg-white/6">
+            <button onClick={handleRequestAssignment} disabled={loading} className="block w-full text-left px-3 py-2 text-white rounded hover:bg-white/6">
               {loading ? 'Requesting…' : 'Request Assignment'}
             </button>
           )}
-          {canAssign && <button className="block px-3 py-2 rounded hover:bg-white/6">Assign</button>}
+          {canAssign && <button className="block px-3 py-2 text-white rounded hover:bg-white/6">Assign</button>}
         </div>
       )}
     </div>

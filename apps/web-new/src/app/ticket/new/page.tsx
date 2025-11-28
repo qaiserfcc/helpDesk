@@ -27,6 +27,25 @@ export default function NewTicketPage() {
   const addNotification = useNotificationStore((s) => s.addNotification);
   const session = useAuthStore((s) => s.session);
 
+  if (!session) return null;
+  const canCreate = session.user.role === "user" || session.user.role === "admin";
+  if (!canCreate) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="max-w-md mx-auto card rounded-lg shadow p-8 text-center">
+          <h1 className="text-2xl font-bold text-white mb-4">Not authorized</h1>
+          <p className="text-white/90 mb-6">Only users and admins can create tickets.</p>
+          <button
+            onClick={() => router.push('/')}
+            className="bg-white/10 text-white px-4 py-2 rounded-lg hover:bg-white/20"
+          >
+            Back
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!description.trim()) {
@@ -95,7 +114,7 @@ export default function NewTicketPage() {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={6}
-                className="w-full px-3 py-2 border border-transparent rounded-lg focus:ring-2 focus:ring-white focus:border-white text-white bg-white/5"
+                className="w-full px-3 py-2 border border-transparent rounded-lg focus:ring-2 focus:ring-white focus:border-white text-white card"
                 placeholder="Describe the issue in detail..."
                 required
               />

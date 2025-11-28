@@ -64,13 +64,9 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
   const isAdmin = authUser?.role === "admin";
   const isAgent = authUser?.role === "agent";
   const isTicketResolved = ticket?.status === "resolved";
-  const isTicketOwner = Boolean(ticket && ticket.creator.id === authUser?.id);
   const canAssign = Boolean(isAdmin && !isTicketResolved);
   const canEdit = Boolean(
-    ticket &&
-      !isTicketResolved &&
-      ((isAdmin && authUser?.id) ||
-        (authUser?.role === "user" && isTicketOwner)),
+    ticket && !isTicketResolved && authUser?.id === ticket.creator?.id,
   );
   const pendingRequest = ticket?.assignmentRequest;
   const agentHasPendingRequest = isAgent && pendingRequest?.id === authUser?.id;
@@ -263,12 +259,12 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
 
               <div className="space-y-4">
                 <div>
-                  <p className="text-sm text-gray-500">Creator</p>
+                  <p className="text-sm text-white/80">Creator</p>
                   <p className="text-lg text-white">{ticket.creator.name}</p>
                 </div>
 
                 <div>
-                  <p className="text-sm text-gray-500">Assignee</p>
+                  <p className="text-sm text-white/80">Assignee</p>
                   <p className="text-lg text-white">
                     {ticket.assignee ? ticket.assignee.name : "Unassigned"}
                   </p>
@@ -308,7 +304,7 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
               {activityLoading ? (
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
               ) : activities.length === 0 ? (
-                <p className="text-gray-500">No recent changes yet.</p>
+                <p className="text-white/80">No recent changes yet.</p>
               ) : (
                 <div className="space-y-4">
                   {activities.map((entry) => (
@@ -332,14 +328,14 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
                 {agentsLoading ? (
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 ) : agents.length === 0 ? (
-                  <p className="text-gray-500">No agents available</p>
+                  <p className="text-white/80">No agents available</p>
                 ) : (
                   <div className="space-y-4">
                     <select
                       title="Select an agent"
                       value={selectedAssigneeId || ""}
                       onChange={(e) => setSelectedAssigneeId(e.target.value || null)}
-                      className="w-full p-3 border border-transparent rounded-lg focus:ring-2 focus:ring-white focus:border-white bg-white/5 text-white"
+                      className="w-full p-3 border border-transparent rounded-lg focus:ring-2 focus:ring-white focus:border-white card text-white"
                     >
                       <option value="">Select an agent</option>
                       {agents.map((agent: UserSummary) => (
