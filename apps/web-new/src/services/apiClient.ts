@@ -25,6 +25,16 @@ apiClient.interceptors.request.use((config) => {
   if (session?.accessToken) {
     config.headers = applyAuthHeader(config.headers, session.accessToken);
   }
+  // Debug: log report requests for troubleshooting 403/permission issues
+  try {
+    const url = (config.url ?? "").toString();
+    if (url.includes("/reports")) {
+      const token = useAuthStore.getState().session?.accessToken;
+      console.debug(`[apiClient] request ${config.method?.toUpperCase()} ${url} auth=${token ? 'present' : 'missing'}`);
+    }
+  } catch (err) {
+    // swallow console errors in production code
+  }
   return config;
 });
 

@@ -43,15 +43,14 @@ function assertRole(user: RequestUser | undefined, allowed: Role[]) {
     throw createError(401, "Authentication required");
   }
   if (!allowed.includes(user.role)) {
-    throw createError(403, "Insufficient permissions for this report");
+    const rolesStr = allowed.join(", ");
+    throw createError(403, `Insufficient permissions for this report; requires role(s): ${rolesStr}`);
   }
 }
 
 export async function getUserTicketReport(user: RequestUser) {
-  assertRole(user, [Role.user, Role.admin]);
-  if (user.role !== Role.user) {
-    throw createError(403, "Only end-users can view this report");
-  }
+  // Only end-users may request the "users/me" ticket report
+  assertRole(user, [Role.user]);
 
   const [tickets, statusBuckets] = await Promise.all([
     prisma.ticket.findMany({
@@ -82,10 +81,8 @@ export async function getUserTicketReport(user: RequestUser) {
 }
 
 export async function getAgentWorkloadReport(user: RequestUser) {
-  assertRole(user, [Role.agent, Role.admin]);
-  if (user.role !== Role.agent) {
-    throw createError(403, "Only agents can view this report");
-  }
+  // Only agents may request the "agents/me" workload report
+  assertRole(user, [Role.agent]);
 
   const commonWhere: Prisma.TicketWhereInput = { assignedTo: user.id };
   const [assigned, pendingRequests, statusBuckets] = await Promise.all([

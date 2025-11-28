@@ -14,6 +14,8 @@ import {
   fetchAdminProductivityReport,
   fetchTickets,
 } from "@/services/tickets";
+import HeroHeader from "@/components/HeroHeader";
+import StatusSnapshot from "@/components/StatusSnapshot";
 
 export default function Dashboard() {
   const { session } = useAuthStore();
@@ -21,13 +23,13 @@ export default function Dashboard() {
   const { data: userReport } = useQuery({
     queryKey: ["user-ticket-report"],
     queryFn: () => fetchUserTicketReport(),
-    enabled: !!session,
+    enabled: !!session && session.user.role === "user",
   });
 
   const { data: agentReport } = useQuery({
     queryKey: ["agent-workload-report"],
     queryFn: () => fetchAgentWorkloadReport(),
-    enabled: !!session && session.user.role !== "user",
+    enabled: !!session && session.user.role === "agent",
   });
 
   const { data: adminReport } = useQuery({
@@ -75,6 +77,18 @@ export default function Dashboard() {
     <div className="min-h-screen">
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
+          <HeroHeader stats={{
+            total: (userReport?.statusCounts ? Object.values(userReport.statusCounts).reduce((s: number, n: number) => s + n, 0) : 0),
+            open: userReport?.statusCounts?.open ?? 0,
+            in_progress: userReport?.statusCounts?.in_progress ?? 0,
+            resolved: userReport?.statusCounts?.resolved ?? 0,
+          }} />
+          <StatusSnapshot counts={{
+            total: (userReport?.statusCounts ? Object.values(userReport.statusCounts).reduce((s: number, n: number) => s + n, 0) : 0),
+            open: userReport?.statusCounts?.open ?? 0,
+            in_progress: userReport?.statusCounts?.in_progress ?? 0,
+            resolved: userReport?.statusCounts?.resolved ?? 0,
+          }} />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* User Dashboard */}
             <div className="card overflow-hidden shadow rounded-lg">
