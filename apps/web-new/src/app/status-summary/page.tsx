@@ -146,15 +146,13 @@ export default function StatusSummaryPage() {
 
   if (user?.role !== "admin") {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="max-w-md mx-auto bg-white rounded-lg shadow p-8 text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Admins Only</h1>
-          <p className="text-gray-600 mb-6">
-            You need admin access to see the organization-wide status summary.
-          </p>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="max-w-md mx-auto card rounded-lg shadow p-8 text-center">
+          <h1 className="text-2xl font-bold text-white mb-4">Admins Only</h1>
+          <p className="text-white/90 mb-6">You need admin access to see the organization-wide status summary.</p>
           <button
             onClick={() => router.back()}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+            className="bg-white/10 text-white px-4 py-2 rounded-lg hover:bg-white/20"
           >
             Back
           </button>
@@ -164,7 +162,7 @@ export default function StatusSummaryPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           <button
@@ -175,8 +173,8 @@ export default function StatusSummaryPage() {
           </button>
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Organization Report</h1>
-              <p className="text-gray-600 mt-2">Live ticket overview</p>
+                <h1 className="text-3xl font-bold text-white">Organization Report</h1>
+                  <p className="text-white/90 mt-2">Live ticket overview</p>
             </div>
             <button
               onClick={onRefresh}
@@ -189,29 +187,29 @@ export default function StatusSummaryPage() {
         </div>
 
         {/* Summary Highlights */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <p className="text-sm text-gray-500">Total tickets</p>
-            <p className="text-3xl font-bold text-gray-900">{highlights.total}</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="card rounded-lg shadow p-6">
+            <p className="text-sm text-white/80">Total tickets</p>
+            <p className="text-3xl font-bold text-white">{highlights.total}</p>
           </div>
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="card rounded-lg shadow p-6">
             <p className="text-sm text-gray-500">Open</p>
-            <p className="text-3xl font-bold text-gray-900">{highlights.open}</p>
+            <p className="text-3xl font-bold text-white">{highlights.open}</p>
           </div>
-          <div className="bg-white rounded-lg shadow p-6">
+            <div className="card rounded-lg shadow p-6">
             <p className="text-sm text-gray-500">In progress</p>
-            <p className="text-3xl font-bold text-gray-900">{highlights.inProgress}</p>
+            <p className="text-3xl font-bold text-white">{highlights.inProgress}</p>
           </div>
-          <div className="bg-white rounded-lg shadow p-6">
+            <div className="card rounded-lg shadow p-6">
             <p className="text-sm text-gray-500">Resolved</p>
-            <p className="text-3xl font-bold text-gray-900">{highlights.resolved}</p>
+            <p className="text-3xl font-bold text-white">{highlights.resolved}</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Status Distribution */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Status Distribution</h2>
+          <div className="card rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold text-white mb-4">Status Distribution</h2>
             {overviewLoading && !overview ? (
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             ) : statusBuckets.length > 0 ? (
@@ -221,16 +219,16 @@ export default function StatusSummaryPage() {
                   return (
                     <div key={bucket.status} className="flex items-center justify-between">
                       <div className="flex-1">
-                        <p className="font-medium text-gray-900">
+                        <p className="font-medium text-white">
                           {formatStatus(bucket.status)}
                         </p>
-                        <p className="text-sm text-gray-500">{share}% of total</p>
+                        <p className="text-sm text-white/80">{share}% of total</p>
                       </div>
                       <div className="flex items-center space-x-4">
-                        <span className="text-lg font-bold text-blue-600">{bucket.count}</span>
+                        <span className="text-lg font-bold text-white">{bucket.count}</span>
                         <div className="w-24 bg-gray-200 rounded-full h-2">
                           <div
-                            className={`bg-blue-600 h-2 rounded-full transition-all duration-300`}
+                            className={`bg-white/10 h-2 rounded-full transition-all duration-300`}
                             style={{ width: `${Math.max(share, 5)}%` }}
                           ></div>
                         </div>
@@ -245,8 +243,8 @@ export default function StatusSummaryPage() {
           </div>
 
           {/* Assignment Load */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Assignment Load</h2>
+          <div className="card rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold text-white mb-4">Assignment Load</h2>
             {overviewLoading && !overview ? (
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             ) : topAgents.length > 0 ? (
@@ -275,8 +273,8 @@ export default function StatusSummaryPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
           {/* Oldest Open Tickets */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Oldest Open Tickets</h2>
+          <div className="card rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold text-white mb-2">Oldest Open Tickets</h2>
             <p className="text-sm text-gray-500 mb-4">Longest waiting issues</p>
             {overviewLoading && oldestOpen.length === 0 ? (
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -286,7 +284,7 @@ export default function StatusSummaryPage() {
                   <Link
                     key={ticket.id}
                     href={`/ticket/${ticket.id}`}
-                    className="block p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                    className="block p-3 border border-white/10 rounded-lg hover:bg-white/6 transition-colors"
                   >
                     <p className="font-medium text-gray-900">{ticket.description}</p>
                     <p className="text-sm text-gray-500 mt-1">
@@ -301,8 +299,8 @@ export default function StatusSummaryPage() {
           </div>
 
           {/* High Priority Alerts */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">High Priority Alerts</h2>
+          <div className="card rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold text-white mb-2">High Priority Alerts</h2>
             <p className="text-sm text-gray-500 mb-4">Requires immediate action</p>
             {escalationsLoading && highPriority.length === 0 ? (
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -312,7 +310,7 @@ export default function StatusSummaryPage() {
                   <Link
                     key={ticket.id}
                     href={`/ticket/${ticket.id}`}
-                    className="block p-3 border border-red-200 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+                    className="block p-3 border border-red-600 bg-red-700/10 rounded-lg hover:bg-red-700/20 transition-colors"
                   >
                     <p className="font-medium text-gray-900">{ticket.description}</p>
                     <p className="text-sm text-gray-600 mt-1">
@@ -332,8 +330,8 @@ export default function StatusSummaryPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
           {/* Stale Tickets */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Stale Tickets</h2>
+          <div className="card rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold text-white mb-2">Stale Tickets</h2>
             <p className="text-sm text-gray-500 mb-4">No updates in 3+ days</p>
             {escalationsLoading && staleTickets.length === 0 ? (
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -343,7 +341,7 @@ export default function StatusSummaryPage() {
                   <Link
                     key={ticket.id}
                     href={`/ticket/${ticket.id}`}
-                    className="block p-3 border border-yellow-200 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition-colors"
+                    className="block p-3 border border-yellow-600 bg-yellow-700/10 rounded-lg hover:bg-yellow-700/20 transition-colors"
                   >
                     <p className="font-medium text-gray-900">{ticket.description}</p>
                     <p className="text-sm text-gray-600 mt-1">
@@ -359,8 +357,8 @@ export default function StatusSummaryPage() {
           </div>
 
           {/* Recent Activity */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Recent Activity</h2>
+          <div className="card rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold text-white mb-4">Recent Activity</h2>
             {activityLoading && recentActivity.length === 0 ? (
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             ) : recentActivity.length > 0 ? (

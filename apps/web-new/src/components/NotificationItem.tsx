@@ -9,14 +9,14 @@ export function NotificationItem({ notification, onDismiss }: NotificationItemPr
   const getNotificationStyles = (type: Notification["type"]) => {
     switch (type) {
       case "success":
-        return "bg-green-50 border-green-200 text-green-800";
+        return "bg-green-600 border-green-600 text-white";
       case "error":
-        return "bg-red-50 border-red-200 text-red-800";
+        return "bg-red-600 border-red-600 text-white";
       case "warning":
-        return "bg-yellow-50 border-yellow-200 text-yellow-800";
+        return "bg-yellow-600 border-yellow-600 text-white";
       case "info":
       default:
-        return "bg-blue-50 border-blue-200 text-blue-800";
+        return "bg-blue-600 border-blue-600 text-white";
     }
   };
 
@@ -28,17 +28,17 @@ export function NotificationItem({ notification, onDismiss }: NotificationItemPr
     >
       <div className="flex justify-between items-start">
         <div className="flex-1">
-          <h4 className="font-medium text-sm">{notification.title}</h4>
-          <p className="text-sm mt-1">{notification.message}</p>
+          <h4 className="font-medium text-sm text-white">{notification.title}</h4>
+          <p className="text-sm mt-1 text-white/90">{notification.message}</p>
           {notification.timestamp && (
-            <p className="text-xs mt-2 opacity-75">
+            <p className="text-xs mt-2 text-white/70">
               {new Date(notification.timestamp).toLocaleString()}
             </p>
           )}
         </div>
         <button
           onClick={() => onDismiss(notification.id)}
-          className="ml-4 text-gray-400 hover:text-gray-600 transition-colors"
+          className="ml-4 text-white bg-white/12 hover:bg-white/20 transition-colors px-2 py-1 rounded border border-white/10"
           aria-label="Dismiss notification"
         >
           ×

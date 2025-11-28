@@ -109,15 +109,13 @@ export default function AllocationDashboardPage() {
 
   if (user?.role !== "admin") {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="max-w-md mx-auto bg-white rounded-lg shadow p-8 text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Admins Only</h1>
-          <p className="text-gray-600 mb-6">
-            You need admin access to inspect allocation reports.
-          </p>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="max-w-md mx-auto card rounded-lg shadow p-8 text-center">
+          <h1 className="text-2xl font-bold text-white mb-4">Admins Only</h1>
+          <p className="text-white/90 mb-6">You need admin access to inspect allocation reports.</p>
           <button
             onClick={() => router.back()}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+            className="bg-white/10 text-white px-4 py-2 rounded-lg hover:bg-white/20"
           >
             Back
           </button>
@@ -127,7 +125,7 @@ export default function AllocationDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           <button
@@ -138,13 +136,13 @@ export default function AllocationDashboardPage() {
           </button>
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Allocation Dashboard</h1>
-              <p className="text-gray-600 mt-2">Live workload + reporting</p>
+              <h1 className="text-3xl font-bold text-white">Allocation Dashboard</h1>
+                <p className="text-white/90 mt-2">Live workload + reporting</p>
             </div>
             <button
               onClick={onRefresh}
               disabled={refreshing}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              className="bg-white/10 text-white px-4 py-2 rounded-lg hover:bg-white/20 disabled:opacity-50"
             >
               {refreshing ? "Refreshing..." : "Refresh"}
             </button>
@@ -154,12 +152,12 @@ export default function AllocationDashboardPage() {
         {/* Status Highlights */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           {statusBuckets.map((bucket) => (
-            <div key={bucket.status} className="bg-white rounded-lg shadow p-6">
+            <div key={bucket.status} className="card rounded-lg shadow p-6">
               <p className="text-sm text-gray-500 uppercase">
                 {formatStatus(bucket.status)}
               </p>
-              <p className="text-3xl font-bold text-gray-900 mt-2">{bucket.count}</p>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-3xl font-bold text-white mt-2">{bucket.count}</p>
+              <p className="text-sm text-white/80 mt-1">
                 {totalTickets
                   ? `${Math.round((bucket.count / totalTickets) * 100)}%`
                   : "0%"}{" "}
@@ -170,32 +168,32 @@ export default function AllocationDashboardPage() {
         </div>
 
         {/* Allocation Snapshot */}
-        <div className="bg-white rounded-lg shadow p-6 mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Allocation Snapshot</h2>
-          <p className="text-gray-600 mb-6">
+        <div className="card rounded-lg shadow p-6 mb-8">
+          <h2 className="text-xl font-semibold text-white mb-2">Allocation Snapshot</h2>
+          <p className="text-white/90 mb-6">
             {workloadStats.totalAgents} active agent{workloadStats.totalAgents === 1 ? "" : "s"}
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-gray-50 rounded-lg p-4">
-              <p className="text-sm text-gray-500">Avg load</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">
+            <div className="bg-white/5 rounded-lg p-4">
+              <p className="text-sm text-white/80">Avg load</p>
+              <p className="text-2xl font-bold text-white mt-1">
                 {workloadStats.averageLoad}
               </p>
-              <p className="text-sm text-gray-500 mt-1">tickets / agent</p>
+              <p className="text-sm text-white/80 mt-1">tickets / agent</p>
             </div>
-            <div className="bg-gray-50 rounded-lg p-4">
-              <p className="text-sm text-gray-500">Total assigned</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">
+            <div className="bg-white/5 rounded-lg p-4">
+              <p className="text-sm text-white/80">Total assigned</p>
+              <p className="text-2xl font-bold text-white mt-1">
                 {workloadStats.totalAssignments}
               </p>
-              <p className="text-sm text-gray-500 mt-1">tickets</p>
+              <p className="text-sm text-white/80 mt-1">tickets</p>
             </div>
-            <div className="bg-gray-50 rounded-lg p-4">
-              <p className="text-sm text-gray-500">Busiest agent</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1 truncate">
+            <div className="bg-white/5 rounded-lg p-4">
+              <p className="text-sm text-white/80">Busiest agent</p>
+              <p className="text-2xl font-bold text-white mt-1 truncate">
                 {workloadStats.busiestAgent?.agent?.name ?? "—"}
               </p>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-white/80 mt-1">
                 {workloadStats.busiestAgent
                   ? `${workloadStats.busiestAgent.count} tickets`
                   : "No load"}
@@ -205,11 +203,11 @@ export default function AllocationDashboardPage() {
         </div>
 
         {/* Live Backlog */}
-        <div className="bg-white rounded-lg shadow p-6 mb-8">
+        <div className="card rounded-lg shadow p-6 mb-8">
           <div className="flex justify-between items-start mb-6">
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">Live Backlog</h2>
-              <p className="text-gray-600 mt-1">
+              <h2 className="text-xl font-semibold text-white">Live Backlog</h2>
+              <p className="text-white/90 mt-1">
                 {insightView === "agents"
                   ? "Assignments per agent"
                   : "Oldest unresolved tickets"}
@@ -226,8 +224,8 @@ export default function AllocationDashboardPage() {
                     }
                     className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                       active
-                        ? "bg-blue-600 text-white"
-                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                        ? "bg-white/10 text-white"
+                        : "bg-white/5 text-white/70 hover:bg-white/10"
                     }`}
                   >
                     {tab.label}
@@ -246,33 +244,33 @@ export default function AllocationDashboardPage() {
                   .slice()
                   .sort((a, b) => b.count - a.count)
                   .map((assignment) => (
-                    <div key={assignment.agentId} className="flex justify-between items-center py-3 border-b border-gray-200">
+                    <div key={assignment.agentId} className="flex justify-between items-center py-3 border-b border-white/6">
                       <div>
-                        <p className="font-medium text-gray-900">
+                        <p className="font-medium text-white">
                           {assignment.agent?.name ?? "Unknown agent"}
                         </p>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-white/80">
                           {assignment.agent?.email ?? "N/A"}
                         </p>
                       </div>
-                      <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                      <div className="bg-white/5 text-white px-3 py-1 rounded-full text-sm font-medium">
                         {assignment.count} Tickets
                       </div>
                     </div>
                   ))}
               </div>
             ) : (
-              <p className="text-gray-500">No agent workload data yet.</p>
+              <p className="text-white/80">No agent workload data yet.</p>
             )
           ) : overviewLoading && oldestOpen.length === 0 ? (
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           ) : oldestOpen.length > 0 ? (
             <div className="space-y-4">
               {oldestOpen.map((ticket: ReportTicket) => (
-                <div key={ticket.id} className="flex justify-between items-center py-3 border-b border-gray-200">
+                  <div key={ticket.id} className="flex justify-between items-center py-3 border-b border-white/6">
                   <div className="flex-1">
-                    <p className="font-medium text-gray-900">{ticket.description}</p>
-                    <p className="text-sm text-gray-500 mt-1">
+                    <p className="font-medium text-white">{ticket.description}</p>
+                    <p className="text-sm text-white/80 mt-1">
                       Opened {new Date(ticket.createdAt).toLocaleDateString()} • {ticket.creator.name}
                     </p>
                   </div>
@@ -288,9 +286,9 @@ export default function AllocationDashboardPage() {
         </div>
 
         {/* Resolution Trend */}
-        <div className="bg-white rounded-lg shadow p-6 mb-8">
+        <div className="card rounded-lg shadow p-6 mb-8">
           <div className="mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">Resolution Trend</h2>
+            <h2 className="text-xl font-semibold text-white">Resolution Trend</h2>
             <p className="text-gray-600 mt-1">
               Last {trendSummary.window} days • {trendSummary.total} tickets
             </p>
@@ -303,7 +301,7 @@ export default function AllocationDashboardPage() {
               {resolutionTrend.map((entry) => (
                 <div key={entry.date} className="flex justify-between items-center">
                   <div className="flex-1">
-                    <p className="font-medium text-gray-900">
+                    <p className="font-medium text-white">
                       {new Date(entry.date).toLocaleDateString()}
                     </p>
                     <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
@@ -325,8 +323,8 @@ export default function AllocationDashboardPage() {
         </div>
 
         {/* Escalation Alerts */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Escalation Alerts</h2>
+        <div className="card rounded-lg shadow p-6">
+          <h2 className="text-xl font-semibold text-white mb-2">Escalation Alerts</h2>
           <p className="text-gray-600 mb-6">High priority + stale</p>
 
           {escalationsLoading &&
@@ -338,13 +336,13 @@ export default function AllocationDashboardPage() {
           ) : (
             <div className="space-y-4">
               {highPriority.slice(0, 3).map((ticket) => (
-                <Link
-                  key={`high-${ticket.id}`}
-                  href={`/ticket/${ticket.id}`}
-                  className="flex justify-between items-center p-4 border border-red-200 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
-                >
+                  <Link
+                    key={`high-${ticket.id}`}
+                    href={`/ticket/${ticket.id}`}
+                    className="flex justify-between items-center p-4 border border-red-600 bg-red-700/10 rounded-lg hover:bg-red-700/20 transition-colors"
+                  >
                   <div className="flex-1">
-                    <p className="font-medium text-gray-900">{ticket.description}</p>
+                    <p className="font-medium text-white">{ticket.description}</p>
                     <p className="text-sm text-gray-600 mt-1">
                       {formatStatus(ticket.status)} • HIGH PRIORITY
                     </p>
@@ -353,13 +351,13 @@ export default function AllocationDashboardPage() {
                 </Link>
               ))}
               {staleTickets.slice(0, 3).map((ticket) => (
-                <Link
-                  key={`stale-${ticket.id}`}
-                  href={`/ticket/${ticket.id}`}
-                  className="flex justify-between items-center p-4 border border-yellow-200 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition-colors"
-                >
+                  <Link
+                    key={`stale-${ticket.id}`}
+                    href={`/ticket/${ticket.id}`}
+                    className="flex justify-between items-center p-4 border border-yellow-600 bg-yellow-700/10 rounded-lg hover:bg-yellow-700/20 transition-colors"
+                  >
                   <div className="flex-1">
-                    <p className="font-medium text-gray-900">{ticket.description}</p>
+                    <p className="font-medium text-white">{ticket.description}</p>
                     <p className="text-sm text-gray-600 mt-1">
                       Updated {new Date(ticket.updatedAt).toLocaleDateString()}
                     </p>

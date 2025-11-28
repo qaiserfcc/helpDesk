@@ -112,6 +112,7 @@ export function validateRegisterForm(
   name: string,
   email: string,
   password: string,
+  role?: UserRole,
 ): ValidationResult {
   const errors: Record<string, string> = {};
 
@@ -128,6 +129,10 @@ export function validateRegisterForm(
   const passwordError = validatePassword(password);
   if (passwordError) {
     errors.password = passwordError;
+  }
+
+  if (role && !["user", "agent", "admin"].includes(role)) {
+    errors.role = "Invalid role";
   }
 
   return {

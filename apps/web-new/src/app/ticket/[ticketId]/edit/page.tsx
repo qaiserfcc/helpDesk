@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchTicket, updateTicket, type UpdateTicketPayload, type IssueType, type TicketPriority } from "@/services/tickets";
@@ -21,7 +21,7 @@ interface EditTicketPageProps {
 }
 
 export default function EditTicketPage({ params }: EditTicketPageProps) {
-  const { ticketId } = params;
+  const { ticketId } = React.use(params as unknown as Promise<EditTicketPageProps["params"]>);
   const router = useRouter();
   const queryClient = useQueryClient();
   const [description, setDescription] = useState("");
@@ -89,7 +89,7 @@ export default function EditTicketPage({ params }: EditTicketPageProps) {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-2xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-          <div className="bg-white shadow rounded-lg p-6">
+          <div className="card shadow rounded-lg p-6">
             <div className="text-center">
               <h1 className="text-2xl font-bold text-gray-900 mb-4">Ticket is Resolved</h1>
               <p className="text-gray-600 mb-6">
@@ -122,7 +122,7 @@ export default function EditTicketPage({ params }: EditTicketPageProps) {
           <p className="text-gray-600">Ticket #{ticket.id.slice(0, 8)}</p>
         </div>
 
-        <div className="bg-white shadow rounded-lg p-6">
+        <div className="card shadow rounded-lg p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">

@@ -73,3 +73,5 @@ apps/backend/tmp/
 
 # Local tooling binaries
 render
+
+/generated/prisma

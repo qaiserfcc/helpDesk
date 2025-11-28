@@ -284,30 +284,27 @@ router.post("/:ticketId/request-assignment", async (req, res, next) => {
   }
 });
 
-router.post(
-  "/:ticketId/assignment-request/decline",
-  async (req, res, next) => {
-    if (!req.user) {
-      next(createError(401, "Authentication required"));
-      return;
-    }
+router.post("/:ticketId/assignment-request/decline", async (req, res, next) => {
+  if (!req.user) {
+    next(createError(401, "Authentication required"));
+    return;
+  }
 
-    if (req.user.role !== Role.admin) {
-      next(createError(403, "Only admins can decline assignment requests"));
-      return;
-    }
+  if (req.user.role !== Role.admin) {
+    next(createError(403, "Only admins can decline assignment requests"));
+    return;
+  }
 
-    try {
-      const ticket = await declineAssignmentRequest(
-        req.params.ticketId,
-        req.user,
-      );
-      res.json({ ticket });
-    } catch (error) {
-      next(error);
-    }
-  },
-);
+  try {
+    const ticket = await declineAssignmentRequest(
+      req.params.ticketId,
+      req.user,
+    );
+    res.json({ ticket });
+  } catch (error) {
+    next(error);
+  }
+});
 
 router.post("/:ticketId/resolve", async (req, res, next) => {
   if (!req.user) {

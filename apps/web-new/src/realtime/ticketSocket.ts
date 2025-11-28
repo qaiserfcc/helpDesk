@@ -186,11 +186,16 @@ export function syncTicketSocketSession(accessToken: string | null) {
 
   const instance = io(env.apiBaseUrl, {
     transports: ["websocket", "polling"],
-    auth: { token: `Bearer ${accessToken}` },
+    // Pass a plain access token in the auth payload. The server handles
+    // both raw tokens and tokens prefixed with 'Bearer '. Prefer the
+    // plain token to avoid double-prefix issues and make logs clearer.
+    auth: { token: accessToken },
+    autoConnect: true,
   });
 
   socket = instance;
   currentToken = accessToken;
+  console.info("Realtime: attempting to connect to", env.apiBaseUrl, "token set?", Boolean(accessToken));
   attachListeners(instance);
 }
 

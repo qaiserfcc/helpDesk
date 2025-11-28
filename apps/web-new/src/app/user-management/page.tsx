@@ -232,15 +232,15 @@ export default function UserManagementPage() {
 
   if (user?.role !== "admin") {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="max-w-md mx-auto bg-white rounded-lg shadow p-8 text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Admins Only</h1>
-          <p className="text-gray-600 mb-6">
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="max-w-md mx-auto card rounded-lg shadow p-8 text-center">
+          <h1 className="text-2xl font-bold text-white mb-4">Admins Only</h1>
+          <p className="text-white/90 mb-6">
             You need admin access to manage organization members.
           </p>
           <button
             onClick={() => router.back()}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+            className="bg-white/10 text-white px-4 py-2 rounded-lg hover:bg-white/20"
           >
             Back
           </button>
@@ -250,7 +250,7 @@ export default function UserManagementPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           <button
@@ -261,15 +261,15 @@ export default function UserManagementPage() {
           </button>
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
-              <p className="text-gray-600 mt-2">
+              <h1 className="text-3xl font-bold text-white">User Management</h1>
+                  <p className="text-white/90 mt-2">
                 Review agent workloads and assignment coverage
               </p>
             </div>
             <button
               onClick={handleRefresh}
               disabled={refreshing}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              className="bg-white/10 text-white px-4 py-2 rounded-lg hover:bg-white/20 disabled:opacity-50"
             >
               {refreshing ? "Refreshing..." : "Refresh"}
             </button>
@@ -277,29 +277,25 @@ export default function UserManagementPage() {
         </div>
 
         {/* Active Agents Section */}
-        <div className="bg-white rounded-lg shadow p-6 mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Active Agents</h2>
-          <p className="text-gray-600 mb-6">
+        <div className="card rounded-lg shadow p-6 mb-8">
+          <h2 className="text-xl font-semibold text-white mb-2">Active Agents</h2>
+          <p className="text-white/90 mb-6">
             {assignments.length} team member{assignments.length === 1 ? "" : "s"}
           </p>
 
-          {overviewInitialLoading ? (
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            {overviewInitialLoading ? (
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white/80"></div>
           ) : assignments.length === 0 ? (
-            <p className="text-gray-500">No active agents found.</p>
+            <p className="text-white/80">No active agents found.</p>
           ) : (
             <div className="space-y-4">
               {assignments.map((assignment) => (
-                <div key={assignment.agentId} className="flex justify-between items-center py-3 border-b border-gray-200">
+                <div key={assignment.agentId} className="flex justify-between items-center py-3 border-b border-white/6">
                   <div>
-                    <p className="font-medium text-gray-900">
-                      {assignment.agent?.name ?? "Unknown agent"}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {assignment.agent?.email ?? "Not available"}
-                    </p>
+                    <p className="font-medium text-white">{assignment.agent?.name ?? "Unknown agent"}</p>
+                    <p className="text-sm text-white/80">{assignment.agent?.email ?? "Not available"}</p>
                   </div>
-                  <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                  <div className="bg-white/5 text-white px-3 py-1 rounded-full text-sm font-medium">
                     {assignment.count} Tickets
                   </div>
                 </div>
@@ -309,15 +305,15 @@ export default function UserManagementPage() {
         </div>
 
         {/* Workspace Directory */}
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="card rounded-lg shadow p-6">
           <div className="flex justify-between items-start mb-6">
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">Workspace Directory</h2>
-              <p className="text-gray-600 mt-1">{userSectionSubtitle}</p>
+              <h2 className="text-xl font-semibold text-white">Workspace Directory</h2>
+              <p className="text-white/90 mt-1">{userSectionSubtitle}</p>
             </div>
             <button
               onClick={openCreateForm}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+              className="bg-white/10 text-white px-4 py-2 rounded-lg hover:bg-white/20"
             >
               Add Member
             </button>
@@ -333,8 +329,8 @@ export default function UserManagementPage() {
                   onClick={() => setRoleFilter(filter.value)}
                   className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                     active
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      ? "bg-white/10 text-white"
+                      : "bg-white/5 text-white/70 hover:bg-white/10"
                   }`}
                 >
                   {filter.label}
@@ -344,28 +340,28 @@ export default function UserManagementPage() {
           </div>
 
           {/* Users List */}
-          {usersInitialLoading ? (
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            {usersInitialLoading ? (
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white/80"></div>
           ) : usersError ? (
-            <p className="text-gray-500">{usersErrorMessage}</p>
+            <p className="text-white/80">{usersErrorMessage}</p>
           ) : memberList.length === 0 ? (
-            <p className="text-gray-500">No members match this filter.</p>
+            <p className="text-white/80">No members match this filter.</p>
           ) : (
             <div className="space-y-4">
               {memberList.map((entry) => (
-                <div key={entry.id} className="flex justify-between items-center py-4 border-b border-gray-200">
+                <div key={entry.id} className="flex justify-between items-center py-4 border-b border-white/6">
                   <div className="flex-1">
-                    <p className="font-medium text-gray-900">{entry.name}</p>
-                    <p className="text-sm text-gray-500">{entry.email}</p>
+                    <p className="font-medium text-white">{entry.name}</p>
+                    <p className="text-sm text-white/80">{entry.email}</p>
                   </div>
                   <div className="flex items-center space-x-4">
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-medium ${
                         entry.role === "admin"
-                          ? "bg-red-100 text-red-800"
+                          ? "bg-white/5 text-white"
                           : entry.role === "agent"
-                          ? "bg-blue-100 text-blue-800"
-                          : "bg-purple-100 text-purple-800"
+                          ? "bg-white/5 text-white"
+                          : "bg-white/5 text-white"
                       }`}
                     >
                       {roleLabels[entry.role]}
@@ -373,7 +369,7 @@ export default function UserManagementPage() {
                     <div className="flex space-x-2">
                       <button
                         onClick={() => openEditForm(entry)}
-                        className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50"
+                        className="px-3 py-1 text-sm border border-white/10 rounded hover:bg-white/8"
                       >
                         Edit
                       </button>
@@ -396,30 +392,30 @@ export default function UserManagementPage() {
       {/* User Form Modal */}
       {formVisible && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+          <div className="card rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">
+                <h3 className="text-lg font-semibold text-white">
                   {formMode === "create"
                     ? "Add Workspace Member"
                     : "Edit Workspace Member"}
                 </h3>
                 <button
                   onClick={closeForm}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-white/60 hover:text-white/80"
                 >
                   ✕
                 </button>
               </div>
 
-              <p className="text-gray-600 mb-6">
+              <p className="text-white/80 mb-6">
                 Invite teammates or adjust their access level. Password updates
                 apply immediately.
               </p>
 
               {/* Name Field */}
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-white/90 mb-1">
                   Full name
                 </label>
                 <input
@@ -429,7 +425,7 @@ export default function UserManagementPage() {
                   onChange={(e) =>
                     setFormValues((prev) => ({ ...prev, name: e.target.value }))
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-white/10 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white/5 text-white"
                 />
                 {formErrors.name && (
                   <p className="text-red-600 text-sm mt-1">{formErrors.name}</p>
@@ -438,7 +434,7 @@ export default function UserManagementPage() {
 
               {/* Email Field */}
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-white/90 mb-1">
                   Email
                 </label>
                 <input
@@ -448,7 +444,7 @@ export default function UserManagementPage() {
                   onChange={(e) =>
                     setFormValues((prev) => ({ ...prev, email: e.target.value }))
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-white/10 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white/5 text-white"
                 />
                 {formErrors.email && (
                   <p className="text-red-600 text-sm mt-1">{formErrors.email}</p>
@@ -457,7 +453,7 @@ export default function UserManagementPage() {
 
               {/* Password Field */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-white/90 mb-1">
                   {formMode === "create"
                     ? "Temporary password"
                     : "Reset password"}
@@ -469,7 +465,7 @@ export default function UserManagementPage() {
                   onChange={(e) =>
                     setFormValues((prev) => ({ ...prev, password: e.target.value }))
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-white/10 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white/5 text-white"
                 />
                 {formErrors.password && (
                   <p className="text-red-600 text-sm mt-1">{formErrors.password}</p>
@@ -478,7 +474,7 @@ export default function UserManagementPage() {
 
               {/* Role Selection */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-3">
+                <label className="block text-sm font-medium text-white/90 mb-3">
                   Role
                 </label>
                 <div className="space-y-3">
@@ -498,18 +494,16 @@ export default function UserManagementPage() {
                           }
                           className={`p-4 border rounded-lg cursor-pointer transition-colors ${
                             selected
-                              ? "border-blue-500 bg-blue-50"
-                              : "border-gray-200 hover:border-gray-300"
+                              ? "border-white/10 bg-white/5"
+                              : "border-white/6 hover:border-white/20"
                           }`}
                         >
                           <p
-                            className={`font-medium ${
-                              selected ? "text-blue-900" : "text-gray-900"
-                            }`}
+                            className={`font-medium ${selected ? "text-white" : "text-white/90"}`}
                           >
                             {filter.label.replace(/s$/, "")}
                           </p>
-                          <p className="text-sm text-gray-600 mt-1">
+                          <p className="text-sm text-white/80 mt-1">
                             {roleValue === "admin"
                               ? "Full access"
                               : roleValue === "agent"
@@ -530,7 +524,7 @@ export default function UserManagementPage() {
               <div className="flex justify-end space-x-3">
                 <button
                   onClick={closeForm}
-                  className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+                  className="px-4 py-2 text-white/70 border border-white/10 rounded-md hover:bg-white/6"
                 >
                   Cancel
                 </button>

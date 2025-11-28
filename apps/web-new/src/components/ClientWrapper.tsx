@@ -3,6 +3,8 @@
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
+import { fetchRecentTicketActivity } from "@/services/tickets";
+import { useNotificationStore } from "@/store/useNotificationStore";
 
 export default function ClientWrapper({
   children,
@@ -29,6 +31,28 @@ export default function ClientWrapper({
       router.push("/");
     }
   }, [initialized, session, pathname, router]);
+
+  // seed recent activity as notifications on initial load
+  useEffect(() => {
+    if (!initialized || !session) return;
+    (async () => {
+      try {
+        const entries = await fetchRecentTicketActivity(25);
+        const notifications = entries.map((e) => ({
+          id: e.id,
+          ticketId: e.ticketId,
+          actor: e.actor.name,
+          summary: e.type === "assignment_request" ? `${e.actor.name} requested assignment` : e.type.replaceAll("_", " "),
+          createdAt: e.createdAt,
+          type: "activity" as const,
+        }));
+        useNotificationStore.getState().seedFromHistory(notifications);
+      } catch (error) {
+        // ignore seed errors
+        console.warn("Failed to seed notifications", error);
+      }
+    })();
+  }, [initialized, session]);
 
   if (!initialized) {
     return (

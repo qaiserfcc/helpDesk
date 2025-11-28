@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useNotificationStore } from "@/store/useNotificationStore";
+import axios from "axios";
+import { useToastStore } from "@/store/useToastStore";
 import {
   assignTicket,
   declineAssignmentRequest,
@@ -40,7 +42,7 @@ interface TicketDetailPageProps {
 }
 
 export default function TicketDetailPage({ params }: TicketDetailPageProps) {
-  const { ticketId } = params;
+  const { ticketId } = React.use(params as unknown as Promise<TicketDetailPageProps["params"]>);
   const router = useRouter();
   const queryClient = useQueryClient();
   const authUser = useAuthStore((state) => state.session?.user);
@@ -93,6 +95,7 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
   });
 
   const markTicketRead = useNotificationStore((state) => state.markTicketRead);
+  const toastAdd = useToastStore((s) => s.addNotification);
 
   useEffect(() => {
     markTicketRead(ticketId);
@@ -188,9 +191,14 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
     try {
       await requestAssignment(ticketId);
       await invalidateTickets();
-    } catch (error) {
+      toastAdd({ type: "success", title: "Request sent", message: "Assignment request submitted to admins", timestamp: new Date().toISOString() });
+    } catch (error: unknown) {
       console.error("request assignment failed", error);
-      alert("Request failed");
+      let message = String(error ?? "Unknown error");
+      if (axios.isAxiosError(error)) {
+        message = (error.response?.data?.message as string) ?? message;
+      }
+      toastAdd({ type: "error", title: "Request failed", message, timestamp: new Date().toISOString() });
     } finally {
       setIsRequesting(false);
     }
@@ -201,12 +209,12 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
     window.open(url, "_blank");
   };
 
-  const selectedAgent = agents.find((agent: UserSummary) => agent.id === selectedAssigneeId) ?? null;
+  // selected agent derived from agents list if needed in UI (unused currently)
 
   if (isLoading || !ticket) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-white/80"></div>
       </div>
     );
   }
@@ -220,7 +228,7 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           <button
@@ -229,39 +237,39 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
           >
             ← Back
           </button>
-          <h1 className="text-3xl font-bold text-gray-900">Ticket #{ticket.id.slice(0, 8)}</h1>
-          <p className="text-lg text-gray-600 mt-2">{ticket.description}</p>
+          <h1 className="text-3xl font-bold text-white">Ticket #{ticket.id.slice(0, 8)}</h1>
+          <p className="text-lg text-white/90 mt-2">{ticket.description}</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
             {/* Status and Details */}
-            <div className="bg-white shadow rounded-lg p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Details</h2>
+            <div className="card shadow rounded-lg p-6">
+              <h2 className="text-xl font-semibold text-white mb-4">Details</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-500">Status</p>
-                  <p className="text-lg font-medium text-gray-900">{formatStatus(ticket.status)}</p>
+                <div className="bg-white/5 p-4 rounded-lg">
+                  <p className="text-sm text-white/80">Status</p>
+                  <p className="text-lg font-medium text-white">{formatStatus(ticket.status)}</p>
                 </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-500">Priority</p>
-                  <p className="text-lg font-medium text-gray-900 capitalize">{ticket.priority}</p>
+                <div className="bg-white/5 p-4 rounded-lg">
+                  <p className="text-sm text-white/80">Priority</p>
+                  <p className="text-lg font-medium text-white capitalize">{ticket.priority}</p>
                 </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-500">Type</p>
-                  <p className="text-lg font-medium text-gray-900 capitalize">{ticket.issueType}</p>
+                <div className="bg-white/5 p-4 rounded-lg">
+                  <p className="text-sm text-white/80">Type</p>
+                  <p className="text-lg font-medium text-white capitalize">{ticket.issueType}</p>
                 </div>
               </div>
 
               <div className="space-y-4">
                 <div>
                   <p className="text-sm text-gray-500">Creator</p>
-                  <p className="text-lg text-gray-900">{ticket.creator.name}</p>
+                  <p className="text-lg text-white">{ticket.creator.name}</p>
                 </div>
 
                 <div>
                   <p className="text-sm text-gray-500">Assignee</p>
-                  <p className="text-lg text-gray-900">
+                  <p className="text-lg text-white">
                     {ticket.assignee ? ticket.assignee.name : "Unassigned"}
                   </p>
                   {ticket.assignmentRequest && !ticket.assignee && (
@@ -275,19 +283,19 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
 
             {/* Attachments */}
             {ticket.attachments.length > 0 && (
-              <div className="bg-white shadow rounded-lg p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Attachments</h2>
+              <div className="card shadow rounded-lg p-6">
+                <h2 className="text-xl font-semibold text-white mb-4">Attachments</h2>
                 <div className="space-y-2">
                   {ticket.attachments.map((attachment) => (
                     <button
                       key={attachment}
                       onClick={() => handleOpenAttachment(attachment)}
-                      className="w-full text-left p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                      className="w-full text-left p-3 bg-white/5 rounded-lg hover:bg-white/8 transition-colors"
                     >
-                      <p className="text-blue-600 font-medium">
+                      <p className="text-white/90 font-medium">
                         {attachment.split("/").pop() ?? attachment}
                       </p>
-                      <p className="text-sm text-gray-500">Click to open</p>
+                      <p className="text-sm text-white/80">Click to open</p>
                     </button>
                   ))}
                 </div>
@@ -295,8 +303,8 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
             )}
 
             {/* Activity */}
-            <div className="bg-white shadow rounded-lg p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Activity</h2>
+            <div className="card shadow rounded-lg p-6">
+              <h2 className="text-xl font-semibold text-white mb-4">Activity</h2>
               {activityLoading ? (
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
               ) : activities.length === 0 ? (
@@ -304,9 +312,9 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
               ) : (
                 <div className="space-y-4">
                   {activities.map((entry) => (
-                    <div key={entry.id} className="border-l-4 border-blue-500 pl-4">
-                      <p className="text-gray-900">{describeTicketActivity(entry)}</p>
-                      <p className="text-sm text-gray-500 mt-1">
+                    <div key={entry.id} className="border-l-4 border-white/30 pl-4">
+                      <p className="text-white">{describeTicketActivity(entry)}</p>
+                      <p className="text-sm text-white/80 mt-1">
                         {formatActivityTime(entry.createdAt)}
                       </p>
                     </div>
@@ -319,8 +327,8 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
           <div className="space-y-6">
             {/* Assignment Panel */}
             {canAssign && (
-              <div className="bg-white shadow rounded-lg p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Assign Ticket</h2>
+              <div className="card shadow rounded-lg p-6">
+                <h2 className="text-xl font-semibold text-white mb-4">Assign Ticket</h2>
                 {agentsLoading ? (
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 ) : agents.length === 0 ? (
@@ -331,7 +339,7 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
                       title="Select an agent"
                       value={selectedAssigneeId || ""}
                       onChange={(e) => setSelectedAssigneeId(e.target.value || null)}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full p-3 border border-transparent rounded-lg focus:ring-2 focus:ring-white focus:border-white bg-white/5 text-white"
                     >
                       <option value="">Select an agent</option>
                       {agents.map((agent: UserSummary) => (
@@ -343,7 +351,7 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
                     <button
                       onClick={handleAssign}
                       disabled={isAssigning || !selectedAssigneeId}
-                      className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full primary-btn py-2 px-4 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isAssigning ? "Assigning..." : "Assign"}
                     </button>
@@ -353,8 +361,8 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
             )}
 
             {/* Actions */}
-            <div className="bg-white shadow rounded-lg p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Actions</h2>
+            <div className="card shadow rounded-lg p-6">
+              <h2 className="text-xl font-semibold text-white mb-4">Actions</h2>
               <div className="space-y-3">
                 {canEdit && (
                   <button

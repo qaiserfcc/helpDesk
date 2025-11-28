@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { createTicket, type CreateTicketPayload, type IssueType, type TicketPriority } from "@/services/tickets";
+import { useNotificationStore } from "@/store/useNotificationStore";
+import { useAuthStore } from "@/store/useAuthStore";
 
 const priorityOptions: TicketPriority[] = ["low", "medium", "high"];
 const issueOptions: IssueType[] = [
@@ -22,6 +24,8 @@ export default function NewTicketPage() {
   const [issueType, setIssueType] = useState<IssueType>("other");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const addNotification = useNotificationStore((s) => s.addNotification);
+  const session = useAuthStore((s) => s.session);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,12 +44,25 @@ export default function NewTicketPage() {
     };
 
     try {
-      await createTicket(payload);
+      const created = await createTicket(payload);
       await queryClient.invalidateQueries({
         queryKey: ["tickets"],
         exact: false,
       });
-      router.push("/");
+      // Redirect to the newly created ticket detail page so users can review & attach files
+      if (created?.id) {
+        addNotification({
+          id: created.id,
+          ticketId: created.id,
+          actor: session?.user?.name ?? "",
+          summary: `Created ticket: ${created.description?.slice(0, 50)}`,
+          createdAt: created.createdAt,
+          type: "ticket",
+        });
+        router.push(`/ticket/${created.id}`);
+      } else {
+        router.push("/");
+      }
     } catch (err) {
       console.error("Create ticket failed", err);
       setError("Failed to create ticket. Please try again.");
@@ -55,7 +72,7 @@ export default function NewTicketPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       <div className="max-w-2xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           <button
@@ -64,13 +81,13 @@ export default function NewTicketPage() {
           >
             ← Back
           </button>
-          <h1 className="text-3xl font-bold text-gray-900">Create New Ticket</h1>
+          <h1 className="text-3xl font-bold text-white">Create New Ticket</h1>
         </div>
 
-        <div className="bg-white shadow rounded-lg p-6">
+        <div className="card shadow rounded-lg p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="description" className="block text-sm font-medium text-white/90 mb-2">
                 Description *
               </label>
               <textarea
@@ -78,14 +95,14 @@ export default function NewTicketPage() {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={6}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-transparent rounded-lg focus:ring-2 focus:ring-white focus:border-white text-white bg-white/5"
                 placeholder="Describe the issue in detail..."
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-white/90 mb-2">
                 Priority
               </label>
               <div className="flex space-x-3">
@@ -99,14 +116,14 @@ export default function NewTicketPage() {
                       onChange={(e) => setPriority(e.target.value as TicketPriority)}
                       className="mr-2"
                     />
-                    <span className="capitalize">{option}</span>
+                    <span className="capitalize text-white">{option}</span>
                   </label>
                 ))}
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-white/90 mb-2">
                 Issue Type
               </label>
               <div className="flex flex-wrap gap-3">
@@ -120,15 +137,15 @@ export default function NewTicketPage() {
                       onChange={(e) => setIssueType(e.target.value as IssueType)}
                       className="mr-2"
                     />
-                    <span className="capitalize">{option}</span>
+                    <span className="capitalize text-white">{option}</span>
                   </label>
                 ))}
               </div>
             </div>
 
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <p className="text-red-600">{error}</p>
+              <div className="bg-red-50/30 border border-red-200 rounded-lg p-4">
+                <p className="text-red-200">{error}</p>
               </div>
             )}
 
@@ -136,14 +153,14 @@ export default function NewTicketPage() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 primary-btn py-2 px-4 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {submitting ? "Creating..." : "Create Ticket"}
               </button>
               <button
                 type="button"
                 onClick={() => router.back()}
-                className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                className="px-6 py-2 border border-white/10 rounded-lg hover:bg-white/6 text-white"
               >
                 Cancel
               </button>

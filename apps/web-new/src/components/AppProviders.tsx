@@ -62,6 +62,18 @@ export function AppProviders({ children }: AppProvidersProps) {
     };
   }, [session?.accessToken]);
 
+  // Reconnect socket when the browser regains online status
+  useEffect(() => {
+    const handleOnline = () => {
+      const accessToken = useAuthStore.getState().session?.accessToken ?? null;
+      if (accessToken) {
+        ticketSocket.connect(accessToken);
+      }
+    };
+    window.addEventListener("online", handleOnline);
+    return () => window.removeEventListener("online", handleOnline);
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <OfflineBanner />
