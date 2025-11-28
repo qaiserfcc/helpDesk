@@ -6,6 +6,7 @@ import {
   type NotificationEntry,
 } from "@/store/useNotificationStore";
 import { colors } from "@/theme/colors";
+import { commonStyles } from "@/theme/commonStyles";
 
 const TOAST_DURATION_MS = 3600;
 
@@ -98,17 +99,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   toast: {
-    backgroundColor: "#0F172A",
+    ...commonStyles.card,
     borderRadius: 18,
     paddingHorizontal: 20,
     paddingVertical: 16,
-    borderWidth: 1,
-    borderColor: "#1E293B",
+    borderColor: colors.border,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     gap: 12,
-    shadowColor: "#000",
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.2,
     shadowRadius: 10,
@@ -118,12 +118,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   toastActor: {
-    color: colors.text,
+    color: colors.foreground,
     fontWeight: "700",
     marginBottom: 2,
   },
   toastSummary: {
-    color: colors.text,
+    color: colors.foreground,
     fontSize: 14,
   },
   toastTime: {

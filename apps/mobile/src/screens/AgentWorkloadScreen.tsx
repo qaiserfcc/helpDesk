@@ -13,6 +13,8 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useQuery } from "@tanstack/react-query";
 import { RootStackParamList } from "@/navigation/AppNavigator";
+import { colors } from "@/theme/colors";
+import { commonStyles } from "@/theme/commonStyles";
 import { useAuthStore } from "@/store/useAuthStore";
 import {
   AgentWorkloadReport,
@@ -76,7 +78,7 @@ export function AgentWorkloadScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={() => refetch()}
-            tintColor="#38BDF8"
+            tintColor={colors.accentMuted}
           />
         }
       >
@@ -150,7 +152,7 @@ function TicketSection({
     <View style={styles.sectionCard}>
       <Text style={styles.sectionTitle}>{title}</Text>
       {loading ? (
-        <ActivityIndicator color="#38BDF8" />
+        <ActivityIndicator color={colors.accentMuted} />
       ) : tickets.length === 0 ? (
         <Text style={styles.sectionHint}>{hint}</Text>
       ) : (
@@ -187,8 +189,7 @@ function TicketSection({
 
 const styles = StyleSheet.create({
   safeArea: {
-    flex: 1,
-    backgroundColor: "#020617",
+    ...commonStyles.safeArea,
   },
   container: {
     flex: 1,
@@ -206,21 +207,21 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#1E293B",
+    borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
   },
   backGlyph: {
-    color: "#E2E8F0",
+    color: colors.text,
     fontSize: 18,
   },
   title: {
-    color: "#F8FAFC",
+    color: colors.text,
     fontSize: 22,
     fontWeight: "700",
   },
   subtitle: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     marginTop: 4,
   },
   summaryHighlights: {
@@ -232,46 +233,39 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: 16,
     padding: 16,
-    backgroundColor: "#0F172A",
-    borderWidth: 1,
-    borderColor: "#1E293B",
+    ...commonStyles.card,
   },
   highlightLabel: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 12,
   },
   highlightValue: {
     marginTop: 8,
-    color: "#F8FAFC",
+    color: colors.text,
     fontSize: 24,
     fontWeight: "700",
   },
   sectionCard: {
+    ...commonStyles.sectionCard,
     marginBottom: 20,
     padding: 16,
     borderRadius: 18,
-    backgroundColor: "#0B1220",
-    borderWidth: 1,
-    borderColor: "#1E293B",
   },
   sectionTitle: {
-    color: "#F8FAFC",
+    color: colors.text,
     fontSize: 16,
     fontWeight: "600",
     marginBottom: 12,
   },
   sectionHint: {
-    color: "#94A3B8",
+    color: colors.textMuted,
   },
   ticketList: {
     gap: 12,
   },
   ticketCard: {
+    ...commonStyles.card,
     padding: 16,
-    borderRadius: 16,
-    backgroundColor: "#0F172A",
-    borderWidth: 1,
-    borderColor: "#1E293B",
     gap: 8,
   },
   ticketCardHeader: {
@@ -280,7 +274,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   ticketId: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 13,
   },
   statusPill: {
@@ -289,20 +283,20 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   status_open: {
-    backgroundColor: "#0F172A",
+    backgroundColor: colors.card,
   },
   status_in_progress: {
-    backgroundColor: "#1E3A8A",
+    backgroundColor: colors.statusInProgress,
   },
   status_resolved: {
-    backgroundColor: "#0F766E",
+    backgroundColor: colors.statusResolved,
   },
   statusText: {
-    color: "#F8FAFC",
+    color: colors.text,
     fontSize: 12,
   },
   ticketDescription: {
-    color: "#E2E8F0",
+    color: colors.text,
     fontSize: 16,
   },
   ticketMetaRow: {
@@ -310,11 +304,11 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   metaText: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 13,
   },
   metaSubtext: {
-    color: "#CBD5F5",
+    color: colors.muted,
     fontSize: 13,
   },
   unauthorized: {
@@ -324,13 +318,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   unauthorizedTitle: {
-    color: "#F8FAFC",
+    color: colors.text,
     fontSize: 20,
     fontWeight: "700",
     marginBottom: 12,
   },
   unauthorizedCopy: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     textAlign: "center",
     marginBottom: 20,
   },
@@ -339,10 +333,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#1E293B",
+    borderColor: colors.border,
   },
   backButtonText: {
-    color: "#E2E8F0",
+    color: colors.text,
     fontWeight: "600",
   },
 });

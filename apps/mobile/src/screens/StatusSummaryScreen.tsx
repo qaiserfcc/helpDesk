@@ -11,6 +11,8 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useQuery } from "@tanstack/react-query";
+import { colors } from "@/theme/colors";
+import { commonStyles } from "@/theme/commonStyles";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "@/navigation/AppNavigator";
 import {
@@ -121,7 +123,7 @@ export function StatusSummaryScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#38BDF8"
+            tintColor={colors.accentMuted}
           />
         }
       >
@@ -160,7 +162,7 @@ export function StatusSummaryScreen() {
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Status distribution</Text>
           {overviewLoading && !overview ? (
-            <ActivityIndicator color="#38BDF8" />
+            <ActivityIndicator color={colors.accentMuted} />
           ) : statusBuckets.length > 0 ? (
             <View style={styles.statusList}>
               {statusBuckets.map((bucket) => {
@@ -196,7 +198,7 @@ export function StatusSummaryScreen() {
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Assignment load</Text>
           {overviewLoading && !overview ? (
-            <ActivityIndicator color="#38BDF8" />
+            <ActivityIndicator color={colors.accentMuted} />
           ) : topAgents.length > 0 ? (
             <View style={styles.assignmentList}>
               {topAgents.map((assignment) => (
@@ -226,7 +228,7 @@ export function StatusSummaryScreen() {
           <Text style={styles.sectionTitle}>Oldest open tickets</Text>
           <Text style={styles.sectionSubtitle}>Longest waiting issues</Text>
           {overviewLoading && oldestOpen.length === 0 ? (
-            <ActivityIndicator color="#38BDF8" />
+            <ActivityIndicator color={colors.accentMuted} />
           ) : oldestOpen.length > 0 ? (
             <View style={styles.ticketList}>
               {oldestOpen.map((ticket: ReportTicket) => (
@@ -255,7 +257,7 @@ export function StatusSummaryScreen() {
           <Text style={styles.sectionTitle}>High priority alerts</Text>
           <Text style={styles.sectionSubtitle}>Requires immediate action</Text>
           {escalationsLoading && highPriority.length === 0 ? (
-            <ActivityIndicator color="#38BDF8" />
+            <ActivityIndicator color={colors.accentMuted} />
           ) : highPriority.length > 0 ? (
             <View style={styles.ticketList}>
               {highPriority.map((ticket: ReportTicket) => (
@@ -286,7 +288,7 @@ export function StatusSummaryScreen() {
           <Text style={styles.sectionTitle}>Stale tickets</Text>
           <Text style={styles.sectionSubtitle}>No updates in 3+ days</Text>
           {escalationsLoading && staleTickets.length === 0 ? (
-            <ActivityIndicator color="#38BDF8" />
+            <ActivityIndicator color={colors.accentMuted} />
           ) : staleTickets.length > 0 ? (
             <View style={styles.ticketList}>
               {staleTickets.map((ticket: ReportTicket) => (
@@ -314,7 +316,7 @@ export function StatusSummaryScreen() {
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Recent activity</Text>
           {activityLoading && recentActivity.length === 0 ? (
-            <ActivityIndicator color="#38BDF8" />
+            <ActivityIndicator color={colors.accentMuted} />
           ) : recentActivity.length > 0 ? (
             <View style={styles.activityFeed}>
               {recentActivity.map((entry: TicketActivityEntry) => (
@@ -343,7 +345,7 @@ export function StatusSummaryScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#020617",
+    backgroundColor: colors.background,
   },
   container: {
     flex: 1,
@@ -361,21 +363,21 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#1E293B",
+    borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
   },
   backGlyph: {
-    color: "#E2E8F0",
+    color: colors.text,
     fontSize: 18,
   },
   title: {
-    color: "#F8FAFC",
+    color: colors.text,
     fontSize: 22,
     fontWeight: "700",
   },
   subtitle: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     marginTop: 4,
   },
   summaryHighlights: {
@@ -385,45 +387,39 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   highlightCard: {
+    ...commonStyles.card,
     flexBasis: "47%",
     borderRadius: 16,
     padding: 16,
-    backgroundColor: "#0F172A",
-    borderWidth: 1,
-    borderColor: "#1E293B",
   },
   highlightLabel: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 12,
   },
   highlightValue: {
     marginTop: 8,
-    color: "#F8FAFC",
+    color: colors.text,
     fontSize: 24,
     fontWeight: "700",
   },
   sectionCard: {
+    ...commonStyles.sectionCard,
     marginBottom: 16,
-    padding: 16,
-    borderRadius: 18,
-    backgroundColor: "#0B1220",
-    borderWidth: 1,
-    borderColor: "#1E293B",
   },
   sectionTitle: {
-    color: "#F8FAFC",
+    color: colors.text,
     fontSize: 16,
     fontWeight: "600",
     marginBottom: 12,
   },
   sectionSubtitle: {
-    color: "#64748B",
+    color: colors.muted,
     fontSize: 12,
     marginTop: -4,
     marginBottom: 12,
   },
   sectionHint: {
-    color: "#94A3B8",
+    color: colors.textMuted,
   },
   statusList: {
     gap: 12,
@@ -435,12 +431,12 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   statusLabel: {
-    color: "#E2E8F0",
+    color: colors.text,
     fontSize: 15,
     fontWeight: "600",
   },
   statusShare: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 12,
     marginTop: 2,
   },
@@ -448,7 +444,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statusValue: {
-    color: "#38BDF8",
+    color: colors.accentMuted,
     fontSize: 16,
     fontWeight: "700",
     textAlign: "right",
@@ -457,12 +453,12 @@ const styles = StyleSheet.create({
     marginTop: 6,
     height: 6,
     borderRadius: 999,
-    backgroundColor: "#1E293B",
+    backgroundColor: colors.border,
   },
   progressFill: {
     height: 6,
     borderRadius: 999,
-    backgroundColor: "#22D3EE",
+    backgroundColor: colors.accent,
   },
   assignmentList: {
     gap: 12,
@@ -474,25 +470,23 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   assignmentName: {
-    color: "#E2E8F0",
+    color: colors.text,
     fontWeight: "600",
   },
   assignmentMeta: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 12,
   },
   assignmentBadge: {
+    ...commonStyles.card,
     minWidth: 48,
     borderRadius: 12,
     paddingVertical: 6,
     paddingHorizontal: 12,
-    backgroundColor: "#0F172A",
-    borderWidth: 1,
-    borderColor: "#1E293B",
     alignItems: "center",
   },
   assignmentValue: {
-    color: "#38BDF8",
+    color: colors.accentMuted,
     fontWeight: "700",
   },
   activityFeed: {
@@ -503,7 +497,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "flex-start",
     borderBottomWidth: 1,
-    borderBottomColor: "#1E293B",
+    borderBottomColor: colors.border,
     paddingBottom: 10,
   },
   activityTextGroup: {
@@ -511,16 +505,16 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   activityTitle: {
-    color: "#E2E8F0",
+    color: colors.text,
     fontWeight: "600",
   },
   activityCopy: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     marginTop: 2,
     fontSize: 12,
   },
   activityTime: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 12,
   },
   ticketList: {
@@ -531,7 +525,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     borderBottomWidth: 1,
-    borderBottomColor: "#1E293B",
+    borderBottomColor: colors.border,
     paddingVertical: 8,
   },
   ticketTextGroup: {
@@ -539,20 +533,20 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   ticketTitle: {
-    color: "#E2E8F0",
+    color: colors.text,
     fontWeight: "600",
   },
   ticketMeta: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 12,
     marginTop: 2,
   },
   ticketMetaEmphasis: {
-    color: "#FDE68A",
+    color: colors.statusWarningText,
     fontWeight: "700",
   },
   ticketNavigate: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 20,
   },
   unauthorized: {
@@ -562,13 +556,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   unauthorizedTitle: {
-    color: "#F8FAFC",
+    color: colors.text,
     fontSize: 20,
     fontWeight: "700",
     marginBottom: 12,
   },
   unauthorizedCopy: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     textAlign: "center",
     marginBottom: 20,
   },
@@ -577,10 +571,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#1E293B",
+    borderColor: colors.border,
   },
   backButtonText: {
-    color: "#E2E8F0",
+    color: colors.text,
     fontWeight: "600",
   },
 });

@@ -28,6 +28,8 @@ import {
   updateTicket,
 } from "@/services/tickets";
 import { queueTicket } from "@/storage/offline-db";
+import { colors } from "@/theme/colors";
+import { commonStyles } from "@/theme/commonStyles";
 import { syncQueuedTickets } from "@/services/syncService";
 
 const priorityOptions: TicketPriority[] = ["low", "medium", "high"];
@@ -239,7 +241,7 @@ export function TicketFormScreen({ route, navigation }: Props) {
           onChangeText={setDescription}
           multiline
           placeholder="Describe the issue"
-          placeholderTextColor="#475569"
+          placeholderTextColor={colors.muted}
           style={styles.input}
         />
 
@@ -343,8 +345,7 @@ export function TicketFormScreen({ route, navigation }: Props) {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: "#020617",
+    ...commonStyles.container,
   },
   content: {
     padding: 20,
@@ -353,11 +354,11 @@ const styles = StyleSheet.create({
   header: {
     fontSize: 24,
     fontWeight: "700",
-    color: "#F8FAFC",
+    color: colors.text,
     marginBottom: 24,
   },
   label: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 14,
     marginBottom: 8,
   },
@@ -365,9 +366,9 @@ const styles = StyleSheet.create({
     minHeight: 120,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#1E293B",
+    borderColor: colors.border,
     padding: 14,
-    color: "#E2E8F0",
+    color: colors.text,
     marginBottom: 20,
     textAlignVertical: "top",
   },
@@ -382,46 +383,44 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: "#1E293B",
+    borderColor: colors.border,
   },
   optionChipActive: {
-    backgroundColor: "#22D3EE",
-    borderColor: "#22D3EE",
+    backgroundColor: colors.accent,
+    borderColor: colors.accent,
   },
   optionText: {
-    color: "#CBD5F5",
+    color: colors.muted,
     textTransform: "capitalize",
   },
   optionTextActive: {
-    color: "#0B1120",
+    color: colors.onAccent,
     fontWeight: "600",
   },
   existingAttachments: {
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#1E293B",
+    borderColor: colors.border,
     padding: 12,
     marginBottom: 12,
   },
   existingLabel: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 12,
     marginBottom: 6,
   },
   existingAttachmentText: {
-    color: "#E2E8F0",
+    color: colors.text,
     fontSize: 14,
   },
   attachmentCard: {
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#1E293B",
+    ...commonStyles.card,
     padding: 14,
     marginBottom: 24,
     gap: 10,
   },
   attachmentHint: {
-    color: "#64748B",
+    color: colors.muted,
     fontSize: 13,
   },
   attachmentRow: {
@@ -432,35 +431,35 @@ const styles = StyleSheet.create({
   },
   attachmentName: {
     flex: 1,
-    color: "#E2E8F0",
+    color: colors.text,
   },
   removeText: {
-    color: "#F87171",
+    color: colors.danger,
     fontWeight: "600",
   },
   attachmentBtn: {
     marginTop: 4,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#22D3EE",
+    borderColor: colors.accent,
     paddingVertical: 10,
     alignItems: "center",
   },
   attachmentBtnText: {
-    color: "#22D3EE",
+    color: colors.accent,
     fontWeight: "600",
   },
   submitBtn: {
+    ...commonStyles.primaryBtn,
     borderRadius: 16,
     paddingVertical: 16,
     alignItems: "center",
-    backgroundColor: "#22D3EE",
   },
   submitBtnDisabled: {
     opacity: 0.7,
   },
   submitText: {
-    color: "#0B1120",
+    color: colors.onAccent,
     fontWeight: "700",
     fontSize: 16,
   },
@@ -470,35 +469,33 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: colors.border,
   },
   cancelText: {
-    color: "#E2E8F0",
+    color: colors.text,
     fontWeight: "600",
   },
   lockedContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#020617",
+    backgroundColor: colors.background,
     padding: 24,
   },
   lockedCard: {
+    ...commonStyles.card,
     width: "100%",
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#1E293B",
-    backgroundColor: "#0F172A",
     padding: 24,
     gap: 16,
   },
   lockedTitle: {
-    color: "#F8FAFC",
+    color: colors.text,
     fontSize: 20,
     fontWeight: "700",
   },
   lockedMessage: {
-    color: "#CBD5F5",
+    color: colors.muted,
     fontSize: 14,
     lineHeight: 20,
   },
@@ -507,10 +504,10 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#22D3EE",
+    borderColor: colors.accent,
   },
   lockedBtnText: {
-    color: "#22D3EE",
+    color: colors.accent,
     fontWeight: "600",
   },
 });

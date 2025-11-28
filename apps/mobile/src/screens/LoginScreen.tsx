@@ -13,6 +13,8 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { login } from "@/services/auth";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useOfflineStore } from "@/store/useOfflineStore";
+import { colors } from "@/theme/colors";
+import { commonStyles } from "@/theme/commonStyles";
 import { demoAccounts } from "@/constants/demoAccounts";
 import { RootStackParamList } from "@/navigation/AppNavigator";
 
@@ -161,7 +163,7 @@ export function LoginScreen({ navigation }: Props) {
             autoComplete="email"
             keyboardType="email-address"
             placeholder="you@example.com"
-            placeholderTextColor="#475569"
+            placeholderTextColor={colors.textMuted}
             value={email}
             onChangeText={setEmail}
           />
@@ -173,7 +175,7 @@ export function LoginScreen({ navigation }: Props) {
             style={styles.input}
             secureTextEntry
             placeholder="••••••••"
-            placeholderTextColor="#475569"
+            placeholderTextColor={colors.textMuted}
             value={password}
             onChangeText={setPassword}
           />
@@ -202,41 +204,38 @@ export function LoginScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: "#020617",
+    ...commonStyles.container,
     justifyContent: "center",
     paddingHorizontal: 24,
   },
   form: {
+    ...commonStyles.card,
     padding: 24,
     borderRadius: 24,
-    backgroundColor: "#0F172A",
   },
   title: {
     fontSize: 24,
     fontWeight: "700",
-    color: "#F8FAFC",
+    color: colors.foreground,
   },
   subtitle: {
     marginTop: 4,
-    color: "#94A3B8",
+    color: colors.textMuted,
   },
   offlineHint: {
+    ...commonStyles.card,
     marginTop: 18,
     padding: 12,
     borderRadius: 12,
-    backgroundColor: "#0B1120",
-    borderWidth: 1,
-    borderColor: "#1E293B",
   },
   offlineHintText: {
-    color: "#F8FAFC",
+    color: colors.foreground,
     fontSize: 13,
     fontWeight: "600",
   },
   offlineHintMeta: {
     marginTop: 4,
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 12,
   },
   fieldGroup: {
@@ -246,7 +245,7 @@ const styles = StyleSheet.create({
     marginTop: 18,
   },
   presetHeading: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 13,
     fontWeight: "500",
   },
@@ -256,50 +255,48 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   presetButton: {
+    ...commonStyles.card,
     flexBasis: "30%",
     flexGrow: 1,
     marginRight: 8,
     marginTop: 10,
     borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#1E293B",
     paddingHorizontal: 12,
     paddingVertical: 10,
-    backgroundColor: "#0B1120",
   },
   presetLabel: {
-    color: "#F8FAFC",
+    color: colors.foreground,
     fontWeight: "600",
   },
   presetHint: {
     marginTop: 4,
-    color: "#64748B",
+    color: colors.textMuted,
     fontSize: 12,
   },
   label: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     marginBottom: 6,
   },
   input: {
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    backgroundColor: "#1E293B",
-    color: "#F8FAFC",
+    backgroundColor: colors.border,
+    color: colors.foreground,
   },
   errorText: {
     marginTop: 12,
-    color: "#F87171",
+    color: colors.danger,
   },
   primaryCta: {
+    ...commonStyles.primaryBtn,
     marginTop: 28,
     paddingVertical: 14,
     borderRadius: 16,
-    alignItems: "center",
-    backgroundColor: "#22D3EE",
   },
   primaryText: {
-    color: "#0F172A",
+    ...commonStyles.primaryText,
+    color: colors.foreground,
     fontWeight: "700",
   },
   secondaryCta: {
@@ -307,7 +304,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   secondaryText: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontWeight: "600",
   },
   disabled: {

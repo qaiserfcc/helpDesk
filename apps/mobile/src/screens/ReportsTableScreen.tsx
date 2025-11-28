@@ -15,6 +15,8 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { RootStackParamList } from "@/navigation/AppNavigator";
 import { useAuthStore } from "@/store/useAuthStore";
+import { colors } from "@/theme/colors";
+import { commonStyles } from "@/theme/commonStyles";
 import { ReportTicket, fetchTicketExportDataset } from "@/services/tickets";
 import { formatTicketStatus } from "@/utils/ticketActivity";
 import {
@@ -152,7 +154,7 @@ export function ReportsTableScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={() => refetch()}
-            tintColor="#38BDF8"
+            tintColor={colors.accentMuted}
           />
         }
       >
@@ -232,7 +234,7 @@ export function ReportsTableScreen() {
               disabled={exportMutation.isPending}
             >
               {exportMutation.isPending ? (
-                <ActivityIndicator color="#0F172A" />
+                <ActivityIndicator color={colors.card} />
               ) : (
                 <Text style={styles.exportButtonText}>Export</Text>
               )}
@@ -267,7 +269,7 @@ export function ReportsTableScreen() {
           )}
 
           {isLoading && !dataset ? (
-            <ActivityIndicator color="#38BDF8" />
+            <ActivityIndicator color={colors.accentMuted} />
           ) : role === "admin" && statusFilter === "all" ? (
             activeAdminAggregate.length === 0 ? (
               <Text style={styles.sectionHint}>{noDataMessage}</Text>
@@ -371,8 +373,7 @@ export function ReportsTableScreen() {
 
 const styles = StyleSheet.create({
   safeArea: {
-    flex: 1,
-    backgroundColor: "#020617",
+    ...commonStyles.safeArea,
   },
   container: {
     flex: 1,
@@ -390,21 +391,21 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#1E293B",
+    borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
   },
   backGlyph: {
-    color: "#E2E8F0",
+    color: colors.text,
     fontSize: 18,
   },
   title: {
-    color: "#F8FAFC",
+    color: colors.text,
     fontSize: 22,
     fontWeight: "700",
   },
   subtitle: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     marginTop: 4,
   },
   summaryHighlights: {
@@ -413,20 +414,17 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   highlightCard: {
+    ...commonStyles.card,
     flex: 1,
-    borderRadius: 16,
     padding: 16,
-    backgroundColor: "#0F172A",
-    borderWidth: 1,
-    borderColor: "#1E293B",
   },
   highlightLabel: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 12,
   },
   highlightValue: {
     marginTop: 8,
-    color: "#F8FAFC",
+    color: colors.text,
     fontSize: 24,
     fontWeight: "700",
   },
@@ -441,27 +439,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: "#1E293B",
+    borderColor: colors.border,
   },
   filterChipActive: {
-    backgroundColor: "#22D3EE",
-    borderColor: "#22D3EE",
+    backgroundColor: colors.accentMuted,
+    borderColor: colors.accentMuted,
   },
   filterChipText: {
-    color: "#CBD5F5",
+    color: colors.muted,
     fontSize: 13,
   },
   filterChipTextActive: {
-    color: "#0F172A",
+    color: colors.card,
     fontWeight: "600",
   },
   sectionCard: {
+    ...commonStyles.sectionCard,
     marginBottom: 20,
-    padding: 16,
-    borderRadius: 18,
-    backgroundColor: "#0B1220",
-    borderWidth: 1,
-    borderColor: "#1E293B",
   },
   sectionHeader: {
     flexDirection: "row",
@@ -470,17 +464,17 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sectionTitle: {
-    color: "#F8FAFC",
+    color: colors.text,
     fontSize: 16,
     fontWeight: "600",
   },
   sectionSubtitle: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 12,
     marginTop: 4,
   },
   sectionHint: {
-    color: "#94A3B8",
+    color: colors.textMuted,
   },
   adminToggle: {
     flexDirection: "row",
@@ -491,42 +485,42 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#1E293B",
+    borderColor: colors.border,
     paddingVertical: 10,
     alignItems: "center",
   },
   adminToggleButtonActive: {
-    backgroundColor: "#1E3A8A",
-    borderColor: "#1E3A8A",
+    backgroundColor: colors.statusInProgress,
+    borderColor: colors.statusInProgress,
   },
   adminToggleText: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontWeight: "500",
   },
   adminToggleTextActive: {
-    color: "#E2E8F0",
+    color: colors.text,
   },
   table: {
     borderWidth: 1,
-    borderColor: "#1E293B",
+    borderColor: colors.border,
     borderRadius: 16,
     overflow: "hidden",
   },
   tableRow: {
+    ...commonStyles.card,
     flexDirection: "row",
     alignItems: "center",
     borderBottomWidth: 1,
-    borderBottomColor: "#1E293B",
-    backgroundColor: "#0F172A",
+    borderBottomColor: colors.border,
   },
   tableHeaderRow: {
-    backgroundColor: "#0B1220",
+    ...commonStyles.card,
   },
   tableCell: {
     flex: 1,
     paddingVertical: 12,
     paddingHorizontal: 12,
-    color: "#E2E8F0",
+    color: colors.text,
   },
   cellTicket: {
     flex: 2,
@@ -537,23 +531,23 @@ const styles = StyleSheet.create({
   cellPriority: {
     flex: 1,
     textTransform: "capitalize",
-    color: "#F8FAFC",
+    color: colors.text,
   },
   cellUpdated: {
     flex: 1,
-    color: "#F8FAFC",
+    color: colors.text,
   },
   cellNumeric: {
     textAlign: "right",
-    color: "#F8FAFC",
+    color: colors.text,
   },
   tableTicketId: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 12,
     marginBottom: 4,
   },
   tableTicketText: {
-    color: "#E2E8F0",
+    color: colors.text,
     fontSize: 13,
   },
   statusPill: {
@@ -562,23 +556,23 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   status_open: {
-    backgroundColor: "#0F172A",
+    backgroundColor: colors.card,
   },
   status_in_progress: {
-    backgroundColor: "#1E3A8A",
+    backgroundColor: colors.statusInProgress,
   },
   status_resolved: {
-    backgroundColor: "#0F766E",
+    backgroundColor: colors.statusResolved,
   },
   statusText: {
-    color: "#F8FAFC",
+    color: colors.text,
     fontSize: 12,
   },
   exportButton: {
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 12,
-    backgroundColor: "#22D3EE",
+    backgroundColor: colors.accentMuted,
     minWidth: 100,
     alignItems: "center",
   },
@@ -586,7 +580,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   exportButtonText: {
-    color: "#052c3b",
+    color: colors.card,
     fontWeight: "700",
   },
   unauthorized: {
@@ -596,13 +590,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   unauthorizedTitle: {
-    color: "#F8FAFC",
+    color: colors.text,
     fontSize: 20,
     fontWeight: "700",
     marginBottom: 12,
   },
   unauthorizedCopy: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     textAlign: "center",
     marginBottom: 20,
   },
@@ -611,10 +605,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#1E293B",
+    borderColor: colors.border,
   },
   backButtonText: {
-    color: "#E2E8F0",
+    color: colors.text,
     fontWeight: "600",
   },
 });

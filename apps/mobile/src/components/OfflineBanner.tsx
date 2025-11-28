@@ -2,6 +2,8 @@ import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useOfflineStore } from "@/store/useOfflineStore";
 import { useAuthStore } from "@/store/useAuthStore";
+import { colors } from "@/theme/colors";
+import { commonStyles } from "@/theme/commonStyles";
 
 export function OfflineBanner() {
   const isOffline = useOfflineStore((state) => state.isOffline);
@@ -36,14 +38,14 @@ export function OfflineBanner() {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#0F172A",
+    ...commonStyles.card,
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#1E293B",
+    borderBottomColor: colors.border,
   },
   text: {
-    color: "#F8FAFC",
+    color: colors.foreground,
     fontSize: 13,
     fontWeight: "600",
     textAlign: "center",

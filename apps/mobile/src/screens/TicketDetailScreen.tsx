@@ -29,6 +29,8 @@ import {
   formatTicketStatus,
 } from "@/utils/ticketActivity";
 import { useNotificationStore } from "@/store/useNotificationStore";
+import { colors } from "@/theme/colors";
+import { commonStyles } from "@/theme/commonStyles";
 
 const formatStatus = formatTicketStatus;
 
@@ -225,7 +227,7 @@ export function TicketDetailScreen({ route, navigation }: Props) {
   if (isLoading || !ticket) {
     return (
       <View style={styles.loader}>
-        <ActivityIndicator size="large" color="#38BDF8" />
+        <ActivityIndicator size="large" color={colors.accentMuted} />
       </View>
     );
   }
@@ -288,7 +290,7 @@ export function TicketDetailScreen({ route, navigation }: Props) {
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>Assign ticket</Text>
           {agentsLoading ? (
-            <ActivityIndicator color="#38BDF8" />
+            <ActivityIndicator color={colors.accentMuted} />
           ) : agents.length === 0 ? (
             <Text style={styles.sectionHint}>
               Invite agents from the admin portal to assign tickets.
@@ -347,7 +349,7 @@ export function TicketDetailScreen({ route, navigation }: Props) {
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>Activity</Text>
         {activityLoading ? (
-          <ActivityIndicator color="#38BDF8" />
+          <ActivityIndicator color={colors.accentMuted} />
         ) : activities.length === 0 ? (
           <Text style={styles.sectionHint}>No recent changes yet.</Text>
         ) : (
@@ -449,26 +451,24 @@ export function TicketDetailScreen({ route, navigation }: Props) {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: "#020617",
+    ...commonStyles.container,
   },
   content: {
     padding: 20,
     paddingBottom: 60,
   },
   loader: {
-    flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#020617",
+    ...commonStyles.container,
   },
   ticketId: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 14,
   },
   title: {
     marginTop: 8,
-    color: "#F8FAFC",
+    color: colors.text,
     fontSize: 22,
     fontWeight: "700",
   },
@@ -478,17 +478,17 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   badge: {
+    ...commonStyles.card,
     flex: 1,
     borderRadius: 14,
-    backgroundColor: "#0F172A",
     padding: 12,
   },
   badgeLabel: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 12,
   },
   badgeValue: {
-    color: "#F8FAFC",
+    color: colors.text,
     fontSize: 16,
     fontWeight: "600",
     marginTop: 4,
@@ -497,29 +497,29 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   sectionLabel: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 13,
     marginBottom: 6,
   },
   sectionValue: {
-    color: "#E2E8F0",
+    color: colors.text,
     fontSize: 16,
   },
   attachmentButton: {
+    ...commonStyles.card,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#1D4ED8",
+    borderColor: colors.accent,
     paddingVertical: 10,
     paddingHorizontal: 14,
     marginTop: 8,
-    backgroundColor: "#0F172A",
   },
   attachmentLabel: {
-    color: "#E2E8F0",
+    color: colors.text,
     fontWeight: "600",
   },
   attachmentHint: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 12,
     marginTop: 2,
   },
@@ -528,54 +528,51 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   primaryBtn: {
+    ...commonStyles.primaryBtn,
     borderRadius: 16,
     paddingVertical: 14,
     alignItems: "center",
-    backgroundColor: "#22D3EE",
   },
   resolveBtn: {
-    backgroundColor: "#0EA5E9",
+    backgroundColor: colors.accent,
   },
   disabledBtn: {
     opacity: 0.5,
   },
   primaryText: {
-    color: "#0B1120",
+    ...commonStyles.primaryText,
     fontWeight: "700",
   },
   secondaryBtn: {
-    borderRadius: 16,
+    ...commonStyles.secondaryBtn,
     paddingVertical: 12,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#334155",
   },
   secondaryText: {
-    color: "#E2E8F0",
+    color: colors.text,
     fontWeight: "600",
   },
   reopenBtn: {
-    borderColor: "#22D3EE",
+    borderColor: colors.accent,
   },
   reopenText: {
-    color: "#22D3EE",
+    color: colors.accent,
     fontWeight: "600",
   },
   dangerBtn: {
-    borderColor: "#DC2626",
+    borderColor: colors.danger,
   },
   dangerText: {
-    color: "#FCA5A5",
+    color: colors.danger,
     fontWeight: "600",
   },
   assignmentNote: {
     marginTop: 4,
-    color: "#FACC15",
+    color: colors.statusWarning,
     fontSize: 13,
   },
   sectionHint: {
     marginTop: 8,
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 13,
   },
   agentGrid: {
@@ -584,26 +581,26 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   agentChip: {
+    ...commonStyles.card,
     flexBasis: "48%",
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#1E293B",
+    borderColor: colors.border,
     padding: 12,
-    backgroundColor: "#0F172A",
   },
   agentChipActive: {
-    borderColor: "#22D3EE",
-    backgroundColor: "#082F49",
+    ...commonStyles.card,
+    borderColor: colors.accent,
   },
   agentChipText: {
-    color: "#E2E8F0",
+    color: colors.text,
     fontWeight: "600",
   },
   agentChipTextActive: {
-    color: "#67E8F9",
+    color: colors.accentMuted,
   },
   agentChipSub: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 12,
     marginTop: 4,
   },
@@ -611,25 +608,23 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   activityItem: {
+    ...commonStyles.card,
     padding: 12,
     borderRadius: 12,
-    backgroundColor: "#0F172A",
-    borderWidth: 1,
-    borderColor: "#1E293B",
   },
   activityDescription: {
-    color: "#E2E8F0",
+    color: colors.text,
     fontSize: 14,
     fontWeight: "500",
   },
   activityMeta: {
     marginTop: 4,
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 12,
   },
   resolvedNotice: {
-    backgroundColor: "#1D4ED8",
-    color: "#E0F2FE",
+    backgroundColor: colors.accent,
+    color: colors.accentMuted,
     padding: 12,
     borderRadius: 12,
     fontSize: 13,
@@ -637,18 +632,18 @@ const styles = StyleSheet.create({
   pendingSyncBanner: {
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#FBBF24",
-    backgroundColor: "#1F1302",
+    borderColor: colors.statusWarning,
+    backgroundColor: colors.statusWarningBg,
     padding: 16,
     marginTop: 20,
   },
   pendingSyncTitle: {
-    color: "#FBBF24",
+    color: colors.statusWarning,
     fontWeight: "700",
     marginBottom: 4,
   },
   pendingSyncText: {
-    color: "#FDE68A",
+    color: colors.statusWarningText,
     fontSize: 13,
     lineHeight: 18,
   },

@@ -23,6 +23,8 @@ import {
 import { formatTicketStatus } from "@/utils/ticketActivity";
 import { useRoleGuard } from "@/hooks/useRoleGuard";
 import { RoleRestrictedView } from "@/components/RoleRestrictedView";
+import { colors } from "@/theme/colors";
+import { commonStyles } from "@/theme/commonStyles";
 import {
   buildStatusBuckets,
   deriveTrendSummary,
@@ -114,7 +116,7 @@ export function AllocationDashboardScreen() {
   const insightContent =
     insightView === "agents" ? (
       overviewLoading && assignments.length === 0 ? (
-        <ActivityIndicator color="#38BDF8" />
+        <ActivityIndicator color={colors.accentMuted} />
       ) : assignments.length > 0 ? (
         <View style={styles.assignmentList}>
           {assignments
@@ -141,7 +143,7 @@ export function AllocationDashboardScreen() {
         <Text style={styles.sectionHint}>No agent workload data yet.</Text>
       )
     ) : overviewLoading && oldestOpen.length === 0 ? (
-      <ActivityIndicator color="#38BDF8" />
+      <ActivityIndicator color={colors.accentMuted} />
     ) : oldestOpen.length > 0 ? (
       <View style={styles.ticketList}>
         {oldestOpen.map((ticket: ReportTicket) => (
@@ -180,14 +182,14 @@ export function AllocationDashboardScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, commonStyles.safeArea]}>
       <ScrollView
         style={styles.container}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#38BDF8"
+            tintColor={colors.accentMuted}
           />
         }
       >
@@ -307,7 +309,7 @@ export function AllocationDashboardScreen() {
             </View>
           </View>
           {productivityLoading && resolutionTrend.length === 0 ? (
-            <ActivityIndicator color="#38BDF8" />
+            <ActivityIndicator color={colors.accentMuted} />
           ) : resolutionTrend.length > 0 ? (
             <View style={styles.trendList}>
               {resolutionTrend.map((entry) => (
@@ -342,7 +344,7 @@ export function AllocationDashboardScreen() {
           {escalationsLoading &&
           highPriority.length === 0 &&
           staleTickets.length === 0 ? (
-            <ActivityIndicator color="#38BDF8" />
+            <ActivityIndicator color={colors.accentMuted} />
           ) : highPriority.length === 0 && staleTickets.length === 0 ? (
             <Text style={styles.sectionHint}>No escalations detected.</Text>
           ) : (
@@ -380,7 +382,7 @@ export function AllocationDashboardScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#020617",
+    backgroundColor: colors.background,
   },
   container: {
     flex: 1,
@@ -398,21 +400,21 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#1E293B",
+    borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
   },
   backGlyph: {
-    color: "#E2E8F0",
+    color: colors.text,
     fontSize: 18,
   },
   title: {
-    color: "#F8FAFC",
+    color: colors.text,
     fontSize: 22,
     fontWeight: "700",
   },
   subtitle: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     marginTop: 4,
   },
   summaryHighlights: {
@@ -422,49 +424,43 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   highlightCard: {
+    ...commonStyles.card,
     flexBasis: "48%",
     flexGrow: 1,
     borderRadius: 18,
-    borderWidth: 1,
-    borderColor: "#1E293B",
     padding: 16,
-    backgroundColor: "#0B1220",
   },
   highlightLabel: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 13,
     textTransform: "uppercase",
   },
   highlightValue: {
-    color: "#F8FAFC",
+    color: colors.text,
     fontSize: 24,
     fontWeight: "700",
     marginTop: 8,
   },
   highlightHint: {
-    color: "#64748B",
+    color: colors.muted,
     marginTop: 4,
   },
   sectionCard: {
-    padding: 16,
-    borderRadius: 18,
-    backgroundColor: "#0B1220",
-    borderWidth: 1,
-    borderColor: "#1E293B",
+    ...commonStyles.sectionCard,
     marginBottom: 16,
   },
   sectionTitle: {
-    color: "#F8FAFC",
+    color: colors.text,
     fontSize: 16,
     fontWeight: "600",
   },
   sectionSubtitle: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     marginTop: 4,
     marginBottom: 12,
   },
   sectionHint: {
-    color: "#94A3B8",
+    color: colors.textMuted,
   },
   snapshotRow: {
     flexDirection: "row",
@@ -474,22 +470,22 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#1E293B",
+    borderColor: colors.border,
     padding: 14,
-    backgroundColor: "#111827",
+    backgroundColor: colors.background,
   },
   snapshotLabel: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 12,
   },
   snapshotValue: {
-    color: "#F8FAFC",
+    color: colors.text,
     fontSize: 20,
     fontWeight: "700",
     marginTop: 6,
   },
   snapshotHint: {
-    color: "#64748B",
+    color: colors.muted,
     marginTop: 2,
   },
   sectionHeader: {
@@ -502,23 +498,23 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   filterChip: {
+    ...commonStyles.card,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: "#1E293B",
+    borderColor: colors.border,
     paddingVertical: 6,
     paddingHorizontal: 14,
-    backgroundColor: "#0B1120",
   },
   filterChipActive: {
-    borderColor: "#22D3EE",
-    backgroundColor: "#082F49",
+    borderColor: colors.accentMuted,
+    backgroundColor: colors.accentMuted,
   },
   filterChipText: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontWeight: "600",
   },
   filterChipTextActive: {
-    color: "#F8FAFC",
+    color: colors.text,
   },
   assignmentList: {
     marginTop: 4,
@@ -529,33 +525,31 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#1E293B",
+    borderBottomColor: colors.border,
   },
   assignmentName: {
-    color: "#E2E8F0",
+    color: colors.text,
     fontWeight: "600",
   },
   assignmentMeta: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 12,
   },
   assignmentBadge: {
+    ...commonStyles.card,
     minWidth: 70,
     borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#1E293B",
     paddingVertical: 6,
     paddingHorizontal: 12,
     alignItems: "center",
-    backgroundColor: "#0F172A",
   },
   assignmentValue: {
-    color: "#F8FAFC",
+    color: colors.text,
     fontWeight: "700",
     fontSize: 18,
   },
   assignmentLabel: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 11,
   },
   ticketList: {
@@ -566,23 +560,23 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#1E293B",
+    borderBottomColor: colors.border,
     paddingBottom: 12,
   },
   ticketTextGroup: {
     flex: 1,
   },
   ticketTitle: {
-    color: "#E2E8F0",
+    color: colors.text,
     fontWeight: "600",
   },
   ticketMeta: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 12,
     marginTop: 4,
   },
   ticketStatus: {
-    color: "#E2E8F0",
+    color: colors.text,
     fontWeight: "700",
   },
   trendList: {
@@ -595,22 +589,22 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   trendLabel: {
-    color: "#E2E8F0",
+    color: colors.text,
     fontWeight: "600",
   },
   trendValue: {
-    color: "#F8FAFC",
+    color: colors.text,
     fontWeight: "700",
   },
   progressTrack: {
     height: 6,
     borderRadius: 999,
-    backgroundColor: "#1E293B",
+    backgroundColor: colors.border,
     marginTop: 6,
   },
   progressFill: {
     height: 6,
     borderRadius: 999,
-    backgroundColor: "#22D3EE",
+    backgroundColor: colors.accentMuted,
   },
 });

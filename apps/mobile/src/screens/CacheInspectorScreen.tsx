@@ -11,6 +11,8 @@ import {
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { listTicketCacheScopes, readTicketCache } from "@/storage/offline-db";
+import { colors } from "@/theme/colors";
+import { commonStyles } from "@/theme/commonStyles";
 import { useAuthStore } from "@/store/useAuthStore";
 
 type CacheEntry = {
@@ -70,7 +72,7 @@ export function CacheInspectorScreen() {
     }
 
     if (loading && !entries.length) {
-      return <ActivityIndicator color="#38BDF8" />;
+      return <ActivityIndicator color={colors.accentMuted} />;
     }
 
     if (error) {
@@ -121,55 +123,52 @@ export function CacheInspectorScreen() {
 
 const styles = StyleSheet.create({
   safeArea: {
-    flex: 1,
-    backgroundColor: "#020617",
+    ...commonStyles.safeArea,
   },
   content: {
     padding: 20,
     gap: 16,
   },
   title: {
-    color: "#F8FAFC",
+    color: colors.foreground,
     fontSize: 22,
     fontWeight: "700",
   },
   subtitle: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 14,
   },
   entries: {
     gap: 16,
   },
   infoText: {
-    color: "#CBD5F5",
+    color: colors.muted,
     fontSize: 14,
   },
   errorText: {
-    color: "#FCA5A5",
+    color: colors.danger,
     fontSize: 14,
     fontWeight: "600",
   },
   card: {
+    ...commonStyles.card,
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#1E293B",
-    backgroundColor: "#0F172A",
     padding: 16,
     gap: 10,
   },
   scopeLabel: {
-    color: "#38BDF8",
+    color: colors.accentMuted,
     fontSize: 12,
     textTransform: "uppercase",
     letterSpacing: 0.6,
   },
   codeBlock: {
     borderRadius: 12,
-    backgroundColor: "#020617",
+    backgroundColor: colors.background,
     padding: 12,
   },
   codeText: {
-    color: "#E2E8F0",
+    color: colors.text,
     fontSize: 12,
     lineHeight: 18,
     fontFamily: Platform.select({

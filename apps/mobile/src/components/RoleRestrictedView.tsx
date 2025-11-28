@@ -1,5 +1,6 @@
 import React from "react";
 import { Pressable, SafeAreaView, StyleSheet, Text, View } from "react-native";
+import { colors } from "@/theme/colors";
 
 type Props = {
   title?: string;
@@ -30,7 +31,7 @@ export function RoleRestrictedView({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#020617",
+    backgroundColor: colors.background,
   },
   container: {
     flex: 1,
@@ -39,14 +40,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   title: {
-    color: "#F8FAFC",
+    color: colors.foreground,
     fontSize: 22,
     fontWeight: "700",
     marginBottom: 12,
     textAlign: "center",
   },
   copy: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     textAlign: "center",
     marginBottom: 20,
     fontSize: 15,
@@ -56,10 +57,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#1E293B",
+    borderColor: colors.border,
   },
   backButtonText: {
-    color: "#E2E8F0",
+    color: colors.text,
     fontWeight: "600",
     fontSize: 16,
   },

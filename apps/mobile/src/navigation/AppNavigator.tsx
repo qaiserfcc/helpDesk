@@ -16,6 +16,7 @@ import { AllocationDashboardScreen } from "@/screens/AllocationDashboardScreen";
 import { SettingsScreen } from "@/screens/SettingsScreen";
 import { CacheInspectorScreen } from "@/screens/CacheInspectorScreen";
 import { useAuthStore } from "@/store/useAuthStore";
+import { colors } from "@/theme/colors";
 import { navigationRef } from "./navigationRef";
 
 export type RootStackParamList = {
@@ -41,7 +42,7 @@ const navTheme = {
   ...DefaultTheme,
   colors: {
     ...DefaultTheme.colors,
-    background: "#0B1120",
+    background: colors.background,
   },
 };
 

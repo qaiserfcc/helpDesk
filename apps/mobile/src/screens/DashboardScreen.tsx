@@ -22,6 +22,8 @@ import {
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useQuery } from "@tanstack/react-query";
+import { colors } from "@/theme/colors";
+import { commonStyles } from "@/theme/commonStyles";
 import { RootStackParamList } from "@/navigation/AppNavigator";
 import { useAuthStore } from "@/store/useAuthStore";
 import {
@@ -443,7 +445,7 @@ export function DashboardScreen() {
             <Switch
               value={assignedOnly}
               onValueChange={setAssignedOnly}
-              trackColor={{ false: "#475569", true: "#38BDF8" }}
+              trackColor={{ false: colors.textMuted, true: colors.accentMuted }}
             />
           </View>
         )}
@@ -468,7 +470,7 @@ export function DashboardScreen() {
             }
           >
             {queuedLoading ? (
-              <ActivityIndicator color="#0F172A" />
+              <ActivityIndicator color={colors.card} />
             ) : (
               <Text style={styles.syncText}>Sync now</Text>
             )}
@@ -482,7 +484,7 @@ export function DashboardScreen() {
             <View>
               <Text style={styles.sectionHeading}>Status snapshot</Text>
               <Text style={styles.snapshotMeta}>
-                {statusSummary ? "Organization" : "Personal"} view
+                {statusSummary ? "Organization view" : "Personal view"}
               </Text>
             </View>
             <Pressable
@@ -592,7 +594,7 @@ export function DashboardScreen() {
           <RefreshControl
             refreshing={isLoading || isRefetching}
             onRefresh={onRefresh}
-            tintColor="#38BDF8"
+            tintColor={colors.accentMuted}
           />
         }
         ListEmptyComponent={renderEmptyState}
@@ -729,8 +731,7 @@ export function DashboardScreen() {
 
 const styles = StyleSheet.create({
   safeArea: {
-    flex: 1,
-    backgroundColor: "#020617",
+    ...commonStyles.safeArea,
   },
   list: {
     flex: 1,
@@ -750,7 +751,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(15, 23, 42, 0.85)",
     borderWidth: 1,
     borderColor: "rgba(59, 130, 246, 0.18)",
-    shadowColor: "#0F172A",
+    shadowColor: colors.shadow,
     shadowOpacity: 0.35,
     shadowRadius: 14,
     gap: 14,
@@ -778,7 +779,7 @@ const styles = StyleSheet.create({
   },
   menuGlyph: {
     fontSize: 20,
-    color: "#F8FAFC",
+    color: colors.text,
   },
   heroCopy: {
     flex: 1,
@@ -786,7 +787,7 @@ const styles = StyleSheet.create({
   },
   heroEyebrow: {
     fontSize: 13,
-    color: "#94A3B8",
+    color: colors.textMuted,
     textTransform: "uppercase",
     letterSpacing: 1.2,
   },
@@ -811,17 +812,17 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   heroStatLabel: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 12,
     textTransform: "uppercase",
   },
   heroStatValue: {
-    color: "#F8FAFC",
+    color: colors.text,
     fontSize: 28,
     fontWeight: "700",
   },
   heroStatHint: {
-    color: "#38BDF8",
+    color: colors.accentMuted,
     fontSize: 12,
   },
   controlPanel: {
@@ -833,15 +834,13 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   navMenu: {
+    ...commonStyles.card,
     padding: 16,
     borderRadius: 16,
-    backgroundColor: "#0F172A",
-    borderWidth: 1,
-    borderColor: "#1E293B",
     gap: 12,
   },
   navMenuLabel: {
-    color: "#CBD5F5",
+    color: colors.muted,
     fontSize: 12,
     textTransform: "uppercase",
     letterSpacing: 0.8,
@@ -852,13 +851,11 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   navMenuCard: {
+    ...commonStyles.card,
     flexBasis: "48%",
     flexGrow: 1,
     padding: 14,
     borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#1E293B",
-    backgroundColor: "#0B1220",
     gap: 6,
     flexDirection: "row",
     alignItems: "center",
@@ -868,31 +865,29 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   navMenuTitle: {
-    color: "#F8FAFC",
+    color: colors.text,
     fontSize: 15,
     fontWeight: "600",
   },
   navMenuSubtitle: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 12,
   },
   reportShortcut: {
+    ...commonStyles.card,
     padding: 16,
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#1E293B",
-    backgroundColor: "#0F172A",
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
   reportShortcutTitle: {
-    color: "#F8FAFC",
+    color: colors.text,
     fontSize: 16,
     fontWeight: "600",
   },
   reportShortcutSubtitle: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 12,
     marginTop: 4,
   },
@@ -902,34 +897,33 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 26,
     fontWeight: "700",
-    color: "#F8FAFC",
+    color: colors.text,
   },
   subtitle: {
     marginTop: 2,
     fontSize: 15,
-    color: "#CBD5F5",
+    color: colors.muted,
   },
   signOut: {
     paddingVertical: 6,
     paddingHorizontal: 14,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: colors.border,
   },
   signOutText: {
-    color: "#E2E8F0",
+    color: colors.text,
     fontSize: 13,
   },
   iconButton: {
+    ...commonStyles.card,
     position: "relative",
     width: 40,
     height: 40,
     borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#0F172A",
-    borderWidth: 1,
-    borderColor: "#1E293B",
+    padding: 0,
   },
   iconGlyph: {
     fontSize: 18,
@@ -938,12 +932,12 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 2,
     right: 2,
-    backgroundColor: "#EF4444",
+    backgroundColor: colors.danger,
     paddingHorizontal: 4,
     borderRadius: 999,
   },
   iconBadgeText: {
-    color: "#fff",
+    color: colors.foreground,
     fontSize: 10,
     fontWeight: "700",
   },
@@ -952,23 +946,22 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   card: {
+    ...commonStyles.card,
     flex: 1,
     padding: 12,
     borderRadius: 14,
-    backgroundColor: "#0F172A",
-    borderWidth: 1,
-    borderColor: "#1E293B",
+    borderColor: colors.border,
   },
   cardLabel: {
     fontSize: 12,
-    color: "#94A3B8",
+    color: colors.textMuted,
     textTransform: "uppercase",
   },
   cardValue: {
     marginTop: 6,
     fontSize: 22,
     fontWeight: "700",
-    color: "#F8FAFC",
+    color: colors.text,
   },
   filterRow: {
     gap: 12,
@@ -983,18 +976,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: "#1E293B",
+    borderColor: colors.border,
   },
   filterChipActive: {
-    backgroundColor: "#22D3EE",
-    borderColor: "#22D3EE",
+    backgroundColor: colors.accentMuted,
+    borderColor: colors.accentMuted,
   },
   filterChipText: {
-    color: "#CBD5F5",
+    color: colors.muted,
     fontSize: 13,
   },
   filterChipTextActive: {
-    color: "#0F172A",
+    color: colors.card,
     fontWeight: "600",
   },
   switchRow: {
@@ -1003,7 +996,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   switchLabel: {
-    color: "#E2E8F0",
+    color: colors.text,
     fontSize: 14,
     marginRight: 8,
   },
@@ -1019,22 +1012,20 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   queueBanner: {
+    ...commonStyles.card,
     padding: 16,
     borderRadius: 16,
-    backgroundColor: "#0F172A",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     gap: 12,
-    borderWidth: 1,
-    borderColor: "#1E293B",
   },
   queueTitle: {
-    color: "#F8FAFC",
+    color: colors.text,
     fontWeight: "600",
   },
   queueSubtitle: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 12,
     marginTop: 4,
   },
@@ -1042,18 +1033,16 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 14,
     borderRadius: 12,
-    backgroundColor: "#22D3EE",
+    backgroundColor: colors.accentMuted,
   },
   syncText: {
-    color: "#0F172A",
+    color: colors.card,
     fontWeight: "700",
   },
   reportCard: {
+    ...commonStyles.card,
     padding: 16,
     borderRadius: 16,
-    backgroundColor: "#0F172A",
-    borderWidth: 1,
-    borderColor: "#1E293B",
     gap: 8,
   },
   snapshotRow: {
@@ -1075,7 +1064,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   snapshotMeta: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 12,
   },
   textLink: {
@@ -1087,7 +1076,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(15, 118, 110, 0.15)",
   },
   textLinkLabel: {
-    color: "#38BDF8",
+    color: colors.accentMuted,
     fontSize: 13,
     fontWeight: "600",
   },
@@ -1102,12 +1091,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   reportTitle: {
-    color: "#F8FAFC",
+    color: colors.text,
     fontSize: 16,
     fontWeight: "600",
   },
   reportHint: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 13,
   },
   reportLink: {
@@ -1115,10 +1104,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#1E293B",
+    borderColor: colors.border,
   },
   reportLinkText: {
-    color: "#38BDF8",
+    color: colors.accentMuted,
     fontSize: 13,
     fontWeight: "600",
   },
@@ -1128,27 +1117,25 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   highlightCard: {
+    ...commonStyles.card,
     flexBasis: "47%",
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#1E293B",
     padding: 12,
-    backgroundColor: "#0B1220",
   },
   highlightLabel: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 12,
   },
   highlightValue: {
     marginTop: 4,
-    color: "#F8FAFC",
+    color: colors.text,
     fontSize: 20,
     fontWeight: "700",
   },
   sectionHeading: {
     marginTop: 8,
     marginBottom: 4,
-    color: "#E2E8F0",
+    color: colors.text,
     fontWeight: "600",
   },
   summaryGrid: {
@@ -1157,20 +1144,18 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   summaryChip: {
+    ...commonStyles.card,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#1E293B",
     padding: 10,
-    backgroundColor: "#0B1220",
     flexBasis: "30%",
   },
   summaryChipLabel: {
-    color: "#CBD5F5",
+    color: colors.muted,
     fontSize: 12,
   },
   summaryChipValue: {
     marginTop: 6,
-    color: "#F8FAFC",
+    color: colors.text,
     fontSize: 18,
     fontWeight: "700",
   },
@@ -1183,24 +1168,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   assignmentName: {
-    color: "#E2E8F0",
+    color: colors.text,
     fontSize: 14,
   },
   assignmentCount: {
-    color: "#38BDF8",
+    color: colors.accentMuted,
     fontWeight: "700",
   },
   assignmentMore: {
     marginTop: 4,
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 12,
   },
   notificationsPanel: {
+    ...commonStyles.card,
     borderRadius: 16,
     padding: 16,
-    backgroundColor: "#0B1220",
-    borderWidth: 1,
-    borderColor: "#1E293B",
     gap: 10,
   },
   activityPanel: {
@@ -1213,7 +1196,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   activityEmpty: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 13,
   },
   activityItem: {
@@ -1224,24 +1207,24 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   activityActor: {
-    color: "#F8FAFC",
+    color: colors.text,
     fontWeight: "600",
   },
   activityCopy: {
-    color: "#CBD5F5",
+    color: colors.muted,
     fontSize: 13,
   },
   activityMeta: {
-    color: "#64748B",
+    color: colors.muted,
     fontSize: 11,
   },
   notificationsTitle: {
-    color: "#F8FAFC",
+    color: colors.text,
     fontSize: 16,
     fontWeight: "600",
   },
   notificationsEmpty: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 13,
   },
   notificationRow: {
@@ -1249,7 +1232,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingVertical: 6,
     borderBottomWidth: 1,
-    borderBottomColor: "#1E293B",
+    borderBottomColor: colors.border,
   },
   notificationUnread: {
     backgroundColor: "rgba(56, 189, 248, 0.08)",
@@ -1269,18 +1252,18 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: "#38BDF8",
+    backgroundColor: colors.accentMuted,
   },
   notificationText: {
-    color: "#E2E8F0",
+    color: colors.text,
     fontWeight: "600",
   },
   notificationSub: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 12,
   },
   notificationTime: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 12,
   },
   drawerOverlay: {
@@ -1339,7 +1322,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   navDrawerBackGlyph: {
-    color: "#F8FAFC",
+    color: colors.text,
     fontSize: 18,
   },
   navDrawerHeaderCopy: {
@@ -1347,12 +1330,12 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   navDrawerTitle: {
-    color: "#F8FAFC",
+    color: colors.text,
     fontSize: 18,
     fontWeight: "700",
   },
   navDrawerSubtitle: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 12,
   },
   navDrawerItem: {
@@ -1370,21 +1353,19 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   navDrawerItemTitle: {
-    color: "#E2E8F0",
+    color: colors.text,
     fontSize: 15,
     fontWeight: "600",
   },
   navDrawerItemSubtitle: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 12,
   },
   notificationsDrawer: {
+    ...commonStyles.card,
     marginTop: 40,
     borderRadius: 20,
     padding: 16,
-    backgroundColor: "#0F172A",
-    borderWidth: 1,
-    borderColor: "#1E293B",
     maxHeight: "70%",
   },
   drawerHeader: {
@@ -1394,11 +1375,11 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   notificationsMeta: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 13,
   },
   closeDrawerText: {
-    color: "#38BDF8",
+    color: colors.accentMuted,
     fontWeight: "600",
   },
   drawerScroll: {
@@ -1409,12 +1390,10 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   ticketCard: {
+    ...commonStyles.card,
     marginTop: 12,
     padding: 16,
     borderRadius: 18,
-    backgroundColor: "#0B1220",
-    borderWidth: 1,
-    borderColor: "#1E293B",
   },
   ticketCardHeader: {
     flexDirection: "row",
@@ -1422,7 +1401,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   ticketId: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 13,
   },
   statusPill: {
@@ -1431,21 +1410,21 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   status_open: {
-    backgroundColor: "#0F172A",
+    backgroundColor: colors.card,
   },
   status_in_progress: {
-    backgroundColor: "#1E3A8A",
+    backgroundColor: colors.statusInProgress,
   },
   status_resolved: {
-    backgroundColor: "#0F766E",
+    backgroundColor: colors.statusResolved,
   },
   statusText: {
-    color: "#F8FAFC",
+    color: colors.text,
     fontSize: 12,
   },
   ticketDescription: {
     marginTop: 10,
-    color: "#E2E8F0",
+    color: colors.text,
     fontSize: 16,
   },
   ticketMetaRow: {
@@ -1460,19 +1439,19 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: "#FBBF24",
-    backgroundColor: "#422006",
-    color: "#FDE68A",
+    borderColor: colors.statusWarning,
+    backgroundColor: colors.statusWarningBg,
+    color: colors.statusWarningText,
     fontSize: 12,
     fontWeight: "600",
   },
   metaText: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 13,
   },
   metaSubtext: {
     marginTop: 6,
-    color: "#CBD5F5",
+    color: colors.muted,
     fontSize: 13,
   },
   emptyState: {
@@ -1481,37 +1460,35 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   emptyTitle: {
-    color: "#F8FAFC",
+    color: colors.text,
     fontSize: 18,
     fontWeight: "600",
   },
   emptySubtitle: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     textAlign: "center",
   },
   primaryCta: {
+    ...commonStyles.primaryBtn,
     position: "absolute",
     left: 20,
     right: 20,
     bottom: 24,
     paddingVertical: 16,
     borderRadius: 16,
-    alignItems: "center",
-    backgroundColor: "#22D3EE",
   },
   primaryText: {
+    ...commonStyles.primaryText,
     fontWeight: "700",
-    color: "#020617",
   },
   toastBanner: {
+    ...commonStyles.card,
     position: "absolute",
     left: 20,
     right: 20,
     padding: 16,
     borderRadius: 16,
-    backgroundColor: "#0B1220",
-    borderWidth: 1,
-    borderColor: "#22D3EE",
+    borderColor: colors.accentMuted,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -1521,16 +1498,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   toastActor: {
-    color: "#F8FAFC",
+    color: colors.text,
     fontWeight: "600",
   },
   toastMessage: {
-    color: "#CBD5F5",
+    color: colors.muted,
     fontSize: 13,
     marginTop: 2,
   },
   toastDismiss: {
-    color: "#38BDF8",
+    color: colors.accentMuted,
     fontWeight: "600",
   },
 });

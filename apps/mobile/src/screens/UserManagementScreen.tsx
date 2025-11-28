@@ -34,6 +34,8 @@ import {
 } from "@/utils/userFormValidation";
 import { useRoleGuard } from "@/hooks/useRoleGuard";
 import { RoleRestrictedView } from "@/components/RoleRestrictedView";
+import { colors } from "@/theme/colors";
+import { commonStyles } from "@/theme/commonStyles";
 
 type Navigation = NativeStackNavigationProp<
   RootStackParamList,
@@ -278,10 +280,10 @@ export function UserManagementScreen() {
       <ScrollView
         style={styles.container}
         refreshControl={
-          <RefreshControl
+            <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            tintColor="#38BDF8"
+            tintColor={colors.accentMuted}
           />
         }
       >
@@ -308,7 +310,7 @@ export function UserManagementScreen() {
           </Text>
 
           {overviewInitialLoading ? (
-            <ActivityIndicator color="#38BDF8" />
+            <ActivityIndicator color={colors.accentMuted} />
           ) : assignments.length === 0 ? (
             <Text style={styles.sectionHint}>No active agents found.</Text>
           ) : (
@@ -346,7 +348,7 @@ export function UserManagementScreen() {
             </Pressable>
           </View>
 
-          <View style={styles.filterRow}>
+          <View style={[styles.filterRow, commonStyles.card]}>
             {roleFilters.map((filter) => {
               const active = roleFilter === filter.value;
               return (
@@ -369,7 +371,7 @@ export function UserManagementScreen() {
           </View>
 
           {usersInitialLoading ? (
-            <ActivityIndicator color="#38BDF8" />
+            <ActivityIndicator color={colors.accentMuted} />
           ) : usersError ? (
             <Text style={styles.sectionHint}>{usersErrorMessage}</Text>
           ) : memberList.length === 0 ? (
@@ -470,7 +472,7 @@ export function UserManagementScreen() {
                 <TextInput
                   style={styles.input}
                   placeholder="Casey Admin"
-                  placeholderTextColor="#475569"
+                  placeholderTextColor={colors.textMuted}
                   autoCapitalize="words"
                   value={formValues.name}
                   onChangeText={(text) =>
@@ -487,7 +489,7 @@ export function UserManagementScreen() {
                 <TextInput
                   style={styles.input}
                   placeholder="casey@example.com"
-                  placeholderTextColor="#475569"
+                  placeholderTextColor={colors.textMuted}
                   autoCapitalize="none"
                   autoComplete="email"
                   keyboardType="email-address"
@@ -510,7 +512,7 @@ export function UserManagementScreen() {
                 <TextInput
                   style={styles.input}
                   placeholder="At least 6 characters"
-                  placeholderTextColor="#475569"
+                  placeholderTextColor={colors.textMuted}
                   secureTextEntry
                   value={formValues.password}
                   onChangeText={(text) =>
@@ -600,8 +602,7 @@ export function UserManagementScreen() {
 
 const styles = StyleSheet.create({
   safeArea: {
-    flex: 1,
-    backgroundColor: "#020617",
+    ...commonStyles.safeArea,
   },
   container: {
     flex: 1,
@@ -619,46 +620,42 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#1E293B",
+    borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
   },
   backGlyph: {
-    color: "#E2E8F0",
+    color: colors.text,
     fontSize: 18,
   },
   title: {
-    color: "#F8FAFC",
+    color: colors.text,
     fontSize: 22,
     fontWeight: "700",
   },
   subtitle: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     marginTop: 4,
   },
   sectionCard: {
-    padding: 16,
-    borderRadius: 18,
-    backgroundColor: "#0B1220",
-    borderWidth: 1,
-    borderColor: "#1E293B",
+    ...commonStyles.sectionCard,
     marginBottom: 16,
   },
   directoryCard: {
     marginTop: 20,
   },
   sectionTitle: {
-    color: "#F8FAFC",
+    color: colors.text,
     fontSize: 16,
     fontWeight: "600",
     marginBottom: 4,
   },
   sectionSubtitle: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     marginBottom: 12,
   },
   sectionHint: {
-    color: "#94A3B8",
+    color: colors.textMuted,
   },
   sectionHeader: {
     flexDirection: "row",
@@ -676,37 +673,35 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: "#1E293B",
+    borderBottomColor: colors.border,
   },
   assignmentTextGroup: {
     flex: 1,
     marginRight: 12,
   },
   assignmentName: {
-    color: "#E2E8F0",
+    color: colors.text,
     fontWeight: "600",
   },
   assignmentMeta: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 12,
   },
   assignmentBadge: {
+    ...commonStyles.card,
     minWidth: 64,
     borderRadius: 14,
     paddingVertical: 6,
     paddingHorizontal: 12,
-    backgroundColor: "#0F172A",
-    borderWidth: 1,
-    borderColor: "#1E293B",
     alignItems: "center",
   },
   assignmentCount: {
-    color: "#F8FAFC",
+    color: colors.text,
     fontWeight: "700",
     fontSize: 18,
   },
   assignmentLabel: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 11,
   },
   filterRow: {
@@ -716,23 +711,23 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   filterChip: {
+    ...commonStyles.card,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: "#1E293B",
+    borderColor: colors.border,
     paddingVertical: 6,
     paddingHorizontal: 14,
-    backgroundColor: "#0B1120",
   },
   filterChipActive: {
-    borderColor: "#22D3EE",
-    backgroundColor: "#082F49",
+    borderColor: colors.accentMuted,
+    backgroundColor: colors.accentMuted,
   },
   filterChipText: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontWeight: "600",
   },
   filterChipTextActive: {
-    color: "#F8FAFC",
+    color: colors.text,
   },
   userList: {
     marginTop: 4,
@@ -743,7 +738,7 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#1E293B",
+    borderBottomColor: colors.border,
   },
   userMeta: {
     flex: 1,
@@ -757,23 +752,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderWidth: 1,
-    borderColor: "#1E293B",
-    backgroundColor: "#111827",
+    borderColor: colors.border,
+    backgroundColor: colors.background,
   },
   roleBadgeAdmin: {
-    borderColor: "#fb7185",
+    borderColor: colors.danger,
     backgroundColor: "rgba(251, 113, 133, 0.15)",
   },
   roleBadgeAgent: {
-    borderColor: "#38BDF8",
+    borderColor: colors.accentMuted,
     backgroundColor: "rgba(56, 189, 248, 0.12)",
   },
   roleBadgeUser: {
-    borderColor: "#a78bfa",
+    borderColor: colors.statusUser,
     backgroundColor: "rgba(167, 139, 250, 0.12)",
   },
   roleBadgeText: {
-    color: "#F8FAFC",
+    color: colors.text,
     fontWeight: "700",
     fontSize: 12,
   },
@@ -784,31 +779,31 @@ const styles = StyleSheet.create({
   actionButton: {
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#1E293B",
+    borderColor: colors.border,
     paddingVertical: 6,
     paddingHorizontal: 12,
   },
   actionButtonText: {
-    color: "#E2E8F0",
+    color: colors.text,
     fontWeight: "600",
     fontSize: 12,
   },
   actionButtonDanger: {
-    borderColor: "#7f1d1d",
+    borderColor: colors.danger,
   },
   actionButtonDangerText: {
-    color: "#fca5a5",
+    color: colors.danger,
   },
   primaryCta: {
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 14,
-    backgroundColor: "#22D3EE",
+    backgroundColor: colors.accentMuted,
     alignItems: "center",
     justifyContent: "center",
   },
   primaryCtaText: {
-    color: "#0B1220",
+    color: colors.card,
     fontWeight: "700",
   },
   secondaryCta: {
@@ -816,25 +811,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#1E293B",
+    borderColor: colors.border,
   },
   secondaryCtaText: {
-    color: "#E2E8F0",
+    color: colors.text,
     fontWeight: "600",
   },
   fieldGroup: {
     marginTop: 16,
   },
   label: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     marginBottom: 6,
   },
   input: {
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    backgroundColor: "#1E293B",
-    color: "#F8FAFC",
+    backgroundColor: colors.border,
+    color: colors.text,
   },
   roleRow: {
     marginTop: 4,
@@ -843,31 +838,31 @@ const styles = StyleSheet.create({
   roleCard: {
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#1E293B",
+    borderColor: colors.border,
     padding: 14,
     marginTop: 12,
-    backgroundColor: "#111827",
+    backgroundColor: colors.background,
   },
   roleCardActive: {
-    borderColor: "#22D3EE",
-    backgroundColor: "#0F172A",
+    ...commonStyles.card,
+    borderColor: colors.accentMuted,
   },
   roleLabel: {
-    color: "#CBD5F5",
+    color: colors.muted,
     fontSize: 15,
     fontWeight: "600",
   },
   roleLabelActive: {
-    color: "#22D3EE",
+    color: colors.accentMuted,
   },
   roleDescription: {
     marginTop: 6,
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 12,
   },
   errorText: {
     marginTop: 6,
-    color: "#F87171",
+    color: colors.danger,
     fontSize: 13,
   },
   modalOverlay: {
@@ -880,11 +875,9 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   modalCard: {
+    ...commonStyles.card,
     borderRadius: 24,
     padding: 20,
-    backgroundColor: "#0B1220",
-    borderWidth: 1,
-    borderColor: "#1E293B",
   },
   modalHeader: {
     flexDirection: "row",
@@ -893,19 +886,19 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   modalTitle: {
-    color: "#F8FAFC",
+    color: colors.text,
     fontSize: 20,
     fontWeight: "700",
   },
   modalSubtitle: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     marginTop: 4,
   },
   modalClose: {
     padding: 6,
   },
   modalCloseGlyph: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 18,
   },
   modalActions: {

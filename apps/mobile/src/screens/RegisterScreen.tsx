@@ -15,7 +15,9 @@ import { RootStackParamList } from "@/navigation/AppNavigator";
 import { register } from "@/services/auth";
 import { useAuthStore, type UserRole } from "@/store/useAuthStore";
 import { useOfflineStore } from "@/store/useOfflineStore";
+import { colors } from "@/theme/colors";
 import { demoAccounts } from "@/constants/demoAccounts";
+import { commonStyles } from "@/theme/commonStyles";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Register">;
 
@@ -143,17 +145,16 @@ export function RegisterScreen({ navigation }: Props) {
                   ? "Offline sign ups are queued and will sync automatically."
                   : "Using cached session while offline."}
               </Text>
-              {authQueueLength > 0 ? (
+              {authQueueLength > 0 && (
                 <Text style={styles.offlineHintMeta}>
                   {authQueueLength === 1
                     ? "1 auth action awaiting sync"
                     : `${authQueueLength} auth actions awaiting sync`}
                 </Text>
-              ) : null}
+              )}
             </View>
           )}
-
-          <View style={styles.presetSection}>
+            <View style={styles.presetSection}>
             <Text style={styles.presetHeading}>Quick fill demo accounts</Text>
             <View style={styles.presetRow}>
               {demoAccounts.map((account) => (
@@ -179,7 +180,7 @@ export function RegisterScreen({ navigation }: Props) {
               style={styles.input}
               autoCapitalize="words"
               placeholder="Ada Lovelace"
-              placeholderTextColor="#475569"
+              placeholderTextColor={colors.textMuted}
               value={name}
               onChangeText={setName}
             />
@@ -193,7 +194,7 @@ export function RegisterScreen({ navigation }: Props) {
               autoComplete="email"
               keyboardType="email-address"
               placeholder="you@example.com"
-              placeholderTextColor="#475569"
+              placeholderTextColor={colors.textMuted}
               value={email}
               onChangeText={setEmail}
             />
@@ -205,7 +206,7 @@ export function RegisterScreen({ navigation }: Props) {
               style={styles.input}
               secureTextEntry
               placeholder="At least 6 characters"
-              placeholderTextColor="#475569"
+              placeholderTextColor={colors.textMuted}
               value={password}
               onChangeText={setPassword}
             />
@@ -266,7 +267,7 @@ export function RegisterScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#020617",
+    backgroundColor: colors.background,
   },
   scrollContent: {
     flexGrow: 1,
@@ -275,36 +276,34 @@ const styles = StyleSheet.create({
     paddingVertical: 32,
   },
   form: {
+    ...commonStyles.card,
     padding: 24,
     borderRadius: 24,
-    backgroundColor: "#0F172A",
   },
   offlineHint: {
+    ...commonStyles.card,
     marginTop: 18,
     padding: 12,
     borderRadius: 12,
-    backgroundColor: "#0B1120",
-    borderWidth: 1,
-    borderColor: "#1E293B",
   },
   offlineHintText: {
-    color: "#F8FAFC",
+    color: colors.foreground,
     fontSize: 13,
     fontWeight: "600",
   },
   offlineHintMeta: {
     marginTop: 4,
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 12,
   },
   title: {
     fontSize: 24,
     fontWeight: "700",
-    color: "#F8FAFC",
+    color: colors.foreground,
   },
   subtitle: {
     marginTop: 4,
-    color: "#94A3B8",
+    color: colors.textMuted,
   },
   fieldGroup: {
     marginTop: 18,
@@ -313,7 +312,7 @@ const styles = StyleSheet.create({
     marginTop: 18,
   },
   presetHeading: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 13,
     fontWeight: "500",
   },
@@ -323,40 +322,38 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   presetButton: {
+    ...commonStyles.card,
     flexBasis: "30%",
     flexGrow: 1,
     marginRight: 8,
     marginTop: 10,
     borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#1E293B",
     paddingHorizontal: 12,
     paddingVertical: 10,
-    backgroundColor: "#0B1120",
   },
   presetLabel: {
-    color: "#F8FAFC",
+    color: colors.foreground,
     fontWeight: "600",
   },
   presetHint: {
     marginTop: 4,
-    color: "#64748B",
+    color: colors.textMuted,
     fontSize: 12,
   },
   label: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     marginBottom: 6,
   },
   input: {
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    backgroundColor: "#1E293B",
-    color: "#F8FAFC",
+    backgroundColor: colors.border,
+    color: colors.foreground,
   },
   errorText: {
     marginTop: 12,
-    color: "#F87171",
+    color: colors.danger,
   },
   roleRow: {
     marginTop: 8,
@@ -364,37 +361,37 @@ const styles = StyleSheet.create({
   roleCard: {
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#1E293B",
+    borderColor: colors.border,
     padding: 14,
     marginTop: 12,
-    backgroundColor: "#111827",
+    backgroundColor: colors.background,
   },
   roleCardActive: {
-    borderColor: "#22D3EE",
-    backgroundColor: "#0F172A",
+    ...commonStyles.card,
+    borderColor: colors.accent,
   },
   roleLabel: {
-    color: "#CBD5F5",
+    color: colors.muted,
     fontSize: 15,
     fontWeight: "600",
   },
   roleLabelActive: {
-    color: "#22D3EE",
+    color: colors.accent,
   },
   roleDescription: {
     marginTop: 6,
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontSize: 12,
   },
   primaryCta: {
+    ...commonStyles.primaryBtn,
     marginTop: 28,
     paddingVertical: 14,
     borderRadius: 16,
-    alignItems: "center",
-    backgroundColor: "#22D3EE",
   },
   primaryText: {
-    color: "#0F172A",
+    ...commonStyles.primaryText,
+    color: colors.foreground,
     fontWeight: "700",
   },
   secondaryCta: {
@@ -402,7 +399,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   secondaryText: {
-    color: "#94A3B8",
+    color: colors.textMuted,
     fontWeight: "600",
   },
   disabled: {
