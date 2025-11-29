@@ -9,6 +9,7 @@ import {
 } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 import { publishTicketEvent } from "../realtime/ticketPublisher.js";
+import { suggestReplyForTicket, summarizeTicket } from "./aiService.js";
 import { dispatchTicketEmail } from "../notifications/ticketMailer.js";
 
 const ticketInclude = {
@@ -189,6 +190,15 @@ export async function createTicket(
   });
 
   notifyTicketChange(ticket, "tickets:created");
+  // Fire-and-forget generation of suggestions/summaries (do not block ticket creation)
+  void (async () => {
+    try {
+      await suggestReplyForTicket(ticket);
+      await summarizeTicket(ticket);
+    } catch (err) {
+      console.warn("AI suggestions generation failed", err);
+    }
+  })();
   return ticket;
 }
 
@@ -614,6 +624,14 @@ export async function ingestQueuedTickets(
     });
 
     notifyTicketChange(ticket, "tickets:created");
+    void (async () => {
+      try {
+        await suggestReplyForTicket(ticket);
+        await summarizeTicket(ticket);
+      } catch (err) {
+        console.warn("AI suggestions generation failed (queued)", err);
+      }
+    })();
     results.push({ tempId: payload.tempId, ticket });
   }
 

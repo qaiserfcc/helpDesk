@@ -22,6 +22,7 @@ import {
   resolveTicket,
   updateTicket,
 } from "@/services/tickets";
+import { suggestReply, fetchSuggestions } from "@/services/ai";
 import { fetchUsers, UserSummary } from "@/services/users";
 import { env } from "@/config/env";
 import {
@@ -94,6 +95,11 @@ export function TicketDetailScreen({ route, navigation }: Props) {
     staleTime: 60_000,
   });
   const markTicketRead = useNotificationStore((state) => state.markTicketRead);
+  const { data: aiSuggestions = [], refetch: refetchAISuggestions } = useQuery({
+    queryKey: ["ai-suggestions", ticketId],
+    queryFn: () => fetchSuggestions(ticketId),
+    enabled: Boolean(ticket),
+  });
 
   useEffect(() => {
     markTicketRead(ticketId);
@@ -202,6 +208,15 @@ export function TicketDetailScreen({ route, navigation }: Props) {
     } catch (error) {
       console.error("request assignment failed", error);
       Alert.alert("Request failed", "Unable to request this ticket right now.");
+    }
+  };
+
+  const handleGenerateSuggestion = async () => {
+    try {
+      await suggestReply(ticketId);
+      await refetchAISuggestions();
+    } catch (error) {
+      console.error("generate suggestion failed", error);
     }
   };
 
@@ -364,6 +379,38 @@ export function TicketDetailScreen({ route, navigation }: Props) {
                 </Text>
               </View>
             ))}
+          </View>
+        )}
+      </View>
+
+      {/* AI Suggestions */}
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>AI Suggestions</Text>
+        {aiSuggestions.length === 0 ? (
+          <View style={{ marginTop: 8 }}>
+            <Text style={styles.sectionHint}>No suggestions are available for this ticket yet.</Text>
+            <Pressable style={[styles.primaryBtn, { marginTop: 12 }]} onPress={handleGenerateSuggestion}>
+              <Text style={styles.primaryText}>Generate suggestion</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <View style={{ marginTop: 8 }}>
+            {aiSuggestions.map((s) => (
+              <View key={s.id} style={[styles.activityItem, { marginBottom: 10 }]}>
+                <Text style={styles.activityDescription}>{s.result?.text ?? JSON.stringify(s.result)}</Text>
+                <Pressable
+                  style={[styles.secondaryBtn, { marginTop: 8 }]}
+                  onPress={() => {
+                    Alert.alert("AI Suggestion", s.result?.text ?? "(no content)");
+                  }}
+                >
+                  <Text style={styles.secondaryText}>Copy</Text>
+                </Pressable>
+              </View>
+            ))}
+            <Pressable style={[styles.primaryBtn, { marginTop: 4 }]} onPress={handleGenerateSuggestion}>
+              <Text style={styles.primaryText}>Regenerate</Text>
+            </Pressable>
           </View>
         )}
       </View>

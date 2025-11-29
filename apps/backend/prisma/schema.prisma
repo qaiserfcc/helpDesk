@@ -54,6 +54,7 @@ model User {
   devices      DeviceToken[]
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
+  aiSuggestions AiSuggestion[]
 }
 
 model Ticket {
@@ -73,6 +74,23 @@ model Ticket {
   updatedAt   DateTime       @updatedAt
   resolvedAt  DateTime?
   activities  TicketActivity[]
+  aiSuggestions AiSuggestion[]
+}
+
+model AiSuggestion {
+  id           String   @id @default(uuid())
+  ticketId     String?
+  ticket       Ticket?  @relation(fields: [ticketId], references: [id])
+  suggestionType String
+  prompt       String
+  result       Json
+  provider     String?
+  providerMeta Json?
+  createdBy    String?
+  createdByUser User?   @relation(fields: [createdBy], references: [id])
+  createdAt    DateTime @default(now())
+
+  @@index([ticketId])
 }
 
 model TicketActivity {

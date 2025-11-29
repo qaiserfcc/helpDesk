@@ -14,6 +14,7 @@ type ServerToClientEvents = {
     ticketId: string;
     activity: TicketActivityEntry;
   }) => void;
+  "tickets:ai:suggestion": (payload: { ticketId: string; suggestion: any }) => void;
 };
 
 let socket: Socket<ServerToClientEvents> | null = null;
@@ -139,6 +140,11 @@ function attachListeners(instance: Socket<ServerToClientEvents>) {
     if (activity) {
       pushActivityNotification(activity);
     }
+  });
+
+  instance.on("tickets:ai:suggestion", ({ ticketId }) => {
+    invalidateTicketLists(ticketId);
+    void queryClient.invalidateQueries({ queryKey: ["ai-suggestions", ticketId] });
   });
 
   instance.on("connect_error", (error) => {

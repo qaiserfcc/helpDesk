@@ -16,6 +16,7 @@ import {
   resolveTicket,
   updateTicket,
 } from "@/services/tickets";
+import { suggestReply, fetchSuggestions } from "@/services/ai";
 import { fetchUsers, type UserSummary } from "@/services/users";
 import { env } from "@/config/env";
 import {
@@ -91,6 +92,7 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
   });
 
   const markTicketRead = useNotificationStore((state) => state.markTicketRead);
+  const { data: aiSuggestions = [] } = useQuery({ queryKey: ["ai-suggestions", ticketId], queryFn: () => fetchSuggestions(ticketId), enabled: Boolean(ticket) });
   const toastAdd = useToastStore((s) => s.addNotification);
 
   useEffect(() => {
@@ -197,6 +199,17 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
       toastAdd({ type: "error", title: "Request failed", message, timestamp: new Date().toISOString() });
     } finally {
       setIsRequesting(false);
+    }
+  };
+
+  const handleGenerateSuggestion = async () => {
+    try {
+      const s = await suggestReply(ticketId);
+      await queryClient.invalidateQueries({ queryKey: ["ai-suggestions", ticketId] });
+      toastAdd({ type: "success", title: "AI suggestion generated", message: "AI suggestion is available", timestamp: new Date().toISOString() });
+    } catch (err) {
+      console.error("ai suggestion failed", err);
+      toastAdd({ type: "error", title: "AI suggestion failed", message: "Try again", timestamp: new Date().toISOString() });
     }
   };
 
@@ -413,6 +426,29 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
                   </button>
                 )}
               </div>
+            </div>
+
+            {/* AI Suggestions */}
+            <div className="card shadow rounded-lg p-6">
+              <h2 className="text-xl font-semibold text-white mb-4">AI Suggestions</h2>
+              {aiSuggestions.length === 0 ? (
+                <div className="space-y-3">
+                  <p className="text-white/80">No AI suggestions yet.</p>
+                  <button onClick={handleGenerateSuggestion} className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700">Generate suggestion</button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {aiSuggestions.map((s) => (
+                    <div key={s.id} className="bg-white/5 p-4 rounded-lg">
+                      <p className="text-white/90 mb-2">{s.result?.text ?? JSON.stringify(s.result)}</p>
+                      <div className="flex gap-2">
+                        <button onClick={() => { navigator.clipboard.writeText(s.result?.text ?? ""); toastAdd({ type: "success", title: "Copied suggestion", message: "Suggestion copied to clipboard", timestamp: new Date().toISOString() }); }} className="bg-white/5 text-white px-3 py-1 rounded">Copy</button>
+                      </div>
+                    </div>
+                  ))}
+                  <button onClick={handleGenerateSuggestion} className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700">Regenerate</button>
+                </div>
+              )}
             </div>
           </div>
         </div>

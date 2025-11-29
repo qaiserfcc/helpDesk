@@ -14,7 +14,8 @@ import {
 export type TicketRealtimeEventName =
   | "tickets:created"
   | "tickets:updated"
-  | "tickets:activity";
+  | "tickets:activity"
+  | "tickets:ai:suggestion";
 
 type TicketAudience = {
   id: string;
@@ -34,7 +35,13 @@ type TicketActivityEvent = {
   audience?: TicketAudience | null;
 };
 
-export type TicketRealtimeEvent = TicketChangeEvent | TicketActivityEvent;
+type TicketAISuggestionEvent = {
+  type: "tickets:ai:suggestion";
+  ticketId: string;
+  suggestion: any;
+};
+
+export type TicketRealtimeEvent = TicketChangeEvent | TicketActivityEvent | TicketAISuggestionEvent;
 
 function collectTicketRooms(ticket: TicketAudience) {
   const rooms = new Set<string>();
@@ -71,6 +78,19 @@ export function publishTicketEvent(event: TicketRealtimeEvent) {
     realtime.to([...rooms]).emit(event.type, {
       ticketId: event.ticketId,
       activity: event.activity,
+    });
+    return;
+  }
+
+  if (event.type === "tickets:ai:suggestion") {
+    const rooms = new Set<string>();
+    rooms.add(ticketRoom(event.ticketId));
+    rooms.add(roleRoom(Role.admin));
+    rooms.add(roleRoom(Role.agent));
+    rooms.add(STAFF_ROOM);
+    realtime.to([...rooms]).emit(event.type, {
+      ticketId: event.ticketId,
+      suggestion: event.suggestion,
     });
     return;
   }
