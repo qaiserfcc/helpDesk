@@ -143,10 +143,7 @@ router.get("/admin/productivity", async (req, res, next) => {
   }
 
   try {
-    const report = await getAdminProductivityReport(
-      req.user,
-      parsed.data.days,
-    );
+    const report = await getAdminProductivityReport(req.user, parsed.data.days);
     res.json({ report });
   } catch (error) {
     next(error);
@@ -166,15 +163,11 @@ router.get("/tickets/export", async (req, res, next) => {
   }
 
   try {
-    const dataset = await getTicketExportDataset(
-      req.user,
-      parsed.data.scope,
-      {
-        agentId: parsed.data.agentId,
-        creatorId: parsed.data.creatorId,
-        status: parsed.data.status,
-      },
-    );
+    const dataset = await getTicketExportDataset(req.user, parsed.data.scope, {
+      agentId: parsed.data.agentId,
+      creatorId: parsed.data.creatorId,
+      status: parsed.data.status,
+    });
 
     if (parsed.data.format === "csv") {
       const csv = ticketsToCsv(dataset.tickets);

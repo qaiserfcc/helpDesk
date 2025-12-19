@@ -155,7 +155,10 @@ router.get("/:categoryId/subcategories", async (req, res, next) => {
   const activeOnly = req.query.active === "true";
 
   try {
-    const subcategories = await listSubcategories(req.params.categoryId, activeOnly);
+    const subcategories = await listSubcategories(
+      req.params.categoryId,
+      activeOnly,
+    );
     res.json({ subcategories });
   } catch (error) {
     next(error);
@@ -219,7 +222,10 @@ router.patch("/subcategories/:subcategoryId", async (req, res, next) => {
   }
 
   try {
-    const subcategory = await updateSubcategory(req.params.subcategoryId, parsed.data);
+    const subcategory = await updateSubcategory(
+      req.params.subcategoryId,
+      parsed.data,
+    );
     res.json({ subcategory });
   } catch (error) {
     next(error);

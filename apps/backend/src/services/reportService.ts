@@ -44,7 +44,10 @@ function assertRole(user: RequestUser | undefined, allowed: Role[]) {
   }
   if (!allowed.includes(user.role)) {
     const rolesStr = allowed.join(", ");
-    throw createError(403, `Insufficient permissions for this report; requires role(s): ${rolesStr}`);
+    throw createError(
+      403,
+      `Insufficient permissions for this report; requires role(s): ${rolesStr}`,
+    );
   }
 }
 
@@ -71,9 +74,10 @@ export async function getUserTicketReport(user: RequestUser) {
     statusCounts: mapStatusBuckets(
       statusBuckets.map((bucket) => ({
         status: bucket.status,
-        count: typeof bucket._count === "object" && bucket._count?._all
-          ? bucket._count._all
-          : 0,
+        count:
+          typeof bucket._count === "object" && bucket._count?._all
+            ? bucket._count._all
+            : 0,
       })),
     ),
     tickets,
@@ -119,9 +123,10 @@ export async function getAgentWorkloadReport(user: RequestUser) {
     statusCounts: mapStatusBuckets(
       statusBuckets.map((bucket) => ({
         status: bucket.status,
-        count: typeof bucket._count === "object" && bucket._count?._all
-          ? bucket._count._all
-          : 0,
+        count:
+          typeof bucket._count === "object" && bucket._count?._all
+            ? bucket._count._all
+            : 0,
       })),
     ),
     assigned,
@@ -175,8 +180,7 @@ export async function getAdminOverviewReport(user: RequestUser) {
       .map((bucket) => ({
         agentId: bucket.assignedTo as string,
         count: bucket._count?._all ?? 0,
-        agent:
-          agents.find((agent) => agent.id === bucket.assignedTo) ?? null,
+        agent: agents.find((agent) => agent.id === bucket.assignedTo) ?? null,
       })),
     oldestOpen,
   };
@@ -209,10 +213,7 @@ export async function getAdminEscalationReport(user: RequestUser) {
   return { highPriority, staleTickets };
 }
 
-export async function getAdminProductivityReport(
-  user: RequestUser,
-  days = 7,
-) {
+export async function getAdminProductivityReport(user: RequestUser, days = 7) {
   assertRole(user, [Role.admin]);
   const safeDays = Math.min(Math.max(days, 1), 30);
   const since = new Date();

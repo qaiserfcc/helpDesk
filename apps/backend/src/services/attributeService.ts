@@ -62,10 +62,14 @@ export async function createAttribute(input: CreateAttributeInput) {
 
   // Validate options for select types
   if (
-    (input.type === AttributeType.select || input.type === AttributeType.multiselect) &&
+    (input.type === AttributeType.select ||
+      input.type === AttributeType.multiselect) &&
     !input.options
   ) {
-    throw createError(400, "Options are required for select and multiselect attributes");
+    throw createError(
+      400,
+      "Options are required for select and multiselect attributes",
+    );
   }
 
   const attribute = await prisma.ticketAttribute.create({
@@ -75,7 +79,8 @@ export async function createAttribute(input: CreateAttributeInput) {
       type: input.type,
       mandatory: input.mandatory ?? false,
       visible: input.visible ?? true,
-      options: input.options ?? undefined,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      options: (input.options as any) ?? undefined,
       defaultValue: input.defaultValue ?? null,
       order: input.order ?? 0,
       active: input.active ?? true,
@@ -85,7 +90,10 @@ export async function createAttribute(input: CreateAttributeInput) {
   return attribute;
 }
 
-export async function updateAttribute(attributeId: string, input: UpdateAttributeInput) {
+export async function updateAttribute(
+  attributeId: string,
+  input: UpdateAttributeInput,
+) {
   // Check if attribute exists
   const existing = await prisma.ticketAttribute.findUnique({
     where: { id: attributeId },
@@ -98,10 +106,14 @@ export async function updateAttribute(attributeId: string, input: UpdateAttribut
   // Validate options for select types if type is being updated
   const newType = input.type ?? existing.type;
   if (
-    (newType === AttributeType.select || newType === AttributeType.multiselect) &&
+    (newType === AttributeType.select ||
+      newType === AttributeType.multiselect) &&
     input.options === null
   ) {
-    throw createError(400, "Options cannot be null for select and multiselect attributes");
+    throw createError(
+      400,
+      "Options cannot be null for select and multiselect attributes",
+    );
   }
 
   const attribute = await prisma.ticketAttribute.update({
@@ -111,7 +123,8 @@ export async function updateAttribute(attributeId: string, input: UpdateAttribut
       type: input.type,
       mandatory: input.mandatory,
       visible: input.visible,
-      options: input.options ?? undefined,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      options: (input.options as any) ?? undefined,
       defaultValue: input.defaultValue ?? undefined,
       order: input.order,
       active: input.active,

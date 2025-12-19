@@ -41,7 +41,10 @@ type TicketAISuggestionEvent = {
   suggestion: any;
 };
 
-export type TicketRealtimeEvent = TicketChangeEvent | TicketActivityEvent | TicketAISuggestionEvent;
+export type TicketRealtimeEvent =
+  | TicketChangeEvent
+  | TicketActivityEvent
+  | TicketAISuggestionEvent;
 
 function collectTicketRooms(ticket: TicketAudience) {
   const rooms = new Set<string>();

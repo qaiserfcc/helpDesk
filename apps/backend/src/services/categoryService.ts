@@ -46,7 +46,9 @@ type UpdateSubcategoryInput = {
   active?: boolean;
 };
 
-export async function listCategories(activeOnly = false): Promise<CategoryListItem[]> {
+export async function listCategories(
+  activeOnly = false,
+): Promise<CategoryListItem[]> {
   const categories = await prisma.ticketCategory.findMany({
     where: activeOnly ? { active: true } : undefined,
     select: {
@@ -63,7 +65,9 @@ export async function listCategories(activeOnly = false): Promise<CategoryListIt
   return categories;
 }
 
-export async function getCategory(categoryId: string): Promise<CategoryWithRelations> {
+export async function getCategory(
+  categoryId: string,
+): Promise<CategoryWithRelations> {
   const category = await prisma.ticketCategory.findUnique({
     where: { id: categoryId },
     include: {
@@ -80,7 +84,9 @@ export async function getCategory(categoryId: string): Promise<CategoryWithRelat
   return category;
 }
 
-export async function createCategory(input: CreateCategoryInput): Promise<CategoryWithRelations> {
+export async function createCategory(
+  input: CreateCategoryInput,
+): Promise<CategoryWithRelations> {
   // Check for duplicate name
   const existing = await prisma.ticketCategory.findUnique({
     where: { name: input.name },
@@ -196,7 +202,9 @@ export async function listSubcategories(
   return subcategories;
 }
 
-export async function getSubcategory(subcategoryId: string): Promise<SubcategoryWithRelations> {
+export async function getSubcategory(
+  subcategoryId: string,
+): Promise<SubcategoryWithRelations> {
   const subcategory = await prisma.ticketSubcategory.findUnique({
     where: { id: subcategoryId },
     include: {
@@ -234,7 +242,10 @@ export async function createSubcategory(
   });
 
   if (existing) {
-    throw createError(409, "Subcategory with this name already exists in this category");
+    throw createError(
+      409,
+      "Subcategory with this name already exists in this category",
+    );
   }
 
   const subcategory = await prisma.ticketSubcategory.create({
@@ -277,7 +288,10 @@ export async function updateSubcategory(
     });
 
     if (duplicate) {
-      throw createError(409, "Subcategory with this name already exists in this category");
+      throw createError(
+        409,
+        "Subcategory with this name already exists in this category",
+      );
     }
   }
 

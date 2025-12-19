@@ -120,7 +120,10 @@ router.patch("/:attributeId", async (req, res, next) => {
   }
 
   try {
-    const attribute = await updateAttribute(req.params.attributeId, parsed.data);
+    const attribute = await updateAttribute(
+      req.params.attributeId,
+      parsed.data,
+    );
     res.json({ attribute });
   } catch (error) {
     next(error);
@@ -185,19 +188,25 @@ router.put("/tickets/:ticketId/values/:attributeId", async (req, res, next) => {
   }
 });
 
-router.delete("/tickets/:ticketId/values/:attributeId", async (req, res, next) => {
-  if (!req.user) {
-    next(createError(401, "Authentication required"));
-    return;
-  }
+router.delete(
+  "/tickets/:ticketId/values/:attributeId",
+  async (req, res, next) => {
+    if (!req.user) {
+      next(createError(401, "Authentication required"));
+      return;
+    }
 
-  try {
-    await deleteTicketAttributeValue(req.params.ticketId, req.params.attributeId);
-    res.status(204).send();
-  } catch (error) {
-    next(error);
-  }
-});
+    try {
+      await deleteTicketAttributeValue(
+        req.params.ticketId,
+        req.params.attributeId,
+      );
+      res.status(204).send();
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 router.get("/tickets/:ticketId/validate", async (req, res, next) => {
   if (!req.user) {

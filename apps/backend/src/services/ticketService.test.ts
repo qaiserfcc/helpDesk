@@ -43,8 +43,10 @@ vi.mock("../notifications/ticketMailer.js", () => ({
 
 const prismaTicket = prisma.ticket as unknown as Record<string, Mock>;
 const prismaUser = prisma.user as unknown as Record<string, Mock>;
-const prismaTicketActivity =
-  prisma.ticketActivity as unknown as Record<string, Mock>;
+const prismaTicketActivity = prisma.ticketActivity as unknown as Record<
+  string,
+  Mock
+>;
 const dispatchTicketEmailMock = dispatchTicketEmail as unknown as Mock;
 
 const baseUser: Express.AuthenticatedUser = {
@@ -192,11 +194,7 @@ describe("updateTicket", () => {
     });
 
     await expect(
-      updateTicket(
-        ticketRecord.id,
-        { description: "Different" },
-        agentUser,
-      ),
+      updateTicket(ticketRecord.id, { description: "Different" }, agentUser),
     ).rejects.toMatchObject({ status: 403 });
     expect(prismaTicket.update).not.toHaveBeenCalled();
   });
@@ -208,7 +206,10 @@ describe("assignTicket", () => {
       ...ticketRecord,
       assignmentRequestId: agentUser.id,
     });
-    prismaUser.findUnique.mockResolvedValue({ id: agentUser.id, role: Role.agent });
+    prismaUser.findUnique.mockResolvedValue({
+      id: agentUser.id,
+      role: Role.agent,
+    });
     const assignedTicket = {
       ...ticketWithRelations,
       assignedTo: agentUser.id,
@@ -259,10 +260,7 @@ describe("requestAssignment", () => {
       },
     });
 
-    const ticket = (await requestAssignment(
-      ticketRecord.id,
-      agentUser,
-    )) as any;
+    const ticket = (await requestAssignment(ticketRecord.id, agentUser)) as any;
 
     expect(prismaTicket.update).toHaveBeenCalledWith(
       expect.objectContaining({

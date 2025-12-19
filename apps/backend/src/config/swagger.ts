@@ -70,124 +70,133 @@ const swaggerDocument = {
         type: "object",
         properties: {
           user: { $ref: "#/components/schemas/User" },
-        post: {
-          tags: ["Tickets"],
-          summary: "Create a ticket",
-          security: [{ bearerAuth: [] }],
-          requestBody: {
-            required: true,
-            content: {
-              "application/json": {
-                schema: { $ref: "#/components/schemas/TicketCreatePayload" },
-              },
-            },
-          },
-          responses: {
-            201: {
-              description: "Ticket created",
-              content: {
-                "application/json": {
-                  schema: { $ref: "#/components/schemas/TicketResponse" },
-                },
-              },
-            },
-            400: { description: "Invalid payload" },
-            401: { description: "Authentication required" },
-          },
-        },
-      },
-      "/api/tickets/{ticketId}/activity": {
-        get: {
-          tags: ["Tickets"],
-          summary: "List activity for a ticket",
-          description:
-            "Returns the most recent status and assignment changes for a ticket. Access is restricted to admins, the ticket creator, or the assigned agent.",
-          security: [{ bearerAuth: [] }],
-          parameters: [
-            {
-              name: "ticketId",
-              in: "path",
+          post: {
+            tags: ["Tickets"],
+            summary: "Create a ticket",
+            security: [{ bearerAuth: [] }],
+            requestBody: {
               required: true,
-              schema: { type: "string", format: "uuid" },
-            },
-            {
-              name: "limit",
-              in: "query",
-              required: false,
-              schema: { type: "integer", minimum: 1, maximum: 200 },
-              description: "Maximum number of activity entries to return (default 50).",
-            },
-          ],
-          responses: {
-            200: {
-              description: "Activity entries returned",
               content: {
                 "application/json": {
-                  schema: { $ref: "#/components/schemas/TicketActivityListResponse" },
+                  schema: { $ref: "#/components/schemas/TicketCreatePayload" },
                 },
               },
             },
-            400: { description: "Invalid parameters" },
-            401: { description: "Authentication required" },
-            403: { description: "Forbidden" },
-            404: { description: "Ticket not found" },
-          },
-        },
-      },
-      "/api/reports/tickets/activity": {
-        get: {
-          tags: ["Tickets"],
-          summary: "Recent activity feed (admin only)",
-          description: "Returns a descending log of recent ticket activity for reporting dashboards.",
-          security: [{ bearerAuth: [] }],
-          parameters: [
-            {
-              name: "limit",
-              in: "query",
-              schema: { type: "integer", minimum: 1, maximum: 200 },
-              description: "Maximum number of rows to return (default 50).",
-            },
-          ],
-          responses: {
-            200: {
-              description: "Activity entries returned",
-              content: {
-                "application/json": {
-                  schema: { $ref: "#/components/schemas/TicketActivityListResponse" },
-                },
-              },
-            },
-            400: { description: "Invalid parameters" },
-            401: { description: "Authentication required" },
-            403: { description: "Insufficient permissions" },
-          },
-        },
-      },
-      "/api/reports/tickets/status-summary": {
-        get: {
-          tags: ["Tickets"],
-          summary: "Ticket status summary (admin only)",
-          description: "Aggregated counts of tickets by status and active agent assignments.",
-          security: [{ bearerAuth: [] }],
-          responses: {
-            200: {
-              description: "Summary returned",
-              content: {
-                "application/json": {
-                  schema: {
-                    type: "object",
-                    properties: {
-                      summary: { $ref: "#/components/schemas/TicketSummaryReport" },
-                    },
-                    required: ["summary"],
+            responses: {
+              201: {
+                description: "Ticket created",
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/TicketResponse" },
                   },
                 },
               },
+              400: { description: "Invalid payload" },
+              401: { description: "Authentication required" },
             },
-            401: { description: "Authentication required" },
-            403: { description: "Insufficient permissions" },
           },
         },
+        "/api/tickets/{ticketId}/activity": {
+          get: {
+            tags: ["Tickets"],
+            summary: "List activity for a ticket",
+            description:
+              "Returns the most recent status and assignment changes for a ticket. Access is restricted to admins, the ticket creator, or the assigned agent.",
+            security: [{ bearerAuth: [] }],
+            parameters: [
+              {
+                name: "ticketId",
+                in: "path",
+                required: true,
+                schema: { type: "string", format: "uuid" },
+              },
+              {
+                name: "limit",
+                in: "query",
+                required: false,
+                schema: { type: "integer", minimum: 1, maximum: 200 },
+                description:
+                  "Maximum number of activity entries to return (default 50).",
+              },
+            ],
+            responses: {
+              200: {
+                description: "Activity entries returned",
+                content: {
+                  "application/json": {
+                    schema: {
+                      $ref: "#/components/schemas/TicketActivityListResponse",
+                    },
+                  },
+                },
+              },
+              400: { description: "Invalid parameters" },
+              401: { description: "Authentication required" },
+              403: { description: "Forbidden" },
+              404: { description: "Ticket not found" },
+            },
+          },
+        },
+        "/api/reports/tickets/activity": {
+          get: {
+            tags: ["Tickets"],
+            summary: "Recent activity feed (admin only)",
+            description:
+              "Returns a descending log of recent ticket activity for reporting dashboards.",
+            security: [{ bearerAuth: [] }],
+            parameters: [
+              {
+                name: "limit",
+                in: "query",
+                schema: { type: "integer", minimum: 1, maximum: 200 },
+                description: "Maximum number of rows to return (default 50).",
+              },
+            ],
+            responses: {
+              200: {
+                description: "Activity entries returned",
+                content: {
+                  "application/json": {
+                    schema: {
+                      $ref: "#/components/schemas/TicketActivityListResponse",
+                    },
+                  },
+                },
+              },
+              400: { description: "Invalid parameters" },
+              401: { description: "Authentication required" },
+              403: { description: "Insufficient permissions" },
+            },
+          },
+        },
+        "/api/reports/tickets/status-summary": {
+          get: {
+            tags: ["Tickets"],
+            summary: "Ticket status summary (admin only)",
+            description:
+              "Aggregated counts of tickets by status and active agent assignments.",
+            security: [{ bearerAuth: [] }],
+            responses: {
+              200: {
+                description: "Summary returned",
+                content: {
+                  "application/json": {
+                    schema: {
+                      type: "object",
+                      properties: {
+                        summary: {
+                          $ref: "#/components/schemas/TicketSummaryReport",
+                        },
+                      },
+                      required: ["summary"],
+                    },
+                  },
+                },
+              },
+              401: { description: "Authentication required" },
+              403: { description: "Insufficient permissions" },
+            },
+          },
           tokens: { $ref: "#/components/schemas/AuthTokens" },
         },
         required: ["user", "tokens"],
@@ -903,7 +912,8 @@ const swaggerDocument = {
             in: "query",
             required: false,
             schema: { type: "integer", minimum: 1, maximum: 200 },
-            description: "Maximum number of activity entries to return (default 50).",
+            description:
+              "Maximum number of activity entries to return (default 50).",
           },
         ],
         responses: {

@@ -11,7 +11,10 @@ import { prisma } from "../lib/prisma.js";
 import { publishTicketEvent } from "../realtime/ticketPublisher.js";
 import { suggestReplyForTicket, summarizeTicket } from "./aiService.js";
 import { dispatchTicketEmail } from "../notifications/ticketMailer.js";
-import { evaluateWorkflowForTicket, getNextWorkflowStep } from "./workflowService.js";
+import {
+  evaluateWorkflowForTicket,
+  getNextWorkflowStep,
+} from "./workflowService.js";
 
 const ticketInclude = {
   creator: { select: { id: true, name: true, email: true } },
@@ -194,7 +197,10 @@ export async function createTicket(
   let currentStepId: string | undefined;
 
   if (input.categoryId) {
-    const workflow = await evaluateWorkflowForTicket(input.categoryId, user.role);
+    const workflow = await evaluateWorkflowForTicket(
+      input.categoryId,
+      user.role,
+    );
     if (workflow) {
       workflowId = workflow.id;
       // Get the first step for this workflow
@@ -246,7 +252,10 @@ export async function createTicket(
 }
 
 type UpdateTicketInput = Partial<
-  Pick<CreateTicketInput, "description" | "priority" | "issueType" | "categoryId" | "subcategoryId">
+  Pick<
+    CreateTicketInput,
+    "description" | "priority" | "issueType" | "categoryId" | "subcategoryId"
+  >
 > & {
   status?: TicketStatus;
 };
@@ -308,15 +317,20 @@ export async function updateTicket(
   const nextStatus = updates.status ?? ticket.status;
   const statusChanged = nextStatus !== ticket.status;
   const descriptionChanged =
-    updates.description !== undefined && updates.description !== ticket.description;
+    updates.description !== undefined &&
+    updates.description !== ticket.description;
   const priorityChanged =
     updates.priority !== undefined && updates.priority !== ticket.priority;
   const issueTypeChanged =
     updates.issueType !== undefined && updates.issueType !== ticket.issueType;
   const categoryChanged =
-    updates.categoryId !== undefined && updates.categoryId !== ticket.categoryId;
+    updates.categoryId !== undefined &&
+    updates.categoryId !== ticket.categoryId;
   const detailFieldsChanged =
-    descriptionChanged || priorityChanged || issueTypeChanged || categoryChanged;
+    descriptionChanged ||
+    priorityChanged ||
+    issueTypeChanged ||
+    categoryChanged;
   let resolvedAt = ticket.resolvedAt;
   if (nextStatus === TicketStatus.resolved) {
     resolvedAt = ticket.resolvedAt ?? new Date();
@@ -329,14 +343,17 @@ export async function updateTicket(
   let newCurrentStepId = ticket.currentStepId;
 
   if (categoryChanged && updates.categoryId) {
-    const workflow = await evaluateWorkflowForTicket(updates.categoryId, user.role);
+    const workflow = await evaluateWorkflowForTicket(
+      updates.categoryId,
+      user.role,
+    );
     if (workflow) {
       newWorkflowId = workflow.id;
       // Get the first step for the new workflow
       const firstStep = await getNextWorkflowStep(null, user.role, workflow.id);
       if (firstStep) {
         newCurrentStepId = firstStep.id;
-        
+
         // Exit current step if exists
         if (ticket.currentStepId) {
           await prisma.ticketWorkflowStep.updateMany({

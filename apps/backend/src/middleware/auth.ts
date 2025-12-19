@@ -38,7 +38,9 @@ export async function requireAuth(
     // Debug: log report route auth usage to help diagnose 403 issues
     try {
       if (req.originalUrl?.includes("/reports")) {
-        console.debug(`[auth] ${req.method} ${req.originalUrl} -> user=${req.user?.id} role=${req.user?.role}`);
+        console.debug(
+          `[auth] ${req.method} ${req.originalUrl} -> user=${req.user?.id} role=${req.user?.role}`,
+        );
       }
     } catch (err) {
       // swallow
