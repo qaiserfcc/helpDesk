@@ -39,6 +39,24 @@ enum IssueType {
   other
 }
 
+enum AttributeType {
+  text
+  number
+  select
+  multiselect
+  date
+  boolean
+}
+
+enum WorkflowStepAction {
+  create
+  update
+  assign
+  resolve
+  escalate
+  comment
+}
+
 model User {
   id           String         @id @default(uuid())
   name         String
@@ -70,11 +88,25 @@ model Ticket {
   attachments String[]
   assignmentRequestId String?
   assignmentRequest   User?    @relation("TicketAssignmentRequests", fields: [assignmentRequestId], references: [id])
+  categoryId  String?
+  category    TicketCategory? @relation(fields: [categoryId], references: [id])
+  subcategoryId String?
+  subcategory TicketSubcategory? @relation(fields: [subcategoryId], references: [id])
+  workflowId  String?
+  workflow    WorkflowDefinition? @relation(fields: [workflowId], references: [id])
+  currentStepId String?
+  currentStep WorkflowStep? @relation("TicketCurrentStep", fields: [currentStepId], references: [id])
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
   resolvedAt  DateTime?
   activities  TicketActivity[]
   aiSuggestions AiSuggestion[]
+  attributeValues TicketAttributeValue[]
+  workflowSteps TicketWorkflowStep[]
+
+  @@index([categoryId])
+  @@index([subcategoryId])
+  @@index([workflowId])
 }
 
 model AiSuggestion {
@@ -120,4 +152,113 @@ model DeviceToken {
   updatedAt   DateTime  @updatedAt
 
   @@unique([userId, deviceToken])
+}
+
+model TicketCategory {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  tickets     Ticket[]
+  subcategories TicketSubcategory[]
+  workflows   WorkflowDefinition[]
+}
+
+model TicketSubcategory {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  categoryId  String
+  category    TicketCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  tickets     Ticket[]
+
+  @@unique([categoryId, name])
+  @@index([categoryId])
+}
+
+model TicketAttribute {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  label       String
+  type        AttributeType
+  mandatory   Boolean  @default(false)
+  visible     Boolean  @default(true)
+  options     Json?    // For select/multiselect types
+  defaultValue String?
+  order       Int      @default(0)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  values      TicketAttributeValue[]
+}
+
+model TicketAttributeValue {
+  id          String   @id @default(uuid())
+  ticketId    String
+  ticket      Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  attributeId String
+  attribute   TicketAttribute @relation(fields: [attributeId], references: [id], onDelete: Cascade)
+  value       String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([ticketId, attributeId])
+  @@index([ticketId])
+  @@index([attributeId])
+}
+
+model WorkflowDefinition {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  categoryId  String?
+  category    TicketCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  version     Int      @default(1)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  steps       WorkflowStep[]
+  tickets     Ticket[]
+
+  @@unique([categoryId, version])
+  @@index([categoryId])
+}
+
+model WorkflowStep {
+  id          String   @id @default(uuid())
+  workflowId  String
+  workflow    WorkflowDefinition @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  order       Int
+  initiatorRole Role?  // null means any role can perform this step
+  allowedActions Json   // Array of WorkflowStepAction
+  conditions  Json?    // Conditions for step transition
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  ticketsAtStep Ticket[] @relation("TicketCurrentStep")
+  ticketSteps TicketWorkflowStep[]
+
+  @@unique([workflowId, order])
+  @@index([workflowId])
+}
+
+model TicketWorkflowStep {
+  id          String   @id @default(uuid())
+  ticketId    String
+  ticket      Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  stepId      String
+  step        WorkflowStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
+  enteredAt   DateTime @default(now())
+  exitedAt    DateTime?
+  actorId     String?
+  notes       String?
+
+  @@index([ticketId])
+  @@index([stepId])
 }
