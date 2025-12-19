@@ -28,6 +28,8 @@ const createTicketSchema = z.object({
   priority: z.nativeEnum(TicketPriority).default(TicketPriority.medium),
   issueType: z.nativeEnum(IssueType).default(IssueType.other),
   attachments: z.array(z.string().min(1)).optional(),
+  categoryId: z.string().uuid().optional(),
+  subcategoryId: z.string().uuid().optional(),
 });
 
 const updateTicketSchema = z.object({
@@ -35,6 +37,8 @@ const updateTicketSchema = z.object({
   priority: z.nativeEnum(TicketPriority).optional(),
   issueType: z.nativeEnum(IssueType).optional(),
   status: z.nativeEnum(TicketStatus).optional(),
+  categoryId: z.string().uuid().optional(),
+  subcategoryId: z.string().uuid().optional(),
 });
 
 const listTicketSchema = z.object({
