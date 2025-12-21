@@ -27,6 +27,8 @@ import {
   uploadTicketAttachments,
   updateTicket,
 } from "@/services/tickets";
+import { fetchCategories, type Category } from "@/services/categories";
+import { fetchAttributes, setTicketAttributeValue, type TicketAttribute } from "@/services/attributes";
 import { queueTicket } from "@/storage/offline-db";
 import { colors } from "@/theme/colors";
 import { commonStyles } from "@/theme/commonStyles";
@@ -77,8 +79,37 @@ export function TicketFormScreen({ route, navigation }: Props) {
   const [issueType, setIssueType] = useState<IssueType>("other");
   const [submitting, setSubmitting] = useState(false);
   const [attachments, setAttachments] = useState<AttachmentDraft[]>([]);
+  const [categoryId, setCategoryId] = useState<string | null>(null);
+  const [subcategoryId, setSubcategoryId] = useState<string | null>(null);
+  const [attributeValues, setAttributeValues] = useState<Record<string, string>>({});
   const isResolvedTicket = Boolean(ticket && ticket.status === "resolved");
   const lockedFromEditing = Boolean(isEdit && isResolvedTicket);
+
+  // Fetch categories and attributes
+  const { data: categories = [] } = useQuery({
+    queryKey: ["categories"],
+    queryFn: fetchCategories,
+  });
+
+  const { data: attributes = [] } = useQuery({
+    queryKey: ["attributes"],
+    queryFn: fetchAttributes,
+  });
+
+  const selectedCategory = useMemo(
+    () => categories.find((cat) => cat.id === categoryId),
+    [categories, categoryId]
+  );
+
+  const subcategories = useMemo(
+    () => selectedCategory?.subcategories ?? [],
+    [selectedCategory]
+  );
+
+  const visibleAttributes = useMemo(
+    () => attributes.filter((attr) => attr.visible && attr.active),
+    [attributes]
+  );
 
   useEffect(() => {
     if (ticket) {
@@ -87,6 +118,11 @@ export function TicketFormScreen({ route, navigation }: Props) {
       setIssueType(ticket.issueType);
     }
   }, [ticket]);
+
+  // Reset subcategory when category changes
+  useEffect(() => {
+    setSubcategoryId(null);
+  }, [categoryId]);
 
   const headerTitle = useMemo(
     () => (isEdit ? "Update ticket" : "Create ticket"),
@@ -155,11 +191,21 @@ export function TicketFormScreen({ route, navigation }: Props) {
       return;
     }
 
+    // Validate mandatory attributes
+    for (const attr of visibleAttributes) {
+      if (attr.mandatory && !attributeValues[attr.id]?.trim()) {
+        Alert.alert("Required field", `${attr.label} is required.`);
+        return;
+      }
+    }
+
     setSubmitting(true);
     const payload: CreateTicketPayload = {
       description: description.trim(),
       priority,
       issueType,
+      categoryId: categoryId || undefined,
+      subcategoryId: subcategoryId || undefined,
     };
 
     let savedTicket: Ticket | undefined;
@@ -174,6 +220,18 @@ export function TicketFormScreen({ route, navigation }: Props) {
           return;
         }
         savedTicket = await createTicket(payload);
+
+        // Save attribute values
+        if (savedTicket && visibleAttributes.length > 0) {
+          const attributeSavePromises = visibleAttributes
+            .filter((attr) => attributeValues[attr.id]?.trim())
+            .map((attr) =>
+              setTicketAttributeValue(savedTicket!.id, attr.id, {
+                value: attributeValues[attr.id].trim(),
+              })
+            );
+          await Promise.all(attributeSavePromises);
+        }
       }
 
       if (attachments.length && savedTicket) {
@@ -290,6 +348,169 @@ export function TicketFormScreen({ route, navigation }: Props) {
             );
           })}
         </View>
+
+        {/* Category Selection */}
+        {categories.length > 0 && (
+          <>
+            <Text style={styles.label}>Category</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.optionRow}>
+              <Pressable
+                style={[styles.optionChip, categoryId === null && styles.optionChipActive]}
+                onPress={() => setCategoryId(null)}
+              >
+                <Text style={[styles.optionText, categoryId === null && styles.optionTextActive]}>
+                  None
+                </Text>
+              </Pressable>
+              {categories.map((cat) => {
+                const selected = cat.id === categoryId;
+                return (
+                  <Pressable
+                    key={cat.id}
+                    style={[styles.optionChip, selected && styles.optionChipActive]}
+                    onPress={() => setCategoryId(cat.id)}
+                  >
+                    <Text style={[styles.optionText, selected && styles.optionTextActive]}>
+                      {cat.name}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </>
+        )}
+
+        {/* Subcategory Selection */}
+        {subcategories.length > 0 && (
+          <>
+            <Text style={styles.label}>Subcategory</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.optionRow}>
+              <Pressable
+                style={[styles.optionChip, subcategoryId === null && styles.optionChipActive]}
+                onPress={() => setSubcategoryId(null)}
+              >
+                <Text style={[styles.optionText, subcategoryId === null && styles.optionTextActive]}>
+                  None
+                </Text>
+              </Pressable>
+              {subcategories.map((sub) => {
+                const selected = sub.id === subcategoryId;
+                return (
+                  <Pressable
+                    key={sub.id}
+                    style={[styles.optionChip, selected && styles.optionChipActive]}
+                    onPress={() => setSubcategoryId(sub.id)}
+                  >
+                    <Text style={[styles.optionText, selected && styles.optionTextActive]}>
+                      {sub.name}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </>
+        )}
+
+        {/* Custom Attributes */}
+        {visibleAttributes.length > 0 && (
+          <View style={styles.attributesSection}>
+            <Text style={styles.sectionTitle}>Additional Information</Text>
+            {visibleAttributes.map((attr) => (
+              <View key={attr.id} style={styles.attributeField}>
+                <Text style={styles.label}>
+                  {attr.label}
+                  {attr.mandatory && <Text style={styles.required}> *</Text>}
+                </Text>
+                {attr.type === "text" && (
+                  <TextInput
+                    value={attributeValues[attr.id] || ""}
+                    onChangeText={(text) =>
+                      setAttributeValues((prev) => ({ ...prev, [attr.id]: text }))
+                    }
+                    placeholder={`Enter ${attr.label.toLowerCase()}`}
+                    placeholderTextColor={colors.muted}
+                    style={styles.input}
+                  />
+                )}
+                {attr.type === "number" && (
+                  <TextInput
+                    value={attributeValues[attr.id] || ""}
+                    onChangeText={(text) =>
+                      setAttributeValues((prev) => ({ ...prev, [attr.id]: text }))
+                    }
+                    placeholder={`Enter ${attr.label.toLowerCase()}`}
+                    placeholderTextColor={colors.muted}
+                    keyboardType="numeric"
+                    style={styles.input}
+                  />
+                )}
+                {attr.type === "date" && (
+                  <TextInput
+                    value={attributeValues[attr.id] || ""}
+                    onChangeText={(text) =>
+                      setAttributeValues((prev) => ({ ...prev, [attr.id]: text }))
+                    }
+                    placeholder="YYYY-MM-DD"
+                    placeholderTextColor={colors.muted}
+                    style={styles.input}
+                  />
+                )}
+                {attr.type === "boolean" && (
+                  <View style={styles.optionRow}>
+                    {["Yes", "No"].map((option) => {
+                      const selected = attributeValues[attr.id] === option;
+                      return (
+                        <Pressable
+                          key={option}
+                          style={[styles.optionChip, selected && styles.optionChipActive]}
+                          onPress={() =>
+                            setAttributeValues((prev) => ({ ...prev, [attr.id]: option }))
+                          }
+                        >
+                          <Text style={[styles.optionText, selected && styles.optionTextActive]}>
+                            {option}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                )}
+                {attr.type === "select" && attr.options && (
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.optionRow}>
+                    {attr.options.map((option) => {
+                      const selected = attributeValues[attr.id] === option;
+                      return (
+                        <Pressable
+                          key={option}
+                          style={[styles.optionChip, selected && styles.optionChipActive]}
+                          onPress={() =>
+                            setAttributeValues((prev) => ({ ...prev, [attr.id]: option }))
+                          }
+                        >
+                          <Text style={[styles.optionText, selected && styles.optionTextActive]}>
+                            {option}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </ScrollView>
+                )}
+                {attr.type === "multiselect" && (
+                  <TextInput
+                    value={attributeValues[attr.id] || ""}
+                    onChangeText={(text) =>
+                      setAttributeValues((prev) => ({ ...prev, [attr.id]: text }))
+                    }
+                    placeholder="Enter values separated by commas"
+                    placeholderTextColor={colors.muted}
+                    multiline
+                    style={[styles.input, styles.textArea]}
+                  />
+                )}
+              </View>
+            ))}
+          </View>
+        )}
 
         <Text style={styles.label}>Attachments</Text>
         {isEdit && ticket?.attachments?.length ? (
@@ -509,5 +730,26 @@ const styles = StyleSheet.create({
   lockedBtnText: {
     color: colors.accent,
     fontWeight: "600",
+  },
+  attributesSection: {
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  sectionTitle: {
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 12,
+  },
+  attributeField: {
+    marginBottom: 16,
+  },
+  required: {
+    color: colors.danger,
+    fontSize: 14,
+  },
+  textArea: {
+    height: 80,
+    textAlignVertical: "top",
   },
 });

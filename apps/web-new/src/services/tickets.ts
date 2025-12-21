@@ -125,6 +125,8 @@ export type CreateTicketPayload = {
   priority: TicketPriority;
   issueType: IssueType;
   attachments?: string[];
+  categoryId?: string;
+  subcategoryId?: string;
 };
 
 export type UpdateTicketPayload = Partial<CreateTicketPayload> & {

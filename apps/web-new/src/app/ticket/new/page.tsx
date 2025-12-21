@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createTicket, type CreateTicketPayload, type IssueType, type TicketPriority } from "@/services/tickets";
 import { useNotificationStore } from "@/store/useNotificationStore";
 import { useAuthStore } from "@/store/useAuthStore";
+import { fetchCategories, type Category, type Subcategory } from "@/services/categories";
+import { fetchAttributes, setTicketAttributeValue, type TicketAttribute } from "@/services/attributes";
 
 const priorityOptions: TicketPriority[] = ["low", "medium", "high"];
 const issueOptions: IssueType[] = [
@@ -22,10 +24,33 @@ export default function NewTicketPage() {
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<TicketPriority>("medium");
   const [issueType, setIssueType] = useState<IssueType>("other");
+  const [categoryId, setCategoryId] = useState<string>("");
+  const [subcategoryId, setSubcategoryId] = useState<string>("");
+  const [attributeValues, setAttributeValues] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const addNotification = useNotificationStore((s) => s.addNotification);
   const session = useAuthStore((s) => s.session);
+
+  const { data: categories } = useQuery({
+    queryKey: ["categories"],
+    queryFn: fetchCategories,
+  });
+
+  const { data: attributes } = useQuery({
+    queryKey: ["attributes"],
+    queryFn: fetchAttributes,
+  });
+
+  const selectedCategory = categories?.find((c) => c.id === categoryId);
+  const subcategories = selectedCategory?.subcategories || [];
+
+  // Reset subcategory when category changes
+  useEffect(() => {
+    setSubcategoryId("");
+  }, [categoryId]);
+
+  const visibleAttributes = attributes?.filter((attr) => attr.visible && attr.active) || [];
 
   if (!session) return null;
   const canCreate = session.user.role === "user" || session.user.role === "admin";
@@ -53,6 +78,15 @@ export default function NewTicketPage() {
       return;
     }
 
+    // Validate mandatory attributes
+    const mandatoryAttrs = visibleAttributes.filter((attr) => attr.mandatory);
+    for (const attr of mandatoryAttrs) {
+      if (!attributeValues[attr.id]) {
+        setError(`${attr.label} is required`);
+        return;
+      }
+    }
+
     setSubmitting(true);
     setError("");
 
@@ -60,10 +94,20 @@ export default function NewTicketPage() {
       description: description.trim(),
       priority,
       issueType,
+      categoryId: categoryId || undefined,
+      subcategoryId: subcategoryId || undefined,
     };
 
     try {
       const created = await createTicket(payload);
+
+      // Set attribute values for the ticket
+      if (created?.id) {
+        const attrPromises = Object.entries(attributeValues).map(([attrId, value]) =>
+          setTicketAttributeValue(created.id, attrId, { value })
+        );
+        await Promise.all(attrPromises);
+      }
       await queryClient.invalidateQueries({
         queryKey: ["tickets"],
         exact: false,
@@ -161,6 +205,137 @@ export default function NewTicketPage() {
                 ))}
               </div>
             </div>
+
+            <div>
+              <label htmlFor="category" className="block text-sm font-medium text-white/90 mb-2">
+                Category
+              </label>
+              <select
+                id="category"
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
+                className="w-full px-3 py-2 border border-transparent rounded-lg focus:ring-2 focus:ring-white focus:border-white text-white card"
+              >
+                <option value="">Select a category</option>
+                {categories?.filter((c) => c.active).map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {subcategories.length > 0 && (
+              <div>
+                <label htmlFor="subcategory" className="block text-sm font-medium text-white/90 mb-2">
+                  Subcategory
+                </label>
+                <select
+                  id="subcategory"
+                  value={subcategoryId}
+                  onChange={(e) => setSubcategoryId(e.target.value)}
+                  className="w-full px-3 py-2 border border-transparent rounded-lg focus:ring-2 focus:ring-white focus:border-white text-white card"
+                >
+                  <option value="">Select a subcategory</option>
+                  {subcategories.filter((sc) => sc.active).map((subcat) => (
+                    <option key={subcat.id} value={subcat.id}>
+                      {subcat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {visibleAttributes.length > 0 && (
+              <div className="space-y-4 border-t border-white/10 pt-4">
+                <h3 className="text-lg font-semibold text-white">Additional Information</h3>
+                {visibleAttributes.map((attr) => (
+                  <div key={attr.id}>
+                    <label className="block text-sm font-medium text-white/90 mb-2">
+                      {attr.label} {attr.mandatory && <span className="text-red-400">*</span>}
+                    </label>
+                    {attr.type === "text" && (
+                      <input
+                        type="text"
+                        value={attributeValues[attr.id] || ""}
+                        onChange={(e) =>
+                          setAttributeValues({ ...attributeValues, [attr.id]: e.target.value })
+                        }
+                        required={attr.mandatory}
+                        className="w-full px-3 py-2 border border-transparent rounded-lg focus:ring-2 focus:ring-white focus:border-white text-white card"
+                      />
+                    )}
+                    {attr.type === "number" && (
+                      <input
+                        type="number"
+                        value={attributeValues[attr.id] || ""}
+                        onChange={(e) =>
+                          setAttributeValues({ ...attributeValues, [attr.id]: e.target.value })
+                        }
+                        required={attr.mandatory}
+                        className="w-full px-3 py-2 border border-transparent rounded-lg focus:ring-2 focus:ring-white focus:border-white text-white card"
+                      />
+                    )}
+                    {attr.type === "date" && (
+                      <input
+                        type="date"
+                        value={attributeValues[attr.id] || ""}
+                        onChange={(e) =>
+                          setAttributeValues({ ...attributeValues, [attr.id]: e.target.value })
+                        }
+                        required={attr.mandatory}
+                        className="w-full px-3 py-2 border border-transparent rounded-lg focus:ring-2 focus:ring-white focus:border-white text-white card"
+                      />
+                    )}
+                    {attr.type === "boolean" && (
+                      <select
+                        value={attributeValues[attr.id] || ""}
+                        onChange={(e) =>
+                          setAttributeValues({ ...attributeValues, [attr.id]: e.target.value })
+                        }
+                        required={attr.mandatory}
+                        className="w-full px-3 py-2 border border-transparent rounded-lg focus:ring-2 focus:ring-white focus:border-white text-white card"
+                      >
+                        <option value="">Select...</option>
+                        <option value="true">Yes</option>
+                        <option value="false">No</option>
+                      </select>
+                    )}
+                    {attr.type === "select" && (
+                      <select
+                        value={attributeValues[attr.id] || ""}
+                        onChange={(e) =>
+                          setAttributeValues({ ...attributeValues, [attr.id]: e.target.value })
+                        }
+                        required={attr.mandatory}
+                        className="w-full px-3 py-2 border border-transparent rounded-lg focus:ring-2 focus:ring-white focus:border-white text-white card"
+                      >
+                        <option value="">Select...</option>
+                        {(Array.isArray(attr.options) ? attr.options : JSON.parse(attr.options || "[]")).map(
+                          (opt: string) => (
+                            <option key={opt} value={opt}>
+                              {opt}
+                            </option>
+                          )
+                        )}
+                      </select>
+                    )}
+                    {attr.type === "multiselect" && (
+                      <textarea
+                        value={attributeValues[attr.id] || ""}
+                        onChange={(e) =>
+                          setAttributeValues({ ...attributeValues, [attr.id]: e.target.value })
+                        }
+                        placeholder="Enter values separated by commas"
+                        required={attr.mandatory}
+                        rows={2}
+                        className="w-full px-3 py-2 border border-transparent rounded-lg focus:ring-2 focus:ring-white focus:border-white text-white card"
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
 
             {error && (
               <div className="bg-red-50/30 border border-red-200 rounded-lg p-4">

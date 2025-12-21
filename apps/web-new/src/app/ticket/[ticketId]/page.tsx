@@ -18,6 +18,8 @@ import {
 } from "@/services/tickets";
 import { suggestReply, fetchSuggestions } from "@/services/ai";
 import { fetchUsers, type UserSummary } from "@/services/users";
+import { fetchWorkflow } from "@/services/workflows";
+import { fetchTicketAttributeValues } from "@/services/attributes";
 import { env } from "@/config/env";
 import {
   describeTicketActivity,
@@ -94,6 +96,20 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
   const markTicketRead = useNotificationStore((state) => state.markTicketRead);
   const { data: aiSuggestions = [] } = useQuery({ queryKey: ["ai-suggestions", ticketId], queryFn: () => fetchSuggestions(ticketId), enabled: Boolean(ticket) });
   const toastAdd = useToastStore((s) => s.addNotification);
+
+  // Fetch workflow if ticket has a workflow assigned
+  const { data: workflow } = useQuery({
+    queryKey: ["workflow", ticket?.workflowId],
+    queryFn: () => fetchWorkflow(ticket!.workflowId!),
+    enabled: !!ticket?.workflowId,
+  });
+
+  // Fetch custom attribute values for this ticket
+  const { data: attributeValues = [] } = useQuery({
+    queryKey: ["ticket-attributes", ticketId],
+    queryFn: () => fetchTicketAttributeValues(ticketId),
+    enabled: !!ticket,
+  });
 
   useEffect(() => {
     markTicketRead(ticketId);
@@ -289,6 +305,119 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
                 </div>
               </div>
             </div>
+
+            {/* Workflow Progress */}
+            {workflow && workflow.steps && workflow.steps.length > 0 && (
+              <div className="card shadow rounded-lg p-6">
+                <h2 className="text-xl font-semibold text-white mb-4">
+                  Workflow Progress: {workflow.name}
+                </h2>
+                <div className="relative">
+                  {/* Steps container */}
+                  <div className="flex items-start justify-between">
+                    {workflow.steps
+                      .sort((a, b) => a.order - b.order)
+                      .map((step, index) => {
+                        const isCurrentStep = ticket.currentWorkflowStepId === step.id;
+                        const isCompleted = false; // TODO: track completed steps
+                        const isLast = index === workflow.steps.length - 1;
+
+                        return (
+                          <div key={step.id} className="flex-1 flex flex-col items-center">
+                            {/* Step circle */}
+                            <div className="relative z-10 flex flex-col items-center">
+                              <div
+                                className={`w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all ${
+                                  isCurrentStep
+                                    ? "bg-blue-500 border-blue-400 shadow-lg shadow-blue-500/50"
+                                    : isCompleted
+                                    ? "bg-green-500 border-green-400"
+                                    : "bg-white/10 border-white/30"
+                                }`}
+                              >
+                                {isCompleted ? (
+                                  <svg
+                                    className="w-6 h-6 text-white"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M5 13l4 4L19 7"
+                                    />
+                                  </svg>
+                                ) : (
+                                  <span className="text-white font-semibold">{index + 1}</span>
+                                )}
+                              </div>
+
+                              {/* Step name */}
+                              <div className="mt-3 text-center max-w-[120px]">
+                                <p
+                                  className={`text-sm font-medium ${
+                                    isCurrentStep ? "text-blue-300" : "text-white/80"
+                                  }`}
+                                >
+                                  {step.name}
+                                </p>
+                                {step.description && (
+                                  <p className="text-xs text-white/60 mt-1">
+                                    {step.description}
+                                  </p>
+                                )}
+                                {isCurrentStep && (
+                                  <span className="inline-block mt-2 px-2 py-1 text-xs font-medium bg-blue-500/20 text-blue-300 rounded-full">
+                                    Current
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Connector line */}
+                            {!isLast && (
+                              <div className="absolute top-6 left-[calc(50%+24px)] right-[calc(-50%+24px)] h-0.5 bg-white/20">
+                                <div
+                                  className={`h-full transition-all ${
+                                    isCompleted ? "bg-green-400" : "bg-transparent"
+                                  }`}
+                                  style={{ width: isCompleted ? "100%" : "0%" }}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                  </div>
+
+                  {/* Additional workflow info */}
+                  {workflow.description && (
+                    <div className="mt-6 p-4 bg-white/5 rounded-lg">
+                      <p className="text-sm text-white/70">{workflow.description}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Custom Attributes */}
+            {attributeValues && attributeValues.length > 0 && (
+              <div className="card shadow rounded-lg p-6">
+                <h2 className="text-xl font-semibold text-white mb-4">Additional Information</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {attributeValues.map((attrValue) => (
+                    <div key={attrValue.id} className="bg-white/5 p-4 rounded-lg">
+                      <p className="text-sm text-white/80">{attrValue.attribute.label}</p>
+                      <p className="text-lg text-white mt-1">
+                        {attrValue.value || "N/A"}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Attachments */}
             {ticket.attachments.length > 0 && (

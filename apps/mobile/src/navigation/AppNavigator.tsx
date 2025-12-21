@@ -15,6 +15,7 @@ import { ReportsTableScreen } from "@/screens/ReportsTableScreen";
 import { AllocationDashboardScreen } from "@/screens/AllocationDashboardScreen";
 import { SettingsScreen } from "@/screens/SettingsScreen";
 import { CacheInspectorScreen } from "@/screens/CacheInspectorScreen";
+import { CategoryManagementScreen } from "@/screens/CategoryManagementScreen";
 import { useAuthStore } from "@/store/useAuthStore";
 import { colors } from "@/theme/colors";
 import { navigationRef } from "./navigationRef";
@@ -32,6 +33,7 @@ export type RootStackParamList = {
   AgentWorkload: undefined;
   Settings: undefined;
   CacheInspector: undefined;
+  CategoryManagement: undefined;
   TicketDetail: { ticketId: string };
   TicketForm: { ticketId?: string } | undefined;
 };
@@ -85,6 +87,10 @@ export function AppNavigator() {
             <Stack.Screen
               name="CacheInspector"
               component={CacheInspectorScreen}
+            />
+            <Stack.Screen
+              name="CategoryManagement"
+              component={CategoryManagementScreen}
             />
             <Stack.Screen name="TicketDetail" component={TicketDetailScreen} />
             <Stack.Screen name="TicketForm" component={TicketFormScreen} />
