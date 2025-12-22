@@ -16,6 +16,8 @@ import { AllocationDashboardScreen } from "@/screens/AllocationDashboardScreen";
 import { SettingsScreen } from "@/screens/SettingsScreen";
 import { CacheInspectorScreen } from "@/screens/CacheInspectorScreen";
 import { CategoryManagementScreen } from "@/screens/CategoryManagementScreen";
+import { WorkflowManagementScreen } from "@/screens/WorkflowManagementScreen";
+import { AttributeManagementScreen } from "@/screens/AttributeManagementScreen";
 import { useAuthStore } from "@/store/useAuthStore";
 import { colors } from "@/theme/colors";
 import { navigationRef } from "./navigationRef";
@@ -34,6 +36,8 @@ export type RootStackParamList = {
   Settings: undefined;
   CacheInspector: undefined;
   CategoryManagement: undefined;
+  WorkflowManagement: undefined;
+  AttributeManagement: undefined;
   TicketDetail: { ticketId: string };
   TicketForm: { ticketId?: string } | undefined;
 };
@@ -91,6 +95,14 @@ export function AppNavigator() {
             <Stack.Screen
               name="CategoryManagement"
               component={CategoryManagementScreen}
+            />
+            <Stack.Screen
+              name="WorkflowManagement"
+              component={WorkflowManagementScreen}
+            />
+            <Stack.Screen
+              name="AttributeManagement"
+              component={AttributeManagementScreen}
             />
             <Stack.Screen name="TicketDetail" component={TicketDetailScreen} />
             <Stack.Screen name="TicketForm" component={TicketFormScreen} />

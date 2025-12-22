@@ -7,13 +7,32 @@ import { NotificationBell } from "@/components/NotificationBell";
 export function Header() {
   const { session } = useAuthStore();
 
+  const navLinks = [
+    { href: "/category-management", label: "Categories" },
+    { href: "/workflow-management", label: "Workflows" },
+    { href: "/attribute-management", label: "Attributes" },
+  ];
+
   if (!session) return null;
 
   return (
     <header className="bg-transparent shadow-sm backdrop-blur-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center py-6">
-          <h1 className="text-3xl font-bold text-white">Help Desk</h1>
+        <div className="flex justify-between items-center py-6 gap-6">
+          <h1 className="text-3xl font-bold text-white whitespace-nowrap">Help Desk</h1>
+
+          <nav className="hidden md:flex items-center gap-6 text-sm text-white/80">
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="hover:text-white transition-colors"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+
           <div className="flex items-center space-x-4">
             <NotificationBell />
             <span className="text-sm text-white/80">Welcome, {session.user.name}</span>

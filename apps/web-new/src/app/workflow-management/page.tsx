@@ -25,7 +25,7 @@ import { fetchCategories, type Category } from "@/services/categories";
 export default function WorkflowManagementPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { session } = useAuthStore((state) => ({ session: state.session }));
+  const session = useAuthStore((state) => state.session);
 
   const [showWorkflowForm, setShowWorkflowForm] = useState(false);
   const [editingWorkflow, setEditingWorkflow] = useState<WorkflowDefinition | null>(null);

@@ -325,6 +325,33 @@ export function DashboardScreen() {
             navigation.navigate("UserManagement"),
           ),
         },
+        {
+          key: "categories",
+          title: "Categories",
+          subtitle: "Organize taxonomy",
+          glyph: "🗂️",
+          onPress: createDrawerHandler(() =>
+            navigation.navigate("CategoryManagement"),
+          ),
+        },
+        {
+          key: "workflows",
+          title: "Workflows",
+          subtitle: "Design lifecycles",
+          glyph: "🧭",
+          onPress: createDrawerHandler(() =>
+            navigation.navigate("WorkflowManagement"),
+          ),
+        },
+        {
+          key: "attributes",
+          title: "Attributes",
+          subtitle: "Ticket fields",
+          glyph: "🧩",
+          onPress: createDrawerHandler(() =>
+            navigation.navigate("AttributeManagement"),
+          ),
+        },
       );
     }
 

@@ -18,7 +18,7 @@ import {
 export default function AttributeManagementPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { session } = useAuthStore((state) => ({ session: state.session }));
+  const session = useAuthStore((state) => state.session);
 
   const [showForm, setShowForm] = useState(false);
   const [editingAttribute, setEditingAttribute] = useState<TicketAttribute | null>(null);
