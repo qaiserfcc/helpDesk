@@ -55,16 +55,6 @@ body {
   color: var(--muted);
 }
 
-/* Override light-gray utility colors for dark theme to improve contrast */
-.text-gray-700,
-.text-gray-600,
-.text-gray-500,
-.text-gray-400,
-.text-gray-900 {
-  color: rgba(255,255,255,0.9) !important;
-}
-
-
 .primary-btn {
   background: linear-gradient(90deg, rgba(124,58,237,1) 0%, rgba(7,182,220,1) 100%);
   color: white;
@@ -76,11 +66,11 @@ body {
 }
 
 /* Improve contrast & focus for interactive controls in dark theme */
-input, textarea, select, button {
+.card input, .card textarea, .card select, .card button {
   color: var(--foreground);
 }
 
-input::placeholder, textarea::placeholder {
+.card input::placeholder, .card textarea::placeholder {
   color: rgba(255,255,255,0.6) !important;
 }
 
@@ -97,8 +87,8 @@ input:focus, textarea:focus, select:focus, button:focus, .primary-btn:focus {
   cursor: not-allowed;
 }
 
-/* Ensure form labels have adequate contrast */
-label, .label, .text-label {
+/* Ensure form labels have adequate contrast on dark cards without forcing white on light modals */
+.card label, .card .label, .card .text-label {
   color: rgba(255,255,255,0.9) !important;
 }
 
@@ -107,10 +97,70 @@ label, .label, .text-label {
   color: rgba(255,255,255,0.72);
 }
 
-/* Ensure select / option dropdowns follow dark theme */
-select, option, select:focus, option:focus {
+/* Ensure select / option dropdowns follow dark theme only inside cards */
+.card select, .card option, .card select:focus, .card option:focus {
   background-color: var(--card-bg) !important;
   color: var(--foreground) !important;
+}
+
+/* Keep gray utility text readable on dark cards without impacting light surfaces */
+.card .text-gray-700,
+.card .text-gray-600,
+.card .text-gray-500,
+.card .text-gray-400,
+.card .text-gray-900 {
+  color: rgba(255,255,255,0.9) !important;
+}
+
+/* Ensure readable text on light surfaces (white modals, light panels) */
+.bg-white,
+.bg-gray-50,
+.bg-gray-100,
+.bg-neutral-50 {
+  color: #0f172a;
+}
+
+.bg-white label,
+.bg-gray-50 label,
+.bg-gray-100 label,
+.bg-neutral-50 label,
+.bg-white .label,
+.bg-gray-50 .label,
+.bg-gray-100 .label,
+.bg-neutral-50 .label,
+.bg-white .text-label,
+.bg-gray-50 .text-label,
+.bg-gray-100 .text-label,
+.bg-neutral-50 .text-label {
+  color: #0f172a !important;
+}
+
+.bg-white input,
+.bg-white textarea,
+.bg-white select,
+.bg-gray-50 input,
+.bg-gray-50 textarea,
+.bg-gray-50 select,
+.bg-gray-100 input,
+.bg-gray-100 textarea,
+.bg-gray-100 select,
+.bg-neutral-50 input,
+.bg-neutral-50 textarea,
+.bg-neutral-50 select {
+  color: #0f172a;
+  background-color: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+.bg-white input::placeholder,
+.bg-white textarea::placeholder,
+.bg-gray-50 input::placeholder,
+.bg-gray-50 textarea::placeholder,
+.bg-gray-100 input::placeholder,
+.bg-gray-100 textarea::placeholder,
+.bg-neutral-50 input::placeholder,
+.bg-neutral-50 textarea::placeholder {
+  color: #94a3b8 !important;
 }
 
 /* Notification popover needs high z-index and strong contrast */

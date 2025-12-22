@@ -55,23 +55,36 @@ export type SetAttributeValuePayload = {
 };
 
 export async function fetchAttributes() {
-  const { data } = await apiClient.get<TicketAttribute[]>("/attributes");
-  return data;
+  const { data } = await apiClient.get<{ attributes: TicketAttribute[] }>(
+    "/attributes",
+  );
+  return data.attributes;
 }
 
 export async function fetchAttribute(attributeId: string) {
-  const { data } = await apiClient.get<TicketAttribute>(`/attributes/${attributeId}`);
-  return data;
+  const { data } = await apiClient.get<{ attribute: TicketAttribute }>(
+    `/attributes/${attributeId}`,
+  );
+  return data.attribute;
 }
 
 export async function createAttribute(payload: CreateAttributePayload) {
-  const { data } = await apiClient.post<TicketAttribute>("/attributes", payload);
-  return data;
+  const { data } = await apiClient.post<{ attribute: TicketAttribute }>(
+    "/attributes",
+    payload,
+  );
+  return data.attribute;
 }
 
-export async function updateAttribute(attributeId: string, payload: UpdateAttributePayload) {
-  const { data } = await apiClient.patch<TicketAttribute>(`/attributes/${attributeId}`, payload);
-  return data;
+export async function updateAttribute(
+  attributeId: string,
+  payload: UpdateAttributePayload,
+) {
+  const { data } = await apiClient.patch<{ attribute: TicketAttribute }>(
+    `/attributes/${attributeId}`,
+    payload,
+  );
+  return data.attribute;
 }
 
 export async function deleteAttribute(attributeId: string) {
@@ -79,13 +92,22 @@ export async function deleteAttribute(attributeId: string) {
 }
 
 export async function fetchTicketAttributeValues(ticketId: string) {
-  const { data } = await apiClient.get<TicketAttributeValue[]>(`/attributes/tickets/${ticketId}/values`);
-  return data;
+  const { data } = await apiClient.get<{ values: TicketAttributeValue[] }>(
+    `/attributes/tickets/${ticketId}/values`,
+  );
+  return data.values;
 }
 
-export async function setTicketAttributeValue(ticketId: string, attributeId: string, payload: SetAttributeValuePayload) {
-  const { data } = await apiClient.put<TicketAttributeValue>(`/attributes/tickets/${ticketId}/attributes/${attributeId}`, payload);
-  return data;
+export async function setTicketAttributeValue(
+  ticketId: string,
+  attributeId: string,
+  payload: SetAttributeValuePayload,
+) {
+  const { data } = await apiClient.put<{ value: TicketAttributeValue }>(
+    `/attributes/tickets/${ticketId}/values/${attributeId}`,
+    payload,
+  );
+  return data.value;
 }
 
 export default {

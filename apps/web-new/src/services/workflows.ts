@@ -62,23 +62,36 @@ export type UpdateWorkflowStepPayload = {
 };
 
 export async function fetchWorkflows() {
-  const { data } = await apiClient.get<WorkflowDefinition[]>("/workflows");
-  return data;
+  const { data } = await apiClient.get<{ workflows: WorkflowDefinition[] }>(
+    "/workflows",
+  );
+  return data.workflows;
 }
 
 export async function fetchWorkflow(workflowId: string) {
-  const { data } = await apiClient.get<WorkflowWithSteps>(`/workflows/${workflowId}`);
-  return data;
+  const { data } = await apiClient.get<{ workflow: WorkflowWithSteps }>(
+    `/workflows/${workflowId}`,
+  );
+  return data.workflow;
 }
 
 export async function createWorkflow(payload: CreateWorkflowPayload) {
-  const { data } = await apiClient.post<WorkflowDefinition>("/workflows", payload);
-  return data;
+  const { data } = await apiClient.post<{ workflow: WorkflowDefinition }>(
+    "/workflows",
+    payload,
+  );
+  return data.workflow;
 }
 
-export async function updateWorkflow(workflowId: string, payload: UpdateWorkflowPayload) {
-  const { data } = await apiClient.patch<WorkflowDefinition>(`/workflows/${workflowId}`, payload);
-  return data;
+export async function updateWorkflow(
+  workflowId: string,
+  payload: UpdateWorkflowPayload,
+) {
+  const { data } = await apiClient.patch<{ workflow: WorkflowDefinition }>(
+    `/workflows/${workflowId}`,
+    payload,
+  );
+  return data.workflow;
 }
 
 export async function deleteWorkflow(workflowId: string) {
@@ -86,18 +99,29 @@ export async function deleteWorkflow(workflowId: string) {
 }
 
 export async function fetchWorkflowSteps(workflowId: string) {
-  const { data } = await apiClient.get<WorkflowStep[]>(`/workflows/${workflowId}/steps`);
-  return data;
+  const { data } = await apiClient.get<{ steps: WorkflowStep[] }>(
+    `/workflows/${workflowId}/steps`,
+  );
+  return data.steps;
 }
 
 export async function createWorkflowStep(payload: CreateWorkflowStepPayload) {
-  const { data } = await apiClient.post<WorkflowStep>("/workflows/steps", payload);
-  return data;
+  const { data } = await apiClient.post<{ step: WorkflowStep }>(
+    "/workflows/steps",
+    payload,
+  );
+  return data.step;
 }
 
-export async function updateWorkflowStep(stepId: string, payload: UpdateWorkflowStepPayload) {
-  const { data } = await apiClient.patch<WorkflowStep>(`/workflows/steps/${stepId}`, payload);
-  return data;
+export async function updateWorkflowStep(
+  stepId: string,
+  payload: UpdateWorkflowStepPayload,
+) {
+  const { data } = await apiClient.patch<{ step: WorkflowStep }>(
+    `/workflows/steps/${stepId}`,
+    payload,
+  );
+  return data.step;
 }
 
 export async function deleteWorkflowStep(stepId: string) {
