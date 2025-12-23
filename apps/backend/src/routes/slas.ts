@@ -16,8 +16,9 @@ const router = Router();
 const createSLASchema = z.object({
   name: z.string().min(1).max(200),
   description: z.string().max(500).optional(),
-  categoryId: z.string().uuid(),
-  subcategoryId: z.string().uuid().nullable().optional(),
+  // Accept non-UUID string IDs (our seeded IDs use readable strings)
+  categoryId: z.string().min(1),
+  subcategoryId: z.string().min(1).nullable().optional(),
   priority: z.enum([TicketPriority.low, TicketPriority.medium, TicketPriority.high]),
   responseTimeMinutes: z.number().int().positive(),
   resolutionTimeMinutes: z.number().int().positive(),
@@ -27,7 +28,7 @@ const createSLASchema = z.object({
 const updateSLASchema = z.object({
   name: z.string().min(1).max(200).optional(),
   description: z.string().max(500).optional(),
-  subcategoryId: z.string().uuid().nullable().optional(),
+  subcategoryId: z.string().min(1).nullable().optional(),
   priority: z.enum([TicketPriority.low, TicketPriority.medium, TicketPriority.high]).optional(),
   responseTimeMinutes: z.number().int().positive().optional(),
   resolutionTimeMinutes: z.number().int().positive().optional(),
