@@ -48,7 +48,7 @@ export default function AttributeManagementPage() {
 
   const { data: attributes, isLoading } = useQuery({
     queryKey: ["attributes"],
-    queryFn: fetchAttributes,
+    queryFn: () => fetchAttributes(),
   });
 
   const createMutation = useMutation({

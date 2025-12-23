@@ -68,7 +68,7 @@ export default function WorkflowManagementPage() {
 
   const { data: categories } = useQuery({
     queryKey: ["categories"],
-    queryFn: fetchCategories,
+    queryFn: () => fetchCategories(),
   });
 
   const { data: steps, isLoading: loadingSteps } = useQuery({

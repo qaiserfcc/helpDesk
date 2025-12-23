@@ -6,7 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createTicket, type CreateTicketPayload, type IssueType, type TicketPriority } from "@/services/tickets";
 import { useNotificationStore } from "@/store/useNotificationStore";
 import { useAuthStore } from "@/store/useAuthStore";
-import { fetchCategories, type Category, type Subcategory } from "@/services/categories";
+import { fetchCategories, fetchSubcategories, type Category, type Subcategory } from "@/services/categories";
 import { fetchAttributes, setTicketAttributeValue, type TicketAttribute } from "@/services/attributes";
 
 const priorityOptions: TicketPriority[] = ["low", "medium", "high"];
@@ -34,16 +34,19 @@ export default function NewTicketPage() {
 
   const { data: categories } = useQuery({
     queryKey: ["categories"],
-    queryFn: fetchCategories,
+    queryFn: () => fetchCategories(),
   });
 
   const { data: attributes } = useQuery({
     queryKey: ["attributes"],
-    queryFn: fetchAttributes,
+    queryFn: () => fetchAttributes(),
   });
 
-  const selectedCategory = categories?.find((c) => c.id === categoryId);
-  const subcategories = selectedCategory?.subcategories || [];
+  const { data: subcategories = [] } = useQuery({
+    queryKey: ["subcategories", categoryId],
+    queryFn: () => (categoryId ? fetchSubcategories(categoryId) : Promise.resolve([])),
+    enabled: !!categoryId,
+  });
 
   // Reset subcategory when category changes
   useEffect(() => {

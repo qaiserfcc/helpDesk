@@ -318,9 +318,9 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
                     {workflow.steps
                       .sort((a, b) => a.order - b.order)
                       .map((step, index) => {
-                        const isCurrentStep = ticket.currentWorkflowStepId === step.id;
+                        const isCurrentStep = ticket.currentStepId === step.id;
                         const isCompleted = false; // TODO: track completed steps
-                        const isLast = index === workflow.steps.length - 1;
+                        const isLast = index === (workflow.steps?.length ?? 0) - 1;
 
                         return (
                           <div key={step.id} className="flex-1 flex flex-col items-center">
@@ -409,7 +409,7 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {attributeValues.map((attrValue) => (
                     <div key={attrValue.id} className="bg-white/5 p-4 rounded-lg">
-                      <p className="text-sm text-white/80">{attrValue.attribute.label}</p>
+                      <p className="text-sm text-white/80">{attrValue.attribute?.label || "Unknown"}</p>
                       <p className="text-lg text-white mt-1">
                         {attrValue.value || "N/A"}
                       </p>
