@@ -191,6 +191,16 @@ export function TicketFormScreen({ route, navigation }: Props) {
       return;
     }
 
+    if (!categoryId) {
+      Alert.alert("Category required", "Please select a category.");
+      return;
+    }
+
+    if (!subcategoryId) {
+      Alert.alert("Subcategory required", "Please select a subcategory.");
+      return;
+    }
+
     // Validate mandatory attributes
     for (const attr of visibleAttributes) {
       if (attr.mandatory && !attributeValues[attr.id]?.trim()) {
@@ -204,8 +214,8 @@ export function TicketFormScreen({ route, navigation }: Props) {
       description: description.trim(),
       priority,
       issueType,
-      categoryId: categoryId || undefined,
-      subcategoryId: subcategoryId || undefined,
+      categoryId,
+      subcategoryId,
     };
 
     let savedTicket: Ticket | undefined;

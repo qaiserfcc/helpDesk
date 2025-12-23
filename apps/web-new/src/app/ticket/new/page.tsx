@@ -78,6 +78,16 @@ export default function NewTicketPage() {
       return;
     }
 
+    if (!categoryId) {
+      setError("Category is required");
+      return;
+    }
+
+    if (!subcategoryId) {
+      setError("Subcategory is required");
+      return;
+    }
+
     // Validate mandatory attributes
     const mandatoryAttrs = visibleAttributes.filter((attr) => attr.mandatory);
     for (const attr of mandatoryAttrs) {
@@ -94,8 +104,8 @@ export default function NewTicketPage() {
       description: description.trim(),
       priority,
       issueType,
-      categoryId: categoryId || undefined,
-      subcategoryId: subcategoryId || undefined,
+      categoryId,
+      subcategoryId,
     };
 
     try {
