@@ -63,7 +63,11 @@ export async function listAgentAssignments(
         },
       },
     },
-    orderBy: [{ categoryId: "asc" }, { subcategoryId: "asc" }, { priority: "asc" }],
+    orderBy: [
+      { categoryId: "asc" },
+      { subcategoryId: "asc" },
+      { priority: "asc" },
+    ],
   });
 
   return assignments;
@@ -124,7 +128,10 @@ export async function createAgentAssignment(input: CreateAgentAssignmentInput) {
     }
 
     if (subcategory.categoryId !== input.categoryId) {
-      throw createError(400, "Subcategory does not belong to the specified category");
+      throw createError(
+        400,
+        "Subcategory does not belong to the specified category",
+      );
     }
   }
 
