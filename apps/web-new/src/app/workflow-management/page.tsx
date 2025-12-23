@@ -50,7 +50,7 @@ export default function WorkflowManagementPage() {
     description: "",
     order: 1,
     initiatorRole: "",
-    allowedActions: null,
+    allowedActions: [],
     conditions: null,
   });
 
@@ -155,7 +155,7 @@ export default function WorkflowManagementPage() {
       description: "",
       order: (steps?.length || 0) + 1,
       initiatorRole: "",
-      allowedActions: null,
+      allowedActions: [],
       conditions: null,
     });
   };

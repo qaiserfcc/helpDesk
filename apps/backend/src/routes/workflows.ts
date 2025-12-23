@@ -36,13 +36,19 @@ const updateWorkflowSchema = z.object({
   active: z.boolean().optional(),
 });
 
+const allowedActionsSchema = z
+  .array(z.nativeEnum(WorkflowStepAction))
+  .nullable()
+  .optional()
+  .transform((val) => val ?? []);
+
 const createWorkflowStepSchema = z.object({
   workflowId: z.string().uuid(),
   name: z.string().min(1).max(200),
   description: z.string().max(1000).optional(),
   order: z.number().int().min(0),
   initiatorRole: z.nativeEnum(Role).optional(),
-  allowedActions: z.array(z.nativeEnum(WorkflowStepAction)),
+  allowedActions: allowedActionsSchema,
   conditions: z.record(z.unknown()).optional(),
 });
 
@@ -51,7 +57,7 @@ const updateWorkflowStepSchema = z.object({
   description: z.string().max(1000).optional(),
   order: z.number().int().min(0).optional(),
   initiatorRole: z.nativeEnum(Role).optional(),
-  allowedActions: z.array(z.nativeEnum(WorkflowStepAction)).optional(),
+  allowedActions: allowedActionsSchema,
   conditions: z.record(z.unknown()).optional(),
 });
 

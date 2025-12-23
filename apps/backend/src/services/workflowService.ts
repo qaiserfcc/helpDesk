@@ -274,7 +274,7 @@ export async function createWorkflowStep(
       order: input.order,
       initiatorRole: input.initiatorRole ?? null,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      allowedActions: input.allowedActions as any,
+      allowedActions: (input.allowedActions ?? []) as any,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       conditions: (input.conditions as any) ?? undefined,
     },
@@ -326,7 +326,7 @@ export async function updateWorkflowStep(
       order: input.order,
       initiatorRole: input.initiatorRole ?? undefined,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      allowedActions: input.allowedActions as any,
+      allowedActions: (input.allowedActions ?? []) as any,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       conditions: (input.conditions as any) ?? undefined,
     },
