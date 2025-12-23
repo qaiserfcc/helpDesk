@@ -45,6 +45,25 @@ const updateSubcategorySchema = z.object({
 
 router.use(requireAuth);
 
+// Subcategory list across categories (optional category filter)
+router.get("/subcategories", async (req, res, next) => {
+  if (!req.user) {
+    next(createError(401, "Authentication required"));
+    return;
+  }
+
+  const activeOnly = req.query.active === "true";
+  const categoryId =
+    typeof req.query.categoryId === "string" ? req.query.categoryId : undefined;
+
+  try {
+    const subcategories = await listSubcategories(categoryId, activeOnly);
+    res.json({ subcategories });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Category routes
 router.get("/", async (req, res, next) => {
   if (!req.user) {
