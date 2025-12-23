@@ -7,6 +7,7 @@ import aiRouter from "./ai.js";
 import categoriesRouter from "./categories.js";
 import attributesRouter from "./attributes.js";
 import workflowsRouter from "./workflows.js";
+import slasRouter from "./slas.js";
 
 const router = Router();
 
@@ -18,6 +19,7 @@ router.use("/ai", aiRouter);
 router.use("/categories", categoriesRouter);
 router.use("/attributes", attributesRouter);
 router.use("/workflows", workflowsRouter);
+router.use("/slas", slasRouter);
 
 router.get("/version", (_req, res) => {
   res.json({

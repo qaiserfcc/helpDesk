@@ -9,6 +9,7 @@ export function Header() {
 
   const navLinks = [
     { href: "/category-management", label: "Categories" },
+    { href: "/sla-management", label: "SLAs" },
     { href: "/workflow-management", label: "Workflows" },
     { href: "/attribute-management", label: "Attributes" },
   ];

@@ -164,6 +164,7 @@ model TicketCategory {
   tickets     Ticket[]
   subcategories TicketSubcategory[]
   workflows   WorkflowDefinition[]
+  slas        TicketSLA[]
 }
 
 model TicketSubcategory {
@@ -176,9 +177,30 @@ model TicketSubcategory {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   tickets     Ticket[]
+  slas        TicketSLA[]
 
   @@unique([categoryId, name])
   @@index([categoryId])
+}
+
+model TicketSLA {
+  id                   String   @id @default(uuid())
+  name                 String   @unique
+  description          String?
+  categoryId           String
+  category             TicketCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  subcategoryId        String?
+  subcategory          TicketSubcategory? @relation(fields: [subcategoryId], references: [id], onDelete: SetNull)
+  priority             TicketPriority
+  responseTimeMinutes  Int
+  resolutionTimeMinutes Int
+  active               Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@unique([categoryId, subcategoryId, priority])
+  @@index([categoryId])
+  @@index([subcategoryId])
 }
 
 model TicketAttribute {
