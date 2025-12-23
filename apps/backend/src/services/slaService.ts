@@ -80,11 +80,12 @@ export async function createSLA(payload: CreateSLAPayload) {
   }
 
   // Check for duplicate SLA (same category, subcategory, priority)
+  const subcatId = payload.subcategoryId !== undefined ? payload.subcategoryId : null;
   const existing = await prisma.ticketSLA.findUnique({
     where: {
       categoryId_subcategoryId_priority: {
         categoryId: payload.categoryId,
-        subcategoryId: payload.subcategoryId || null,
+        subcategoryId: subcatId as string,
         priority: payload.priority,
       },
     },

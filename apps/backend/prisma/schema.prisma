@@ -73,6 +73,7 @@ model User {
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   aiSuggestions AiSuggestion[]
+  agentAssignments AgentAssignment[]
 }
 
 model Ticket {
@@ -165,6 +166,7 @@ model TicketCategory {
   subcategories TicketSubcategory[]
   workflows   WorkflowDefinition[]
   slas        TicketSLA[]
+  agentAssignments AgentAssignment[]
 }
 
 model TicketSubcategory {
@@ -178,6 +180,7 @@ model TicketSubcategory {
   updatedAt   DateTime @updatedAt
   tickets     Ticket[]
   slas        TicketSLA[]
+  agentAssignments AgentAssignment[]
 
   @@unique([categoryId, name])
   @@index([categoryId])
@@ -283,4 +286,23 @@ model TicketWorkflowStep {
 
   @@index([ticketId])
   @@index([stepId])
+}
+
+model AgentAssignment {
+  id            String   @id @default(uuid())
+  categoryId    String
+  category      TicketCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  subcategoryId String?
+  subcategory   TicketSubcategory? @relation(fields: [subcategoryId], references: [id], onDelete: Cascade)
+  agentId       String
+  agent         User     @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  priority      TicketPriority?
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([categoryId, subcategoryId, agentId, priority])
+  @@index([categoryId])
+  @@index([subcategoryId])
+  @@index([agentId])
 }

@@ -8,6 +8,7 @@ import categoriesRouter from "./categories.js";
 import attributesRouter from "./attributes.js";
 import workflowsRouter from "./workflows.js";
 import slasRouter from "./slas.js";
+import agentAssignmentsRouter from "./agentAssignments.js";
 
 const router = Router();
 
@@ -20,6 +21,7 @@ router.use("/categories", categoriesRouter);
 router.use("/attributes", attributesRouter);
 router.use("/workflows", workflowsRouter);
 router.use("/slas", slasRouter);
+router.use("/agent-assignments", agentAssignmentsRouter);
 
 router.get("/version", (_req, res) => {
   res.json({

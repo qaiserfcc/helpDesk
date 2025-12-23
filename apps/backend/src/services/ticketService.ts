@@ -15,6 +15,7 @@ import {
   evaluateWorkflowForTicket,
   getNextWorkflowStep,
 } from "./workflowService.js";
+import { getRecommendedAgent } from "./agentAssignmentService.js";
 
 const ticketInclude = {
   creator: { select: { id: true, name: true, email: true } },
@@ -211,6 +212,19 @@ export async function createTicket(
     }
   }
 
+  // Get recommended agent based on category, subcategory, and priority
+  let assignedTo: string | undefined;
+  if (input.categoryId && input.subcategoryId) {
+    const recommendedAgent = await getRecommendedAgent(
+      input.categoryId,
+      input.subcategoryId,
+      input.priority,
+    );
+    if (recommendedAgent) {
+      assignedTo = recommendedAgent.id;
+    }
+  }
+
   const ticket = await prisma.ticket.create({
     data: {
       description: input.description,
@@ -222,6 +236,7 @@ export async function createTicket(
       workflowId: workflowId,
       currentStepId: currentStepId,
       createdBy: user.id,
+      assignedTo: assignedTo,
     },
     include: ticketInclude,
   });
@@ -235,6 +250,17 @@ export async function createTicket(
         actorId: user.id,
         enteredAt: new Date(),
       },
+    });
+  }
+
+  // Log assignment activity if agent was assigned
+  if (assignedTo) {
+    await logTicketActivity({
+      ticketId: ticket.id,
+      actorId: user.id,
+      type: TicketActivityType.assignment_change,
+      fromAssigneeId: null,
+      toAssigneeId: assignedTo,
     });
   }
 
