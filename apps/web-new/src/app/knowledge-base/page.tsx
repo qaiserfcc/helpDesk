@@ -12,6 +12,7 @@ import {
   searchKnowledgeBase,
   type KnowledgeArticle,
   type CreateKnowledgeArticlePayload,
+  type UpdateKnowledgeArticlePayload,
 } from "@/services/knowledgeBase";
 
 export default function KnowledgeBasePage() {
@@ -45,7 +46,7 @@ export default function KnowledgeBasePage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: any }) =>
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateKnowledgeArticlePayload }) =>
       updateKnowledgeArticle(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["knowledge-articles"] });

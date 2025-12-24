@@ -16,7 +16,10 @@ export interface KnowledgeArticle {
   authorId: string;
   createdAt: string;
   updatedAt: string;
-  category?: any;
+  category?: {
+    id: string;
+    name: string;
+  };
   author?: { id: string; name: string; email: string };
 }
 

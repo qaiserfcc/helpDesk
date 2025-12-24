@@ -8,7 +8,6 @@ interface VisualWorkflowDesignerProps {
   onAddStep: () => void;
   onEditStep: (step: WorkflowStep) => void;
   onDeleteStep: (stepId: string) => void;
-  onReorderSteps?: (steps: WorkflowStep[]) => void;
 }
 
 export function VisualWorkflowDesigner({

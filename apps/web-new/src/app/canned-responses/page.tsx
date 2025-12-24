@@ -11,6 +11,7 @@ import {
   deleteCannedResponse,
   type CannedResponse,
   type CreateCannedResponsePayload,
+  type UpdateCannedResponsePayload,
 } from "@/services/cannedResponses";
 
 export default function CannedResponsesPage() {
@@ -42,7 +43,7 @@ export default function CannedResponsesPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: any }) =>
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateCannedResponsePayload }) =>
       updateCannedResponse(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["canned-responses"] });

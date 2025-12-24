@@ -12,7 +12,10 @@ export interface CannedResponse {
   active: boolean;
   createdAt: string;
   updatedAt: string;
-  category?: any;
+  category?: {
+    id: string;
+    name: string;
+  };
   creator?: { id: string; name: string; email: string };
 }
 

@@ -92,14 +92,22 @@ export async function findBestAgent(
   skillId?: string,
 ): Promise<string | null> {
   // Get all active rules sorted by priority
+  const whereClause: any = {
+    active: true,
+  };
+  
+  // Only add category filter if categoryId is provided
+  if (categoryId) {
+    whereClause.OR = [
+      { categoryId: categoryId },
+      { categoryId: null },
+    ];
+  } else {
+    whereClause.categoryId = null;
+  }
+
   const rules = await prisma.agentAssignmentRule.findMany({
-    where: {
-      active: true,
-      OR: [
-        { categoryId: categoryId ?? null },
-        { categoryId: null },
-      ],
-    },
+    where: whereClause,
     orderBy: { priority: "desc" },
     include: {
       skill: {
