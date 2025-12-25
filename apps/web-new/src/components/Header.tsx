@@ -12,6 +12,7 @@ export function Header() {
     { href: "/sla-management", label: "SLAs" },
     { href: "/workflow-management", label: "Workflows" },
     { href: "/attribute-management", label: "Attributes" },
+    { href: "/agent-assignment", label: "Agent Assignments" },
   ];
 
   if (!session) return null;

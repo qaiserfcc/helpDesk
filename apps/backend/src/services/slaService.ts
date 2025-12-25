@@ -80,18 +80,40 @@ export async function createSLA(payload: CreateSLAPayload) {
   }
 
   // Check for duplicate SLA (same category, subcategory, priority)
-  const existing = await prisma.ticketSLA.findUnique({
-    where: {
-      categoryId_subcategoryId_priority: {
+  // Note: Prisma's unique constraint types don't properly handle nullable fields
+  // We need to ensure the value is either a string or null
+  const subcatId = payload.subcategoryId === undefined ? null : payload.subcategoryId;
+  if (subcatId !== null) {
+    const existing = await prisma.ticketSLA.findUnique({
+      where: {
+        categoryId_subcategoryId_priority: {
+          categoryId: payload.categoryId,
+          subcategoryId: subcatId,
+          priority: payload.priority,
+        },
+      },
+    });
+    if (existing) {
+      throw createError(
+        409,
+        "SLA already exists for this category/subcategory/priority combination",
+      );
+    }
+  } else {
+    // Check for null subcategory case
+    const existing = await prisma.ticketSLA.findFirst({
+      where: {
         categoryId: payload.categoryId,
-        subcategoryId: payload.subcategoryId || null,
+        subcategoryId: null,
         priority: payload.priority,
       },
-    },
-  });
-
-  if (existing) {
-    throw createError(409, "SLA already exists for this category/subcategory/priority combination");
+    });
+    if (existing) {
+      throw createError(
+        409,
+        "SLA already exists for this category/subcategory/priority combination",
+      );
+    }
   }
 
   // Validate times

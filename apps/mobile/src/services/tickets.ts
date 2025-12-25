@@ -24,6 +24,28 @@ export type TicketUser = {
   email: string;
 };
 
+export type TicketCategory = {
+  id: string;
+  name: string;
+};
+
+export type TicketSubcategory = {
+  id: string;
+  name: string;
+};
+
+export type TicketWorkflow = {
+  id: string;
+  name: string;
+  version: number;
+};
+
+export type TicketWorkflowStep = {
+  id: string;
+  name: string;
+  order: number;
+};
+
 export type Ticket = {
   id: string;
   description: string;
@@ -37,6 +59,14 @@ export type Ticket = {
   creator: TicketUser;
   assignee: TicketUser | null;
   assignmentRequest: TicketUser | null;
+  categoryId: string | null;
+  category: TicketCategory | null;
+  subcategoryId: string | null;
+  subcategory: TicketSubcategory | null;
+  workflowId: string | null;
+  workflow: TicketWorkflow | null;
+  currentStepId: string | null;
+  currentStep: TicketWorkflowStep | null;
   pendingSync?: boolean;
   pendingAction?: string;
   isLocalOnly?: boolean;
@@ -137,8 +167,8 @@ export type CreateTicketPayload = {
   priority: TicketPriority;
   issueType: IssueType;
   attachments?: string[];
-  categoryId?: string;
-  subcategoryId?: string;
+  categoryId: string;
+  subcategoryId: string;
 };
 
 export type UpdateTicketPayload = Partial<CreateTicketPayload> & {

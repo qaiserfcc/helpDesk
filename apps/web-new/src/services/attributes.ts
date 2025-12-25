@@ -24,6 +24,7 @@ export type TicketAttributeValue = {
   value: string;
   createdAt?: string;
   updatedAt?: string;
+  attribute?: TicketAttribute;
 };
 
 export type CreateAttributePayload = {
