@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/useAuthStore";
-import { Modal } from "@/components/Modal";
+import { CrudModal } from "@/components/CrudModal";
 import {
   fetchCategories,
   createCategory,
@@ -348,7 +348,7 @@ export default function CategoryManagementPage() {
 
         {/* Create Button */}
         {!formVisible && (
-          <div className="mb-6">
+          <div className="mb-6 flex justify-end">
             <button
               onClick={handleCreateClick}
               className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
@@ -360,63 +360,51 @@ export default function CategoryManagementPage() {
 
         {/* Form Modal */}
         {formVisible && (
-          <Modal
+          <CrudModal
             title={formMode === "create" ? "Create Category" : "Edit Category"}
             onClose={handleCancelClick}
-            actions={
-              <button
-                form="category-form"
-                type="submit"
-                disabled={createMutation.isPending || updateMutation.isPending}
-                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 text-white font-medium rounded-lg transition-colors"
-              >
-                {formMode === "create" ? "Create" : "Update"}
-              </button>
-            }
+            onSubmit={handleSubmit}
+            submitLabel={formMode === "create" ? "Create" : "Update"}
+            isSubmitting={createMutation.isPending || updateMutation.isPending}
+            formId="category-form"
           >
-            <form
-              id="category-form"
-              onSubmit={handleSubmit}
-              className="grid grid-cols-1 md:grid-cols-2 gap-4"
-            >
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Name *</label>
-                <input
-                  type="text"
-                  value={formValues.name}
-                  onChange={(e) => setFormValues({ ...formValues, name: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., IT Support"
-                />
-                {formErrors.name && (
-                  <p className="mt-1 text-sm text-red-500">{formErrors.name}</p>
-                )}
-              </div>
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                <textarea
-                  value={formValues.description}
-                  onChange={(e) => setFormValues({ ...formValues, description: e.target.value })}
-                  rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Category description..."
-                />
-                {formErrors.description && (
-                  <p className="mt-1 text-sm text-red-500">{formErrors.description}</p>
-                )}
-              </div>
-              <div className="flex items-center md:col-span-2">
-                <input
-                  type="checkbox"
-                  id="active"
-                  checked={formValues.active}
-                  onChange={(e) => setFormValues({ ...formValues, active: e.target.checked })}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <label htmlFor="active" className="ml-2 text-sm font-medium text-gray-700">Active</label>
-              </div>
-            </form>
-          </Modal>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Name *</label>
+              <input
+                type="text"
+                value={formValues.name}
+                onChange={(e) => setFormValues({ ...formValues, name: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="e.g., IT Support"
+              />
+              {formErrors.name && (
+                <p className="mt-1 text-sm text-red-500">{formErrors.name}</p>
+              )}
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+              <textarea
+                value={formValues.description}
+                onChange={(e) => setFormValues({ ...formValues, description: e.target.value })}
+                rows={3}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Category description..."
+              />
+              {formErrors.description && (
+                <p className="mt-1 text-sm text-red-500">{formErrors.description}</p>
+              )}
+            </div>
+            <div className="flex items-center md:col-span-2">
+              <input
+                type="checkbox"
+                id="active"
+                checked={formValues.active}
+                onChange={(e) => setFormValues({ ...formValues, active: e.target.checked })}
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <label htmlFor="active" className="ml-2 text-sm font-medium text-gray-700">Active</label>
+            </div>
+          </CrudModal>
         )}
 
         {/* Categories List */}

@@ -8,7 +8,7 @@ import { useNotificationStore } from "@/store/useNotificationStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { fetchCategories, fetchSubcategories, type Category, type Subcategory } from "@/services/categories";
 import { fetchAttributes, setTicketAttributeValue, type TicketAttribute } from "@/services/attributes";
-import { Modal } from "@/components/Modal";
+import { CrudModal } from "@/components/CrudModal";
 
 const priorityOptions: TicketPriority[] = ["low", "medium", "high"];
 const issueOptions: IssueType[] = [
@@ -165,212 +165,205 @@ export default function NewTicketPage() {
         </button>
 
         {showTicketModal && (
-          <Modal
+          <CrudModal
             title="Create New Ticket"
             onClose={handleCloseModal}
-            actions={
-              <button
-                type="submit"
-                form="ticket-form"
-                disabled={submitting}
-                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {submitting ? "Creating..." : "Create Ticket"}
-              </button>
-            }
+            onSubmit={handleSubmit}
+            submitLabel="Create Ticket"
+            isSubmitting={submitting}
+            formId="ticket-form"
           >
-            <form id="ticket-form" onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <label htmlFor="description" className="block text-sm font-medium text-gray-800 mb-2">
-                  Description *
-                </label>
-                <textarea
-                  id="description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  rows={6}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="Describe the issue in detail..."
-                  required
-                />
-              </div>
+            {/* Description - full width */}
+            <div className="md:col-span-2">
+              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+                Description *
+              </label>
+              <textarea
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={6}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Describe the issue in detail..."
+                required
+              />
+            </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-800 mb-2">Priority</label>
-                <div className="flex flex-wrap gap-4">
-                  {priorityOptions.map((option) => (
-                    <label key={option} className="flex items-center gap-2 text-gray-800">
-                      <input
-                        type="radio"
-                        name="priority"
-                        value={option}
-                        checked={priority === option}
-                        onChange={(e) => setPriority(e.target.value as TicketPriority)}
-                        className="h-4 w-4"
-                      />
-                      <span className="capitalize">{option}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
+            {/* Priority */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Priority</label>
+              <select
+                value={priority}
+                onChange={(e) => setPriority(e.target.value as TicketPriority)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                {priorityOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option.charAt(0).toUpperCase() + option.slice(1)}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-800 mb-2">Issue Type</label>
-                <div className="flex flex-wrap gap-4">
-                  {issueOptions.map((option) => (
-                    <label key={option} className="flex items-center gap-2 text-gray-800">
-                      <input
-                        type="radio"
-                        name="issueType"
-                        value={option}
-                        checked={issueType === option}
-                        onChange={(e) => setIssueType(e.target.value as IssueType)}
-                        className="h-4 w-4"
-                      />
-                      <span className="capitalize">{option}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
+            {/* Issue Type */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Issue Type</label>
+              <select
+                value={issueType}
+                onChange={(e) => setIssueType(e.target.value as IssueType)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                {issueOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option.charAt(0).toUpperCase() + option.slice(1)}
+                  </option>
+                ))}
+              </select>
+            </div>
 
+            {/* Category */}
+            <div>
+              <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
+                Category *
+              </label>
+              <select
+                id="category"
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">Select a category</option>
+                {categories?.filter((c) => c.active).map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Subcategory */}
+            {subcategories.length > 0 && (
               <div>
-                <label htmlFor="category" className="block text-sm font-medium text-gray-800 mb-2">
-                  Category
+                <label htmlFor="subcategory" className="block text-sm font-medium text-gray-700 mb-2">
+                  Subcategory *
                 </label>
                 <select
-                  id="category"
-                  value={categoryId}
-                  onChange={(e) => setCategoryId(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  id="subcategory"
+                  value={subcategoryId}
+                  onChange={(e) => setSubcategoryId(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="">Select a category</option>
-                  {categories?.filter((c) => c.active).map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name}
+                  <option value="">Select a subcategory</option>
+                  {subcategories.filter((sc) => sc.active).map((subcat) => (
+                    <option key={subcat.id} value={subcat.id}>
+                      {subcat.name}
                     </option>
                   ))}
                 </select>
               </div>
+            )}
 
-              {subcategories.length > 0 && (
-                <div>
-                  <label htmlFor="subcategory" className="block text-sm font-medium text-gray-800 mb-2">
-                    Subcategory
-                  </label>
-                  <select
-                    id="subcategory"
-                    value={subcategoryId}
-                    onChange={(e) => setSubcategoryId(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  >
-                    <option value="">Select a subcategory</option>
-                    {subcategories.filter((sc) => sc.active).map((subcat) => (
-                      <option key={subcat.id} value={subcat.id}>
-                        {subcat.name}
-                      </option>
-                    ))}
-                  </select>
+            {/* Additional Attributes */}
+            {visibleAttributes.length > 0 && (
+              <>
+                <div className="md:col-span-2 border-t border-gray-200 pt-4 mt-2">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Additional Information</h3>
                 </div>
-              )}
+                {visibleAttributes.map((attr) => (
+                  <div key={attr.id}>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {attr.label} {attr.mandatory && <span className="text-red-500">*</span>}
+                    </label>
+                    {attr.type === "text" && (
+                      <input
+                        type="text"
+                        value={attributeValues[attr.id] || ""}
+                        onChange={(e) =>
+                          setAttributeValues({ ...attributeValues, [attr.id]: e.target.value })
+                        }
+                        required={attr.mandatory}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    )}
+                    {attr.type === "number" && (
+                      <input
+                        type="number"
+                        value={attributeValues[attr.id] || ""}
+                        onChange={(e) =>
+                          setAttributeValues({ ...attributeValues, [attr.id]: e.target.value })
+                        }
+                        required={attr.mandatory}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    )}
+                    {attr.type === "date" && (
+                      <input
+                        type="date"
+                        value={attributeValues[attr.id] || ""}
+                        onChange={(e) =>
+                          setAttributeValues({ ...attributeValues, [attr.id]: e.target.value })
+                        }
+                        required={attr.mandatory}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    )}
+                    {attr.type === "boolean" && (
+                      <select
+                        value={attributeValues[attr.id] || ""}
+                        onChange={(e) =>
+                          setAttributeValues({ ...attributeValues, [attr.id]: e.target.value })
+                        }
+                        required={attr.mandatory}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        <option value="">Select...</option>
+                        <option value="true">Yes</option>
+                        <option value="false">No</option>
+                      </select>
+                    )}
+                    {attr.type === "select" && (
+                      <select
+                        value={attributeValues[attr.id] || ""}
+                        onChange={(e) =>
+                          setAttributeValues({ ...attributeValues, [attr.id]: e.target.value })
+                        }
+                        required={attr.mandatory}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        <option value="">Select...</option>
+                        {(Array.isArray(attr.options) ? attr.options : JSON.parse(attr.options || "[]")).map(
+                          (opt: string) => (
+                            <option key={opt} value={opt}>
+                              {opt}
+                            </option>
+                          )
+                        )}
+                      </select>
+                    )}
+                    {attr.type === "multiselect" && (
+                      <textarea
+                        value={attributeValues[attr.id] || ""}
+                        onChange={(e) =>
+                          setAttributeValues({ ...attributeValues, [attr.id]: e.target.value })
+                        }
+                        placeholder="Enter values separated by commas"
+                        required={attr.mandatory}
+                        rows={2}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    )}
+                  </div>
+                ))}
+              </>
+            )}
 
-              {visibleAttributes.length > 0 && (
-                <div className="space-y-4 border-t border-gray-200 pt-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Additional Information</h3>
-                  {visibleAttributes.map((attr) => (
-                    <div key={attr.id}>
-                      <label className="block text-sm font-medium text-gray-800 mb-2">
-                        {attr.label} {attr.mandatory && <span className="text-red-500">*</span>}
-                      </label>
-                      {attr.type === "text" && (
-                        <input
-                          type="text"
-                          value={attributeValues[attr.id] || ""}
-                          onChange={(e) =>
-                            setAttributeValues({ ...attributeValues, [attr.id]: e.target.value })
-                          }
-                          required={attr.mandatory}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                        />
-                      )}
-                      {attr.type === "number" && (
-                        <input
-                          type="number"
-                          value={attributeValues[attr.id] || ""}
-                          onChange={(e) =>
-                            setAttributeValues({ ...attributeValues, [attr.id]: e.target.value })
-                          }
-                          required={attr.mandatory}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                        />
-                      )}
-                      {attr.type === "date" && (
-                        <input
-                          type="date"
-                          value={attributeValues[attr.id] || ""}
-                          onChange={(e) =>
-                            setAttributeValues({ ...attributeValues, [attr.id]: e.target.value })
-                          }
-                          required={attr.mandatory}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                        />
-                      )}
-                      {attr.type === "boolean" && (
-                        <select
-                          value={attributeValues[attr.id] || ""}
-                          onChange={(e) =>
-                            setAttributeValues({ ...attributeValues, [attr.id]: e.target.value })
-                          }
-                          required={attr.mandatory}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                        >
-                          <option value="">Select...</option>
-                          <option value="true">Yes</option>
-                          <option value="false">No</option>
-                        </select>
-                      )}
-                      {attr.type === "select" && (
-                        <select
-                          value={attributeValues[attr.id] || ""}
-                          onChange={(e) =>
-                            setAttributeValues({ ...attributeValues, [attr.id]: e.target.value })
-                          }
-                          required={attr.mandatory}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                        >
-                          <option value="">Select...</option>
-                          {(Array.isArray(attr.options) ? attr.options : JSON.parse(attr.options || "[]")).map(
-                            (opt: string) => (
-                              <option key={opt} value={opt}>
-                                {opt}
-                              </option>
-                            )
-                          )}
-                        </select>
-                      )}
-                      {attr.type === "multiselect" && (
-                        <textarea
-                          value={attributeValues[attr.id] || ""}
-                          onChange={(e) =>
-                            setAttributeValues({ ...attributeValues, [attr.id]: e.target.value })
-                          }
-                          placeholder="Enter values separated by commas"
-                          required={attr.mandatory}
-                          rows={2}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                        />
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <p className="text-red-700">{error}</p>
-                </div>
-              )}
-            </form>
-          </Modal>
+            {/* Error message */}
+            {error && (
+              <div className="md:col-span-2 bg-red-50 border border-red-200 rounded-lg p-4">
+                <p className="text-red-700">{error}</p>
+              </div>
+            )}
+          </CrudModal>
         )}
       </div>
     </div>

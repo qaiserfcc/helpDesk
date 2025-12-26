@@ -13,7 +13,7 @@ import {
   type UserSummary,
   type UpdateUserPayload,
 } from "@/services/users";
-import { Modal } from "@/components/Modal";
+import { CrudModal } from "@/components/CrudModal";
 import {
   validateUserForm,
   type UserFormValues,
@@ -392,135 +392,130 @@ export default function UserManagementPage() {
 
       {/* User Form Modal */}
       {formVisible && (
-        <Modal
+        <CrudModal
           title={formMode === "create" ? "Add Workspace Member" : "Edit Workspace Member"}
           onClose={closeForm}
-          actions={
-            <button
-              type="submit"
-              form="user-form"
-              disabled={saving}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-            >
-              {saving
-                ? "Saving..."
-                : formMode === "create"
-                ? "Create User"
-                : "Save Changes"}
-            </button>
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSubmitForm();
+          }}
+          submitLabel={
+            saving
+              ? "Saving..."
+              : formMode === "create"
+              ? "Create User"
+              : "Save Changes"
           }
+          isSubmitting={saving}
+          formId="user-form"
         >
-          <form
-            id="user-form"
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSubmitForm();
-            }}
-          >
-            <p className="text-gray-700 mb-6">
+          <div className="md:col-span-2">
+            <p className="text-gray-700 mb-4">
               Invite teammates or adjust their access level. Password updates apply immediately.
             </p>
+          </div>
 
-            {/* Name Field */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-900 mb-1">Full name</label>
-              <input
-                type="text"
-                placeholder="Casey Admin"
-                value={formValues.name}
-                onChange={(e) =>
-                  setFormValues((prev) => ({ ...prev, name: e.target.value }))
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
-              />
-              {formErrors.name && (
-                <p className="text-red-600 text-sm mt-1">{formErrors.name}</p>
-              )}
-            </div>
-
-            {/* Email Field */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-900 mb-1">Email</label>
-              <input
-                type="email"
-                placeholder="casey@example.com"
-                value={formValues.email}
-                onChange={(e) =>
-                  setFormValues((prev) => ({ ...prev, email: e.target.value }))
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
-              />
-              {formErrors.email && (
-                <p className="text-red-600 text-sm mt-1">{formErrors.email}</p>
-              )}
-            </div>
-
-            {/* Password Field */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-900 mb-1">
-                {formMode === "create" ? "Temporary password" : "Reset password"}
-              </label>
-              <input
-                type="password"
-                placeholder="At least 6 characters"
-                value={formValues.password}
-                onChange={(e) =>
-                  setFormValues((prev) => ({ ...prev, password: e.target.value }))
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
-              />
-              {formErrors.password && (
-                <p className="text-red-600 text-sm mt-1">{formErrors.password}</p>
-              )}
-            </div>
-
-            {/* Role Selection */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-900 mb-3">Role</label>
-              <div className="space-y-3">
-                {roleFilters
-                  .filter((filter) => filter.value !== "all")
-                  .map((filter) => {
-                    const roleValue = filter.value as "admin" | "agent" | "user";
-                    const selected = formValues.role === roleValue;
-                    return (
-                      <div
-                        key={`role-${roleValue}`}
-                        onClick={() =>
-                          setFormValues((prev) => ({
-                            ...prev,
-                            role: roleValue,
-                          }))
-                        }
-                        className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                          selected
-                            ? "border-blue-200 bg-blue-50"
-                            : "border-gray-200 hover:border-blue-200"
-                        }`}
-                      >
-                        <p
-                          className={`font-medium ${selected ? "text-gray-900" : "text-gray-800"}`}
-                        >
-                          {filter.label.replace(/s$/, "")}
-                        </p>
-                        <p className="text-sm text-gray-600 mt-1">
-                          {roleValue === "admin"
-                            ? "Full access"
-                            : roleValue === "agent"
-                            ? "Can work assigned tickets"
-                            : "Submitters only"}
-                        </p>
-                      </div>
-                    );
-                  })}
-              </div>
-            </div>
-
-            {formErrors.general && (
-              <p className="text-red-600 text-sm mb-4">{formErrors.general}</p>
+          {/* Name Field */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Full name</label>
+            <input
+              type="text"
+              placeholder="Casey Admin"
+              value={formValues.name}
+              onChange={(e) =>
+                setFormValues((prev) => ({ ...prev, name: e.target.value }))
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            {formErrors.name && (
+              <p className="text-red-600 text-sm mt-1">{formErrors.name}</p>
             )}
-          </form>
-        </Modal>
+          </div>
+
+          {/* Email Field */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+            <input
+              type="email"
+              placeholder="casey@example.com"
+              value={formValues.email}
+              onChange={(e) =>
+                setFormValues((prev) => ({ ...prev, email: e.target.value }))
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            {formErrors.email && (
+              <p className="text-red-600 text-sm mt-1">{formErrors.email}</p>
+            )}
+          </div>
+
+          {/* Password Field */}
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {formMode === "create" ? "Temporary password" : "Reset password"}
+            </label>
+            <input
+              type="password"
+              placeholder="At least 6 characters"
+              value={formValues.password}
+              onChange={(e) =>
+                setFormValues((prev) => ({ ...prev, password: e.target.value }))
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            {formErrors.password && (
+              <p className="text-red-600 text-sm mt-1">{formErrors.password}</p>
+            )}
+          </div>
+
+          {/* Role Selection */}
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-3">Role</label>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {roleFilters
+                .filter((filter) => filter.value !== "all")
+                .map((filter) => {
+                  const roleValue = filter.value as "admin" | "agent" | "user";
+                  const selected = formValues.role === roleValue;
+                  return (
+                    <div
+                      key={`role-${roleValue}`}
+                      onClick={() =>
+                        setFormValues((prev) => ({
+                          ...prev,
+                          role: roleValue,
+                        }))
+                      }
+                      className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                        selected
+                          ? "border-blue-500 bg-blue-50"
+                          : "border-gray-200 hover:border-blue-200"
+                      }`}
+                    >
+                      <p
+                        className={`font-medium ${selected ? "text-gray-900" : "text-gray-800"}`}
+                      >
+                        {filter.label.replace(/s$/, "")}
+                      </p>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {roleValue === "admin"
+                          ? "Full access"
+                          : roleValue === "agent"
+                          ? "Can work assigned tickets"
+                          : "Submitters only"}
+                      </p>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+
+          {formErrors.general && (
+            <div className="md:col-span-2">
+              <p className="text-red-600 text-sm">{formErrors.general}</p>
+            </div>
+          )}
+        </CrudModal>
       )}
     </div>
   );
