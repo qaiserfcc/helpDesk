@@ -44,39 +44,39 @@ export async function fetchKnowledgeArticles(
   categoryId?: string,
   searchTerm?: string
 ): Promise<KnowledgeArticle[]> {
-  const { data } = await apiClient.get(`/api/knowledge-base`, {
+  const { data } = await apiClient.get(`/knowledge-base`, {
     params: { published, categoryId, search: searchTerm },
   });
   return data.articles;
 }
 
 export async function searchKnowledgeBase(query: string, limit = 10): Promise<KnowledgeArticle[]> {
-  const { data } = await apiClient.get(`/api/knowledge-base/search`, {
+  const { data } = await apiClient.get(`/knowledge-base/search`, {
     params: { q: query, limit },
   });
   return data.articles;
 }
 
 export async function fetchKnowledgeArticle(id: string): Promise<KnowledgeArticle> {
-  const { data } = await apiClient.get(`/api/knowledge-base/${id}`);
+  const { data } = await apiClient.get(`/knowledge-base/${id}`);
   return data.article;
 }
 
 export async function createKnowledgeArticle(payload: CreateKnowledgeArticlePayload): Promise<KnowledgeArticle> {
-  const { data } = await apiClient.post(`/api/knowledge-base`, payload);
+  const { data } = await apiClient.post(`/knowledge-base`, payload);
   return data.article;
 }
 
 export async function updateKnowledgeArticle(id: string, payload: UpdateKnowledgeArticlePayload): Promise<KnowledgeArticle> {
-  const { data } = await apiClient.patch(`/api/knowledge-base/${id}`, payload);
+  const { data } = await apiClient.patch(`/knowledge-base/${id}`, payload);
   return data.article;
 }
 
 export async function deleteKnowledgeArticle(id: string): Promise<void> {
-  await apiClient.delete(`/api/knowledge-base/${id}`);
+  await apiClient.delete(`/knowledge-base/${id}`);
 }
 
 export async function rateArticle(id: string, helpful: boolean): Promise<KnowledgeArticle> {
-  const { data } = await apiClient.post(`/api/knowledge-base/${id}/rate`, { helpful });
+  const { data } = await apiClient.post(`/knowledge-base/${id}/rate`, { helpful });
   return data.article;
 }

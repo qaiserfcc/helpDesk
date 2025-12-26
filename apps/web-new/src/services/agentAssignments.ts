@@ -68,7 +68,7 @@ export async function fetchAgentAssignments(
     params.append("active", "true");
   }
   const response = await apiClient.get<{ assignments: AgentAssignment[] }>(
-    `/api/agent-assignments?${params.toString()}`,
+    `/agent-assignments?${params.toString()}`,
   );
   return response.data.assignments;
 }
@@ -77,7 +77,7 @@ export async function fetchAgentAssignment(
   id: string,
 ): Promise<AgentAssignment> {
   const response = await apiClient.get<{ assignment: AgentAssignment }>(
-    `/api/agent-assignments/${id}`,
+    `/agent-assignments/${id}`,
   );
   return response.data.assignment;
 }
@@ -86,7 +86,7 @@ export async function createAgentAssignment(
   payload: CreateAgentAssignmentPayload,
 ): Promise<AgentAssignment> {
   const response = await apiClient.post<{ assignment: AgentAssignment }>(
-    "/api/agent-assignments",
+    "/agent-assignments",
     payload,
   );
   return response.data.assignment;
@@ -97,21 +97,21 @@ export async function updateAgentAssignment(
   payload: UpdateAgentAssignmentPayload,
 ): Promise<AgentAssignment> {
   const response = await apiClient.patch<{ assignment: AgentAssignment }>(
-    `/api/agent-assignments/${id}`,
+    `/agent-assignments/${id}`,
     payload,
   );
   return response.data.assignment;
 }
 
 export async function deleteAgentAssignment(id: string): Promise<void> {
-  await apiClient.delete(`/api/agent-assignments/${id}`);
+  await apiClient.delete(`/agent-assignments/${id}`);
 }
 
 export async function recommendAgent(
   payload: RecommendAgentPayload,
 ): Promise<RecommendedAgent> {
   const response = await apiClient.post<{ agent: RecommendedAgent }>(
-    "/api/agent-assignments/recommend",
+    "/agent-assignments/recommend",
     payload,
   );
   return response.data.agent;
