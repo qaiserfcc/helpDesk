@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/useAuthStore";
-import { Modal } from "@/components/Modal";
+import { CrudModal } from "@/components/CrudModal";
 import {
   fetchSLAs,
   createSLA,
@@ -274,210 +274,194 @@ export default function SLAManagementPage() {
 
         {/* Form Modal */}
         {formVisible && (
-          <Modal
+          <CrudModal
             title={formMode === "create" ? "Create SLA" : "Edit SLA"}
             onClose={handleCancelClick}
-            maxWidthClass="max-w-3xl"
-            actions={
-              <button
-                form="sla-form"
-                type="submit"
-                disabled={createMutation.isPending || updateMutation.isPending}
-                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 text-white font-medium rounded-lg transition-colors"
-              >
-                {formMode === "create" ? "Create" : "Update"}
-              </button>
-            }
+            onSubmit={handleSubmit}
+            submitLabel={formMode === "create" ? "Create" : "Update"}
+            isSubmitting={createMutation.isPending || updateMutation.isPending}
+            formId="sla-form"
           >
-            <form id="sla-form" onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    SLA Name *
-                  </label>
-                  <input
-                    type="text"
-                    value={formValues.name}
-                    onChange={(e) =>
-                      setFormValues({ ...formValues, name: e.target.value })
-                    }
-                    className="w-full px-4 py-2 bg-slate-900/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-green-500"
-                    placeholder="e.g., High Priority - Critical"
-                  />
-                  {formErrors.name && (
-                    <p className="mt-1 text-sm text-red-400">{formErrors.name}</p>
-                  )}
-                </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                SLA Name *
+              </label>
+              <input
+                type="text"
+                value={formValues.name}
+                onChange={(e) =>
+                  setFormValues({ ...formValues, name: e.target.value })
+                }
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="e.g., High Priority - Critical"
+              />
+              {formErrors.name && (
+                <p className="mt-1 text-sm text-red-500">{formErrors.name}</p>
+              )}
+            </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Category *
-                  </label>
-                  <select
-                    value={formValues.categoryId}
-                    onChange={(e) =>
-                      setFormValues({
-                        ...formValues,
-                        categoryId: e.target.value,
-                        subcategoryId: null,
-                      })
-                    }
-                    className="w-full px-4 py-2 bg-slate-900/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-green-500"
-                  >
-                    <option value="">Select category</option>
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </select>
-                  {formErrors.categoryId && (
-                    <p className="mt-1 text-sm text-red-400">{formErrors.categoryId}</p>
-                  )}
-                </div>
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Category *
+              </label>
+              <select
+                value={formValues.categoryId}
+                onChange={(e) =>
+                  setFormValues({
+                    ...formValues,
+                    categoryId: e.target.value,
+                    subcategoryId: null,
+                  })
+                }
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select category</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+              {formErrors.categoryId && (
+                <p className="mt-1 text-sm text-red-500">{formErrors.categoryId}</p>
+              )}
+            </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Subcategory (Optional)
-                  </label>
-                  <select
-                    value={formValues.subcategoryId || ""}
-                    onChange={(e) =>
-                      setFormValues({
-                        ...formValues,
-                        subcategoryId: e.target.value || null,
-                      })
-                    }
-                    disabled={!formValues.categoryId}
-                    className="w-full px-4 py-2 bg-slate-900/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-green-500 disabled:opacity-50"
-                  >
-                    <option value="">None</option>
-                    {categorySubcategories.map((sub) => (
-                      <option key={sub.id} value={sub.id}>
-                        {sub.name}
-                      </option>
-                    ))}
-                  </select>
-                  {formErrors.subcategoryId && (
-                    <p className="mt-1 text-sm text-red-400">{formErrors.subcategoryId}</p>
-                  )}
-                </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Subcategory (Optional)
+              </label>
+              <select
+                value={formValues.subcategoryId || ""}
+                onChange={(e) =>
+                  setFormValues({
+                    ...formValues,
+                    subcategoryId: e.target.value || null,
+                  })
+                }
+                disabled={!formValues.categoryId}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+              >
+                <option value="">None</option>
+                {categorySubcategories.map((sub) => (
+                  <option key={sub.id} value={sub.id}>
+                    {sub.name}
+                  </option>
+                ))}
+              </select>
+              {formErrors.subcategoryId && (
+                <p className="mt-1 text-sm text-red-500">{formErrors.subcategoryId}</p>
+              )}
+            </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Priority *
-                  </label>
-                  <select
-                    value={formValues.priority}
-                    onChange={(e) =>
-                      setFormValues({
-                        ...formValues,
-                        priority: e.target.value as TicketPriority | "",
-                      })
-                    }
-                    className="w-full px-4 py-2 bg-slate-900/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-green-500"
-                  >
-                    <option value="">Select priority</option>
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
-                  </select>
-                  {formErrors.priority && (
-                    <p className="mt-1 text-sm text-red-400">{formErrors.priority}</p>
-                  )}
-                </div>
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Priority *
+              </label>
+              <select
+                value={formValues.priority}
+                onChange={(e) =>
+                  setFormValues({
+                    ...formValues,
+                    priority: e.target.value as TicketPriority | "",
+                  })
+                }
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select priority</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
+              {formErrors.priority && (
+                <p className="mt-1 text-sm text-red-500">{formErrors.priority}</p>
+              )}
+            </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Description
-                </label>
-                <textarea
-                  value={formValues.description}
-                  onChange={(e) =>
-                    setFormValues({
-                      ...formValues,
-                      description: e.target.value,
-                    })
-                  }
-                  rows={2}
-                  className="w-full px-4 py-2 bg-slate-900/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-green-500"
-                  placeholder="SLA description..."
-                />
-                {formErrors.description && (
-                  <p className="mt-1 text-sm text-red-400">
-                    {formErrors.description}
-                  </p>
-                )}
-              </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Description
+              </label>
+              <textarea
+                value={formValues.description}
+                onChange={(e) =>
+                  setFormValues({
+                    ...formValues,
+                    description: e.target.value,
+                  })
+                }
+                rows={2}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="SLA description..."
+              />
+              {formErrors.description && (
+                <p className="mt-1 text-sm text-red-500">
+                  {formErrors.description}
+                </p>
+              )}
+            </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Response Time (minutes) *
-                  </label>
-                  <input
-                    type="number"
-                    value={formValues.responseTimeMinutes}
-                    onChange={(e) =>
-                      setFormValues({
-                        ...formValues,
-                        responseTimeMinutes: parseInt(e.target.value) || 0,
-                      })
-                    }
-                    className="w-full px-4 py-2 bg-slate-900/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-green-500"
-                    placeholder="e.g., 30"
-                  />
-                  {formErrors.responseTimeMinutes && (
-                    <p className="mt-1 text-sm text-red-400">
-                      {formErrors.responseTimeMinutes}
-                    </p>
-                  )}
-                </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Response Time (minutes) *
+              </label>
+              <input
+                type="number"
+                value={formValues.responseTimeMinutes}
+                onChange={(e) =>
+                  setFormValues({
+                    ...formValues,
+                    responseTimeMinutes: parseInt(e.target.value) || 0,
+                  })
+                }
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="e.g., 30"
+              />
+              {formErrors.responseTimeMinutes && (
+                <p className="mt-1 text-sm text-red-500">
+                  {formErrors.responseTimeMinutes}
+                </p>
+              )}
+            </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Resolution Time (minutes) *
-                  </label>
-                  <input
-                    type="number"
-                    value={formValues.resolutionTimeMinutes}
-                    onChange={(e) =>
-                      setFormValues({
-                        ...formValues,
-                        resolutionTimeMinutes: parseInt(e.target.value) || 0,
-                      })
-                    }
-                    className="w-full px-4 py-2 bg-slate-900/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-green-500"
-                    placeholder="e.g., 480"
-                  />
-                  {formErrors.resolutionTimeMinutes && (
-                    <p className="mt-1 text-sm text-red-400">
-                      {formErrors.resolutionTimeMinutes}
-                    </p>
-                  )}
-                </div>
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Resolution Time (minutes) *
+              </label>
+              <input
+                type="number"
+                value={formValues.resolutionTimeMinutes}
+                onChange={(e) =>
+                  setFormValues({
+                    ...formValues,
+                    resolutionTimeMinutes: parseInt(e.target.value) || 0,
+                  })
+                }
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="e.g., 480"
+              />
+              {formErrors.resolutionTimeMinutes && (
+                <p className="mt-1 text-sm text-red-500">
+                  {formErrors.resolutionTimeMinutes}
+                </p>
+              )}
+            </div>
 
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="active"
-                  checked={formValues.active}
-                  onChange={(e) =>
-                    setFormValues({ ...formValues, active: e.target.checked })
-                  }
-                  className="w-4 h-4 text-green-600 bg-slate-900 border-slate-600 rounded focus:ring-green-500"
-                />
-                <label htmlFor="active" className="ml-2 text-sm text-slate-300">
-                  Active
-                </label>
-              </div>
-
-            </form>
-          </Modal>
+            <div className="flex items-center md:col-span-2">
+              <input
+                type="checkbox"
+                id="active"
+                checked={formValues.active}
+                onChange={(e) =>
+                  setFormValues({ ...formValues, active: e.target.checked })
+                }
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <label htmlFor="active" className="ml-2 text-sm font-medium text-gray-700">
+                Active
+              </label>
+            </div>
+          </CrudModal>
         )}
 
         {/* Filter by Category */}

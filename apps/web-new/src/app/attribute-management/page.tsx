@@ -14,7 +14,7 @@ import {
   type CreateAttributePayload,
   type UpdateAttributePayload,
 } from "@/services/attributes";
-import { Modal } from "@/components/Modal";
+import { CrudModal } from "@/components/CrudModal";
 
 export default function AttributeManagementPage() {
   const router = useRouter();
@@ -280,146 +280,138 @@ export default function AttributeManagementPage() {
 
       {/* Form Modal */}
       {showForm && (
-        <Modal
+        <CrudModal
           title={editingAttribute ? "Edit Attribute" : "Create Attribute"}
           onClose={() => {
             setShowForm(false);
             setEditingAttribute(null);
             resetForm();
           }}
-          maxWidthClass="max-w-2xl"
-          actions={
-            <button
-              type="submit"
-              form="attribute-form"
-              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
-            >
-              {editingAttribute ? "Update" : "Create"}
-            </button>
-          }
+          onSubmit={handleSubmit}
+          submitLabel={editingAttribute ? "Update" : "Create"}
+          isSubmitting={createMutation.isPending || updateMutation.isPending}
+          formId="attribute-form"
         >
-          <form id="attribute-form" onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Name (unique identifier) <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="e.g., server_name"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Label (display) <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.label}
-                onChange={(e) => setFormData({ ...formData, label: e.target.value })}
-                placeholder="e.g., Server Name"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Name (unique identifier) <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              required
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              placeholder="e.g., server_name"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Label (display) <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              required
+              value={formData.label}
+              onChange={(e) => setFormData({ ...formData, label: e.target.value })}
+              placeholder="e.g., Server Name"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Type <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={formData.type}
-                onChange={(e) => setFormData({ ...formData, type: e.target.value as AttributeType })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="text">Text</option>
-                <option value="number">Number</option>
-                <option value="select">Select (dropdown)</option>
-                <option value="multiselect">Multi-select</option>
-                <option value="date">Date</option>
-                <option value="boolean">Boolean (yes/no)</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Order</label>
-              <input
-                type="number"
-                min="1"
-                value={formData.order}
-                onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Type <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={formData.type}
+              onChange={(e) => setFormData({ ...formData, type: e.target.value as AttributeType })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="text">Text</option>
+              <option value="number">Number</option>
+              <option value="select">Select (dropdown)</option>
+              <option value="multiselect">Multi-select</option>
+              <option value="date">Date</option>
+              <option value="boolean">Boolean (yes/no)</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Order</label>
+            <input
+              type="number"
+              min="1"
+              value={formData.order}
+              onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
 
-            {(formData.type === "select" || formData.type === "multiselect") && (
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Options (one per line) <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  required
-                  value={optionsText}
-                  onChange={(e) => setOptionsText(e.target.value)}
-                  placeholder="Option 1&#10;Option 2&#10;Option 3"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
-                  rows={4}
-                />
-              </div>
-            )}
-
+          {(formData.type === "select" || formData.type === "multiselect") && (
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Default Value</label>
-              <input
-                type="text"
-                value={formData.defaultValue}
-                onChange={(e) => setFormData({ ...formData, defaultValue: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Options (one per line) <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                required
+                value={optionsText}
+                onChange={(e) => setOptionsText(e.target.value)}
+                placeholder="Option 1&#10;Option 2&#10;Option 3"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                rows={4}
               />
             </div>
+          )}
 
-            <div className="flex gap-6 flex-wrap md:col-span-2">
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="mandatory"
-                  checked={formData.mandatory}
-                  onChange={(e) => setFormData({ ...formData, mandatory: e.target.checked })}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <label htmlFor="mandatory" className="ml-2 text-sm font-medium text-gray-700">
-                  Mandatory
-                </label>
-              </div>
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="visible"
-                  checked={formData.visible}
-                  onChange={(e) => setFormData({ ...formData, visible: e.target.checked })}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <label htmlFor="visible" className="ml-2 text-sm font-medium text-gray-700">
-                  Visible
-                </label>
-              </div>
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="active"
-                  checked={formData.active}
-                  onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <label htmlFor="active" className="ml-2 text-sm font-medium text-gray-700">
-                  Active
-                </label>
-              </div>
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Default Value</label>
+            <input
+              type="text"
+              value={formData.defaultValue}
+              onChange={(e) => setFormData({ ...formData, defaultValue: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div className="flex gap-6 flex-wrap md:col-span-2">
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="mandatory"
+                checked={formData.mandatory}
+                onChange={(e) => setFormData({ ...formData, mandatory: e.target.checked })}
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <label htmlFor="mandatory" className="ml-2 text-sm font-medium text-gray-700">
+                Mandatory
+              </label>
             </div>
-          </form>
-        </Modal>
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="visible"
+                checked={formData.visible}
+                onChange={(e) => setFormData({ ...formData, visible: e.target.checked })}
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <label htmlFor="visible" className="ml-2 text-sm font-medium text-gray-700">
+                Visible
+              </label>
+            </div>
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="active"
+                checked={formData.active}
+                onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <label htmlFor="active" className="ml-2 text-sm font-medium text-gray-700">
+                Active
+              </label>
+            </div>
+          </div>
+        </CrudModal>
       )}
 
       {/* Delete Confirmation Modal */}
