@@ -499,7 +499,7 @@ export default function CategoryManagementPage() {
             {!subFormVisible && (
               <button
                 onClick={handleSubCreateClick}
-                className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors"
+                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
               >
                 Create Subcategory
               </button>
@@ -516,7 +516,7 @@ export default function CategoryManagementPage() {
                   form="subcategory-form"
                   type="submit"
                   disabled={createSubMutation.isPending || updateSubMutation.isPending}
-                  className="px-6 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-600/50 text-white font-medium rounded-lg transition-colors"
+                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 text-white font-medium rounded-lg transition-colors"
                 >
                   {subFormMode === "create" ? "Create" : "Update"}
                 </button>
@@ -636,7 +636,7 @@ export default function CategoryManagementPage() {
                         <div className="flex gap-2">
                           <button
                             onClick={() => handleSubEditClick(sub)}
-                            className="px-3 py-1 text-sm bg-purple-600 hover:bg-purple-700 text-white rounded transition-colors"
+                            className="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
                           >
                             Edit
                           </button>

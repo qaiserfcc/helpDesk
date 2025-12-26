@@ -265,7 +265,7 @@ export default function SLAManagementPage() {
           <div className="mb-6">
             <button
               onClick={handleCreateClick}
-              className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
+              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
             >
               Create SLA
             </button>
@@ -283,7 +283,7 @@ export default function SLAManagementPage() {
                 form="sla-form"
                 type="submit"
                 disabled={createMutation.isPending || updateMutation.isPending}
-                className="px-6 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-600/50 text-white font-medium rounded-lg transition-colors"
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 text-white font-medium rounded-lg transition-colors"
               >
                 {formMode === "create" ? "Create" : "Update"}
               </button>

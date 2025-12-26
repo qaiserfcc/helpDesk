@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/useAuthStore";
+import { CrudModal } from "@/components/CrudModal";
 import {
   fetchAgentAssignments,
   createAgentAssignment,
@@ -193,269 +194,265 @@ export default function AgentAssignmentPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Agent Assignment Designer
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 p-4">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-3xl font-bold text-white">
+            Agent Assignment
           </h1>
           <button
-            onClick={handleCreateNew}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            onClick={() => router.push("/tickets")}
+            className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
           >
-            Create Assignment
+            Back to Tickets
           </button>
         </div>
 
-        {showForm && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6">
-            <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
-              {formMode === "create" ? "Create" : "Edit"} Agent Assignment
-            </h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Category *
-                </label>
-                <select
-                  value={formValues.categoryId}
-                  onChange={(e) => {
-                    setFormValues({
-                      ...formValues,
-                      categoryId: e.target.value,
-                      subcategoryId: "",
-                    });
-                    setFormErrors({ ...formErrors, categoryId: undefined });
-                  }}
-                  disabled={formMode === "edit"}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50"
-                >
-                  <option value="">Select a category</option>
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
-                {formErrors.categoryId && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {formErrors.categoryId}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Subcategory (Optional)
-                </label>
-                <select
-                  value={formValues.subcategoryId}
-                  onChange={(e) => {
-                    setFormValues({
-                      ...formValues,
-                      subcategoryId: e.target.value,
-                    });
-                  }}
-                  disabled={!formValues.categoryId || formMode === "edit"}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50"
-                >
-                  <option value="">Any subcategory</option>
-                  {subcategories.map((sub) => (
-                    <option key={sub.id} value={sub.id}>
-                      {sub.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Agent *
-                </label>
-                <select
-                  value={formValues.agentId}
-                  onChange={(e) => {
-                    setFormValues({ ...formValues, agentId: e.target.value });
-                    setFormErrors({ ...formErrors, agentId: undefined });
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                >
-                  <option value="">Select an agent</option>
-                  {agents.map((agent) => (
-                    <option key={agent.id} value={agent.id}>
-                      {agent.name} ({agent.email})
-                    </option>
-                  ))}
-                </select>
-                {formErrors.agentId && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {formErrors.agentId}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Priority (Optional)
-                </label>
-                <select
-                  value={formValues.priority}
-                  onChange={(e) =>
-                    setFormValues({
-                      ...formValues,
-                      priority: e.target.value as FormValues["priority"],
-                    })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                >
-                  <option value="">Any priority</option>
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                </select>
-              </div>
-
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="active"
-                  checked={formValues.active}
-                  onChange={(e) =>
-                    setFormValues({ ...formValues, active: e.target.checked })
-                  }
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <label
-                  htmlFor="active"
-                  className="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  Active
-                </label>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="submit"
-                  disabled={
-                    createMutation.isPending || updateMutation.isPending
-                  }
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {formMode === "create" ? "Create" : "Update"}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCancel}
-                  className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
+        {!showForm && (
+          <div className="mb-6">
+            <button
+              onClick={handleCreateNew}
+              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+            >
+              Create Assignment
+            </button>
           </div>
         )}
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-900">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Category
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Subcategory
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Agent
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Priority
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {isLoading ? (
+        {showForm && (
+          <CrudModal
+            title={formMode === "create" ? "Create Agent Assignment" : "Edit Agent Assignment"}
+            onClose={handleCancel}
+            onSubmit={handleSubmit}
+            submitLabel={formMode === "create" ? "Create" : "Update"}
+            isSubmitting={createMutation.isPending || updateMutation.isPending}
+            formId="agent-assignment-form"
+          >
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Category *
+              </label>
+              <select
+                value={formValues.categoryId}
+                onChange={(e) => {
+                  setFormValues({
+                    ...formValues,
+                    categoryId: e.target.value,
+                    subcategoryId: "",
+                  });
+                  setFormErrors({ ...formErrors, categoryId: undefined });
+                }}
+                disabled={formMode === "edit"}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:bg-gray-100"
+              >
+                <option value="">Select a category</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+              {formErrors.categoryId && (
+                <p className="mt-1 text-sm text-red-500">
+                  {formErrors.categoryId}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Subcategory
+              </label>
+              <select
+                value={formValues.subcategoryId}
+                onChange={(e) => {
+                  setFormValues({
+                    ...formValues,
+                    subcategoryId: e.target.value,
+                  });
+                }}
+                disabled={!formValues.categoryId || formMode === "edit"}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:bg-gray-100"
+              >
+                <option value="">Any subcategory</option>
+                {subcategories.map((sub) => (
+                  <option key={sub.id} value={sub.id}>
+                    {sub.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Agent *
+              </label>
+              <select
+                value={formValues.agentId}
+                onChange={(e) => {
+                  setFormValues({ ...formValues, agentId: e.target.value });
+                  setFormErrors({ ...formErrors, agentId: undefined });
+                }}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select an agent</option>
+                {agents.map((agent) => (
+                  <option key={agent.id} value={agent.id}>
+                    {agent.name} ({agent.email})
+                  </option>
+                ))}
+              </select>
+              {formErrors.agentId && (
+                <p className="mt-1 text-sm text-red-500">
+                  {formErrors.agentId}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Priority
+              </label>
+              <select
+                value={formValues.priority}
+                onChange={(e) =>
+                  setFormValues({
+                    ...formValues,
+                    priority: e.target.value as FormValues["priority"],
+                  })
+                }
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Any priority</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
+            </div>
+
+            <div className="flex items-center md:col-span-2">
+              <input
+                type="checkbox"
+                id="active"
+                checked={formValues.active}
+                onChange={(e) =>
+                  setFormValues({ ...formValues, active: e.target.checked })
+                }
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <label htmlFor="active" className="ml-2 text-sm font-medium text-gray-700">
+                Active
+              </label>
+            </div>
+          </CrudModal>
+        )}
+
+        <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-lg overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-700">
+            <h2 className="text-lg font-semibold text-white">Agent Assignments</h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-slate-700">
+              <thead className="bg-slate-900/50">
                 <tr>
-                  <td colSpan={6} className="px-6 py-4 text-center">
-                    Loading...
-                  </td>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                    Category
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                    Subcategory
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                    Agent
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                    Priority
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-slate-400 uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
-              ) : assignments.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="px-6 py-4 text-center text-gray-500"
-                  >
-                    No agent assignments found. Create one to get started.
-                  </td>
-                </tr>
-              ) : (
-                assignments.map((assignment) => (
-                  <tr key={assignment.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                      {assignment.category.name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                      {assignment.subcategory?.name || (
-                        <span className="text-gray-400">Any</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                      {assignment.agent.name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                      {assignment.priority ? (
-                        <span
-                          className={`px-2 py-1 rounded text-xs font-medium ${
-                            assignment.priority === "high"
-                              ? "bg-red-100 text-red-800"
-                              : assignment.priority === "medium"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : "bg-green-100 text-green-800"
-                          }`}
-                        >
-                          {assignment.priority}
-                        </span>
-                      ) : (
-                        <span className="text-gray-400">Any</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`px-2 py-1 rounded text-xs font-medium ${
-                          assignment.active
-                            ? "bg-green-100 text-green-800"
-                            : "bg-gray-100 text-gray-800"
-                        }`}
-                      >
-                        {assignment.active ? "Active" : "Inactive"}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button
-                        onClick={() => handleEdit(assignment)}
-                        className="text-blue-600 hover:text-blue-900 mr-4"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(assignment.id)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        Delete
-                      </button>
+              </thead>
+              <tbody className="divide-y divide-slate-700">
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-4 text-center text-slate-400">
+                      Loading...
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : assignments.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className="px-6 py-4 text-center text-slate-400"
+                    >
+                      No agent assignments found. Create one to get started.
+                    </td>
+                  </tr>
+                ) : (
+                  assignments.map((assignment) => (
+                    <tr key={assignment.id} className="hover:bg-slate-700/30 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
+                        {assignment.category.name}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
+                        {assignment.subcategory?.name || (
+                          <span className="text-slate-400">Any</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
+                        {assignment.agent.name}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
+                        {assignment.priority ? (
+                          <span
+                            className={`px-2 py-1 rounded text-xs font-medium ${
+                              assignment.priority === "high"
+                                ? "bg-red-600/20 text-red-400"
+                                : assignment.priority === "medium"
+                                  ? "bg-yellow-600/20 text-yellow-400"
+                                  : "bg-green-600/20 text-green-400"
+                            }`}
+                          >
+                            {assignment.priority}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400">Any</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span
+                          className={`px-2 py-1 rounded text-xs font-medium ${
+                            assignment.active
+                              ? "bg-green-600/20 text-green-400"
+                              : "bg-slate-600/20 text-slate-400"
+                          }`}
+                        >
+                          {assignment.active ? "Active" : "Inactive"}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button
+                          onClick={() => handleEdit(assignment)}
+                          className="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors mr-2"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(assignment.id)}
+                          className="px-3 py-1 text-sm bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

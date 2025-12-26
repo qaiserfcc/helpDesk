@@ -172,42 +172,53 @@ export default function AttributeManagementPage() {
     : [];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#7C3AED] to-[#06B6D4] p-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 p-4">
       <div className="max-w-6xl mx-auto">
-        <div className="mb-8 flex justify-between items-center">
-          <h1 className="text-4xl font-bold text-white">Attribute Management</h1>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-3xl font-bold text-white">Attribute Management</h1>
           <button
-            onClick={handleCreate}
-            className="bg-white text-purple-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition"
+            onClick={() => router.push("/tickets")}
+            className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
           >
-            + Create Attribute
+            Back to Tickets
           </button>
         </div>
 
-        <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6">
-          <h2 className="text-2xl font-bold text-white mb-4">Custom Ticket Attributes</h2>
+        {!showForm && (
+          <div className="mb-6">
+            <button
+              onClick={handleCreate}
+              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+            >
+              + Create Attribute
+            </button>
+          </div>
+        )}
+
+        <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-lg p-6">
+          <h2 className="text-xl font-semibold text-white mb-6">Custom Ticket Attributes</h2>
           {isLoading ? (
-            <p className="text-white/70">Loading attributes...</p>
+            <p className="text-slate-400">Loading attributes...</p>
           ) : sortedAttributes.length > 0 ? (
             <div className="space-y-3">
               {sortedAttributes.map((attr) => (
-                <div key={attr.id} className="bg-white/20 backdrop-blur rounded-lg p-4">
+                <div key={attr.id} className="bg-slate-700/50 backdrop-blur rounded-lg p-4 border border-slate-600 hover:bg-slate-700 transition-colors">
                   <div className="flex justify-between items-start mb-2">
                     <div className="flex-1">
                       <div className="flex items-center gap-3">
-                        <span className="text-white/60 text-sm font-mono">#{attr.order}</span>
+                        <span className="text-slate-400 text-sm font-mono">#{attr.order}</span>
                         <h3 className="text-lg font-semibold text-white">{attr.label}</h3>
-                        <span className="px-2 py-1 bg-purple-500 text-white text-xs rounded">
+                        <span className="px-2 py-1 bg-blue-600/20 text-blue-400 text-xs rounded font-medium">
                           {attr.type}
                         </span>
                       </div>
-                      <p className="text-white/70 text-sm mt-1">Name: {attr.name}</p>
+                      <p className="text-slate-400 text-sm mt-1">Name: {attr.name}</p>
                       {attr.defaultValue && (
-                        <p className="text-white/60 text-xs mt-1">Default: {attr.defaultValue}</p>
+                        <p className="text-slate-500 text-xs mt-1">Default: {attr.defaultValue}</p>
                       )}
                       {(attr.type === "select" || attr.type === "multiselect") && attr.options && (
                         <div className="mt-2">
-                          <p className="text-white/60 text-xs">Options:</p>
+                          <p className="text-slate-500 text-xs">Options:</p>
                           <div className="flex flex-wrap gap-1 mt-1">
                             {(Array.isArray(attr.options)
                               ? attr.options
@@ -215,7 +226,7 @@ export default function AttributeManagementPage() {
                             ).map((opt: string, idx: number) => (
                               <span
                                 key={idx}
-                                className="px-2 py-0.5 bg-white/20 text-white text-xs rounded"
+                                className="px-2 py-0.5 bg-slate-600/50 text-slate-300 text-xs rounded"
                               >
                                 {opt}
                               </span>
@@ -226,18 +237,18 @@ export default function AttributeManagementPage() {
                     </div>
                     <div className="flex gap-2">
                       {attr.mandatory && (
-                        <span className="px-2 py-1 bg-red-500 text-white text-xs rounded">
+                        <span className="px-2 py-1 bg-red-600/20 text-red-400 text-xs rounded font-medium">
                           Required
                         </span>
                       )}
                       {!attr.visible && (
-                        <span className="px-2 py-1 bg-gray-500 text-white text-xs rounded">
+                        <span className="px-2 py-1 bg-slate-600/20 text-slate-400 text-xs rounded font-medium">
                           Hidden
                         </span>
                       )}
                       <span
                         className={`px-2 py-1 rounded text-xs font-semibold ${
-                          attr.active ? "bg-green-500 text-white" : "bg-gray-500 text-white"
+                          attr.active ? "bg-green-600/20 text-green-400" : "bg-slate-600/20 text-slate-400"
                         }`}
                       >
                         {attr.active ? "Active" : "Inactive"}
@@ -247,13 +258,13 @@ export default function AttributeManagementPage() {
                   <div className="flex justify-end gap-2 mt-3">
                     <button
                       onClick={() => handleEdit(attr)}
-                      className="text-white hover:text-blue-200 text-sm font-medium"
+                      className="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleDelete(attr.id)}
-                      className="text-red-300 hover:text-red-100 text-sm font-medium"
+                      className="px-3 py-1 text-sm bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
                     >
                       Delete
                     </button>
@@ -262,7 +273,7 @@ export default function AttributeManagementPage() {
               ))}
             </div>
           ) : (
-            <p className="text-white/70">No custom attributes yet. Create one to get started!</p>
+            <p className="text-slate-400">No custom attributes yet. Create one to get started!</p>
           )}
         </div>
       </div>
@@ -281,7 +292,7 @@ export default function AttributeManagementPage() {
             <button
               type="submit"
               form="attribute-form"
-              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
             >
               {editingAttribute ? "Update" : "Create"}
             </button>
@@ -289,7 +300,7 @@ export default function AttributeManagementPage() {
         >
           <form id="attribute-form" onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Name (unique identifier) <span className="text-red-500">*</span>
               </label>
               <input
@@ -298,11 +309,11 @@ export default function AttributeManagementPage() {
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="e.g., server_name"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Label (display) <span className="text-red-500">*</span>
               </label>
               <input
@@ -311,18 +322,18 @@ export default function AttributeManagementPage() {
                 value={formData.label}
                 onChange={(e) => setFormData({ ...formData, label: e.target.value })}
                 placeholder="e.g., Server Name"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Type <span className="text-red-500">*</span>
               </label>
               <select
                 value={formData.type}
                 onChange={(e) => setFormData({ ...formData, type: e.target.value as AttributeType })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="text">Text</option>
                 <option value="number">Number</option>
@@ -333,19 +344,19 @@ export default function AttributeManagementPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Order</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Order</label>
               <input
                 type="number"
                 min="1"
                 value={formData.order}
                 onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
             {(formData.type === "select" || formData.type === "multiselect") && (
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Options (one per line) <span className="text-red-500">*</span>
                 </label>
                 <textarea
@@ -353,19 +364,19 @@ export default function AttributeManagementPage() {
                   value={optionsText}
                   onChange={(e) => setOptionsText(e.target.value)}
                   placeholder="Option 1&#10;Option 2&#10;Option 3"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent font-mono text-sm"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
                   rows={4}
                 />
               </div>
             )}
 
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Default Value</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Default Value</label>
               <input
                 type="text"
                 value={formData.defaultValue}
                 onChange={(e) => setFormData({ ...formData, defaultValue: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -376,7 +387,7 @@ export default function AttributeManagementPage() {
                   id="mandatory"
                   checked={formData.mandatory}
                   onChange={(e) => setFormData({ ...formData, mandatory: e.target.checked })}
-                  className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
                 <label htmlFor="mandatory" className="ml-2 text-sm font-medium text-gray-700">
                   Mandatory
@@ -388,7 +399,7 @@ export default function AttributeManagementPage() {
                   id="visible"
                   checked={formData.visible}
                   onChange={(e) => setFormData({ ...formData, visible: e.target.checked })}
-                  className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
                 <label htmlFor="visible" className="ml-2 text-sm font-medium text-gray-700">
                   Visible
@@ -400,7 +411,7 @@ export default function AttributeManagementPage() {
                   id="active"
                   checked={formData.active}
                   onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
-                  className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
                 <label htmlFor="active" className="ml-2 text-sm font-medium text-gray-700">
                   Active
@@ -413,26 +424,32 @@ export default function AttributeManagementPage() {
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
-        <Modal
-          title="Confirm Delete"
-          onClose={() => {
-            setShowDeleteModal(false);
-            setAttributeToDelete(null);
-          }}
-          actions={
-            <button
-              onClick={confirmDelete}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-            >
-              Delete
-            </button>
-          }
-        >
-          <p className="text-gray-700">
-            Are you sure you want to delete this attribute? This action cannot be undone and may
-            affect existing tickets with this attribute.
-          </p>
-        </Modal>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 max-w-md w-full">
+            <h2 className="text-2xl font-bold mb-4 text-white">Confirm Delete</h2>
+            <p className="text-slate-300 mb-6">
+              Are you sure you want to delete this attribute? This action cannot be undone and may
+              affect existing tickets with this attribute.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setAttributeToDelete(null);
+                }}
+                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
