@@ -209,7 +209,7 @@ export default function AgentAssignmentPage() {
         </div>
 
         {!showForm && (
-          <div className="mb-6">
+          <div className="mb-6 flex justify-end">
             <button
               onClick={handleCreateNew}
               className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"

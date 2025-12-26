@@ -348,7 +348,7 @@ export default function CategoryManagementPage() {
 
         {/* Create Button */}
         {!formVisible && (
-          <div className="mb-6">
+          <div className="mb-6 flex justify-end">
             <button
               onClick={handleCreateClick}
               className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"

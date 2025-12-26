@@ -76,7 +76,14 @@ export default function KnowledgeBasePage() {
 
   const handleCreate = () => {
     setEditingArticle(null);
-    resetForm();
+    // Pre-fill with test values for quick testing
+    setFormData({
+      title: "Test Article - How to Reset Password",
+      content: "This article explains the step-by-step process for resetting your password.\n\n1. Click on 'Forgot Password'\n2. Enter your email address\n3. Check your email for reset link\n4. Follow the instructions",
+      summary: "Quick guide to reset your account password",
+      tags: ["password", "account", "security"],
+      published: false,
+    });
     setShowForm(true);
   };
 
@@ -136,7 +143,7 @@ export default function KnowledgeBasePage() {
         </div>
 
         {canEdit && !showForm && (
-          <div className="mb-6">
+          <div className="mb-6 flex justify-end">
             <button
               onClick={handleCreate}
               className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"

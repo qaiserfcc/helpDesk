@@ -73,7 +73,12 @@ export default function AgentSkillsPage() {
 
   const handleCreate = () => {
     setEditingSkill(null);
-    resetForm();
+    // Pre-fill with test values for quick testing
+    setFormData({
+      name: "Test Skill - Network Support",
+      description: "Expertise in network troubleshooting and configuration",
+      active: true,
+    });
     setShowForm(true);
   };
 
@@ -129,7 +134,7 @@ export default function AgentSkillsPage() {
         </div>
 
         {!showForm && (
-          <div className="mb-6">
+          <div className="mb-6 flex justify-end">
             <button
               onClick={handleCreate}
               className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"

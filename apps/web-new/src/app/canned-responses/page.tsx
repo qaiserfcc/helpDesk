@@ -67,7 +67,13 @@ export default function CannedResponsesPage() {
 
   const handleCreate = () => {
     setEditingResponse(null);
-    resetForm();
+    // Pre-fill with test values for quick testing
+    setFormData({
+      title: "Test Response - Welcome Message",
+      shortcut: "/welcome",
+      content: "Thank you for contacting our support team. We have received your request and will respond within 24 hours. If you need urgent assistance, please call our helpline.",
+      active: true,
+    });
     setShowForm(true);
   };
 
@@ -113,7 +119,7 @@ export default function CannedResponsesPage() {
         </div>
 
         {!showForm && (
-          <div className="mb-6">
+          <div className="mb-6 flex justify-end">
             <button
               onClick={handleCreate}
               className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
