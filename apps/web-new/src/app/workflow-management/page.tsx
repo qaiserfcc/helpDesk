@@ -21,6 +21,7 @@ import {
   type UpdateWorkflowStepPayload,
 } from "@/services/workflows";
 import { fetchCategories, type Category } from "@/services/categories";
+import { Modal } from "@/components/Modal";
 
 export default function WorkflowManagementPage() {
   const router = useRouter();
@@ -385,232 +386,202 @@ export default function WorkflowManagementPage() {
 
       {/* Workflow Form Modal */}
       {showWorkflowForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl p-6 max-w-lg w-full">
-            <h2 className="text-2xl font-bold mb-4">
-              {editingWorkflow ? "Edit Workflow" : "Create Workflow"}
-            </h2>
-            <form onSubmit={handleSubmitWorkflow}>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={workflowFormData.name}
-                    onChange={(e) =>
-                      setWorkflowFormData({ ...workflowFormData, name: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Description
-                  </label>
-                  <textarea
-                    value={workflowFormData.description}
-                    onChange={(e) =>
-                      setWorkflowFormData({ ...workflowFormData, description: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    rows={3}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                  <select
-                    value={workflowFormData.categoryId || ""}
-                    onChange={(e) =>
-                      setWorkflowFormData({
-                        ...workflowFormData,
-                        categoryId: e.target.value || undefined,
-                      })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  >
-                    <option value="">No category</option>
-                    {categories?.map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Version</label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={workflowFormData.version}
-                    onChange={(e) =>
-                      setWorkflowFormData({
-                        ...workflowFormData,
-                        version: parseInt(e.target.value),
-                      })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  />
-                </div>
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="active"
-                    checked={workflowFormData.active}
-                    onChange={(e) =>
-                      setWorkflowFormData({ ...workflowFormData, active: e.target.checked })
-                    }
-                    className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-                  />
-                  <label htmlFor="active" className="ml-2 text-sm font-medium text-gray-700">
-                    Active
-                  </label>
-                </div>
+        <Modal
+          title={editingWorkflow ? "Edit Workflow" : "Create Workflow"}
+          onClose={() => {
+            setShowWorkflowForm(false);
+            setEditingWorkflow(null);
+            resetWorkflowForm();
+          }}
+          actions={
+            <button
+              type="submit"
+              form="workflow-form"
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+            >
+              {editingWorkflow ? "Update" : "Create"}
+            </button>
+          }
+        >
+          <form id="workflow-form" onSubmit={handleSubmitWorkflow}>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={workflowFormData.name}
+                  onChange={(e) =>
+                    setWorkflowFormData({ ...workflowFormData, name: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
               </div>
-              <div className="flex justify-end gap-3 mt-6">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowWorkflowForm(false);
-                    setEditingWorkflow(null);
-                    resetWorkflowForm();
-                  }}
-                  className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
-                >
-                  {editingWorkflow ? "Update" : "Create"}
-                </button>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea
+                  value={workflowFormData.description}
+                  onChange={(e) =>
+                    setWorkflowFormData({ ...workflowFormData, description: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  rows={3}
+                />
               </div>
-            </form>
-          </div>
-        </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                <select
+                  value={workflowFormData.categoryId || ""}
+                  onChange={(e) =>
+                    setWorkflowFormData({
+                      ...workflowFormData,
+                      categoryId: e.target.value || undefined,
+                    })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                >
+                  <option value="">No category</option>
+                  {categories?.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Version</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={workflowFormData.version}
+                  onChange={(e) =>
+                    setWorkflowFormData({
+                      ...workflowFormData,
+                      version: parseInt(e.target.value),
+                    })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+              </div>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="active"
+                  checked={workflowFormData.active}
+                  onChange={(e) =>
+                    setWorkflowFormData({ ...workflowFormData, active: e.target.checked })
+                  }
+                  className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                />
+                <label htmlFor="active" className="ml-2 text-sm font-medium text-gray-700">
+                  Active
+                </label>
+              </div>
+            </div>
+          </form>
+        </Modal>
       )}
 
       {/* Step Form Modal */}
       {showStepForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl p-6 max-w-lg w-full">
-            <h2 className="text-2xl font-bold mb-4">{editingStep ? "Edit Step" : "Add Step"}</h2>
-            <form onSubmit={handleSubmitStep}>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={stepFormData.name}
-                    onChange={(e) => setStepFormData({ ...stepFormData, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Description
-                  </label>
-                  <textarea
-                    value={stepFormData.description}
-                    onChange={(e) =>
-                      setStepFormData({ ...stepFormData, description: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    rows={3}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Order <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    required
-                    value={stepFormData.order}
-                    onChange={(e) =>
-                      setStepFormData({ ...stepFormData, order: parseInt(e.target.value) })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Initiator Role
-                  </label>
-                  <select
-                    value={stepFormData.initiatorRole}
-                    onChange={(e) =>
-                      setStepFormData({ ...stepFormData, initiatorRole: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  >
-                    <option value="">Any</option>
-                    <option value="admin">Admin</option>
-                    <option value="agent">Agent</option>
-                    <option value="user">User</option>
-                  </select>
-                </div>
+        <Modal
+          title={editingStep ? "Edit Step" : "Add Step"}
+          onClose={() => {
+            setShowStepForm(false);
+            setEditingStep(null);
+            resetStepForm();
+          }}
+          actions={
+            <button
+              type="submit"
+              form="step-form"
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+            >
+              {editingStep ? "Update" : "Add"}
+            </button>
+          }
+        >
+          <form id="step-form" onSubmit={handleSubmitStep}>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={stepFormData.name}
+                  onChange={(e) => setStepFormData({ ...stepFormData, name: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
               </div>
-              <div className="flex justify-end gap-3 mt-6">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowStepForm(false);
-                    setEditingStep(null);
-                    resetStepForm();
-                  }}
-                  className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
-                >
-                  {editingStep ? "Update" : "Add"}
-                </button>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea
+                  value={stepFormData.description}
+                  onChange={(e) => setStepFormData({ ...stepFormData, description: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  rows={3}
+                />
               </div>
-            </form>
-          </div>
-        </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Order <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  required
+                  value={stepFormData.order}
+                  onChange={(e) =>
+                    setStepFormData({ ...stepFormData, order: parseInt(e.target.value) })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Initiator Role</label>
+                <select
+                  value={stepFormData.initiatorRole}
+                  onChange={(e) => setStepFormData({ ...stepFormData, initiatorRole: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                >
+                  <option value="">Any</option>
+                  <option value="admin">Admin</option>
+                  <option value="agent">Agent</option>
+                  <option value="user">User</option>
+                </select>
+              </div>
+            </div>
+          </form>
+        </Modal>
       )}
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl p-6 max-w-md w-full">
-            <h2 className="text-2xl font-bold mb-4">Confirm Delete</h2>
-            <p className="text-gray-700 mb-6">
-              Are you sure you want to delete this {workflowToDelete ? "workflow" : "step"}? This
-              action cannot be undone.
-            </p>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => {
-                  setShowDeleteModal(false);
-                  setWorkflowToDelete(null);
-                  setStepToDelete(null);
-                }}
-                className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDelete}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
+        <Modal
+          title="Confirm Delete"
+          onClose={() => {
+            setShowDeleteModal(false);
+            setWorkflowToDelete(null);
+            setStepToDelete(null);
+          }}
+          actions={
+            <button
+              onClick={confirmDelete}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+            >
+              Delete
+            </button>
+          }
+        >
+          <p className="text-gray-700 mb-2">
+            Are you sure you want to delete this {workflowToDelete ? "workflow" : "step"}? This
+            action cannot be undone.
+          </p>
+        </Modal>
       )}
     </div>
   );

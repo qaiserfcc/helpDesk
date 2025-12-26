@@ -374,7 +374,11 @@ export default function CategoryManagementPage() {
               </button>
             }
           >
-            <form id="category-form" onSubmit={handleSubmit} className="space-y-4">
+            <form
+              id="category-form"
+              onSubmit={handleSubmit}
+              className="grid grid-cols-1 md:grid-cols-2 gap-4"
+            >
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Name *</label>
                 <input
@@ -388,7 +392,7 @@ export default function CategoryManagementPage() {
                   <p className="mt-1 text-sm text-red-500">{formErrors.name}</p>
                 )}
               </div>
-              <div>
+              <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
                 <textarea
                   value={formValues.description}
@@ -401,7 +405,7 @@ export default function CategoryManagementPage() {
                   <p className="mt-1 text-sm text-red-500">{formErrors.description}</p>
                 )}
               </div>
-              <div className="flex items-center">
+              <div className="flex items-center md:col-span-2">
                 <input
                   type="checkbox"
                   id="active"
@@ -518,7 +522,11 @@ export default function CategoryManagementPage() {
                 </button>
               }
             >
-              <form id="subcategory-form" onSubmit={handleSubSubmit} className="space-y-4">
+              <form
+                id="subcategory-form"
+                onSubmit={handleSubSubmit}
+                className="grid grid-cols-1 md:grid-cols-2 gap-4"
+              >
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Category *</label>
                   <select
@@ -550,7 +558,7 @@ export default function CategoryManagementPage() {
                     <p className="mt-1 text-sm text-red-500">{subFormErrors.name}</p>
                   )}
                 </div>
-                <div>
+                <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
                   <textarea
                     value={subFormValues.description}
@@ -563,7 +571,7 @@ export default function CategoryManagementPage() {
                     <p className="mt-1 text-sm text-red-500">{subFormErrors.description}</p>
                   )}
                 </div>
-                <div className="flex items-center">
+                <div className="flex items-center md:col-span-2">
                   <input
                     type="checkbox"
                     id="sub-active"

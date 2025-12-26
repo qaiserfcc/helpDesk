@@ -14,6 +14,7 @@ import {
   type CreateAttributePayload,
   type UpdateAttributePayload,
 } from "@/services/attributes";
+import { Modal } from "@/components/Modal";
 
 export default function AttributeManagementPage() {
   const router = useRouter();
@@ -268,195 +269,170 @@ export default function AttributeManagementPage() {
 
       {/* Form Modal */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-white rounded-xl p-6 max-w-2xl w-full my-8">
-            <h2 className="text-2xl font-bold mb-4">
-              {editingAttribute ? "Edit Attribute" : "Create Attribute"}
-            </h2>
-            <form onSubmit={handleSubmit}>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Name (unique identifier) <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      placeholder="e.g., server_name"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Label (display) <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.label}
-                      onChange={(e) => setFormData({ ...formData, label: e.target.value })}
-                      placeholder="e.g., Server Name"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
+        <Modal
+          title={editingAttribute ? "Edit Attribute" : "Create Attribute"}
+          onClose={() => {
+            setShowForm(false);
+            setEditingAttribute(null);
+            resetForm();
+          }}
+          maxWidthClass="max-w-2xl"
+          actions={
+            <button
+              type="submit"
+              form="attribute-form"
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+            >
+              {editingAttribute ? "Update" : "Create"}
+            </button>
+          }
+        >
+          <form id="attribute-form" onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Name (unique identifier) <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="e.g., server_name"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Label (display) <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.label}
+                onChange={(e) => setFormData({ ...formData, label: e.target.value })}
+                placeholder="e.g., Server Name"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+            </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Type <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      value={formData.type}
-                      onChange={(e) =>
-                        setFormData({ ...formData, type: e.target.value as AttributeType })
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    >
-                      <option value="text">Text</option>
-                      <option value="number">Number</option>
-                      <option value="select">Select (dropdown)</option>
-                      <option value="multiselect">Multi-select</option>
-                      <option value="date">Date</option>
-                      <option value="boolean">Boolean (yes/no)</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Order</label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={formData.order}
-                      onChange={(e) =>
-                        setFormData({ ...formData, order: parseInt(e.target.value) })
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Type <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={formData.type}
+                onChange={(e) => setFormData({ ...formData, type: e.target.value as AttributeType })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              >
+                <option value="text">Text</option>
+                <option value="number">Number</option>
+                <option value="select">Select (dropdown)</option>
+                <option value="multiselect">Multi-select</option>
+                <option value="date">Date</option>
+                <option value="boolean">Boolean (yes/no)</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Order</label>
+              <input
+                type="number"
+                min="1"
+                value={formData.order}
+                onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+            </div>
 
-                {(formData.type === "select" || formData.type === "multiselect") && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Options (one per line) <span className="text-red-500">*</span>
-                    </label>
-                    <textarea
-                      required
-                      value={optionsText}
-                      onChange={(e) => setOptionsText(e.target.value)}
-                      placeholder="Option 1&#10;Option 2&#10;Option 3"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent font-mono text-sm"
-                      rows={4}
-                    />
-                  </div>
-                )}
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Default Value
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.defaultValue}
-                    onChange={(e) => setFormData({ ...formData, defaultValue: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div className="flex gap-6">
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      id="mandatory"
-                      checked={formData.mandatory}
-                      onChange={(e) => setFormData({ ...formData, mandatory: e.target.checked })}
-                      className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-                    />
-                    <label htmlFor="mandatory" className="ml-2 text-sm font-medium text-gray-700">
-                      Mandatory
-                    </label>
-                  </div>
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      id="visible"
-                      checked={formData.visible}
-                      onChange={(e) => setFormData({ ...formData, visible: e.target.checked })}
-                      className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-                    />
-                    <label htmlFor="visible" className="ml-2 text-sm font-medium text-gray-700">
-                      Visible
-                    </label>
-                  </div>
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      id="active"
-                      checked={formData.active}
-                      onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
-                      className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-                    />
-                    <label htmlFor="active" className="ml-2 text-sm font-medium text-gray-700">
-                      Active
-                    </label>
-                  </div>
-                </div>
+            {(formData.type === "select" || formData.type === "multiselect") && (
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Options (one per line) <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  required
+                  value={optionsText}
+                  onChange={(e) => setOptionsText(e.target.value)}
+                  placeholder="Option 1&#10;Option 2&#10;Option 3"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent font-mono text-sm"
+                  rows={4}
+                />
               </div>
-              <div className="flex justify-end gap-3 mt-6">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowForm(false);
-                    setEditingAttribute(null);
-                    resetForm();
-                  }}
-                  className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
-                >
-                  {editingAttribute ? "Update" : "Create"}
-                </button>
+            )}
+
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Default Value</label>
+              <input
+                type="text"
+                value={formData.defaultValue}
+                onChange={(e) => setFormData({ ...formData, defaultValue: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+            </div>
+
+            <div className="flex gap-6 flex-wrap md:col-span-2">
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="mandatory"
+                  checked={formData.mandatory}
+                  onChange={(e) => setFormData({ ...formData, mandatory: e.target.checked })}
+                  className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                />
+                <label htmlFor="mandatory" className="ml-2 text-sm font-medium text-gray-700">
+                  Mandatory
+                </label>
               </div>
-            </form>
-          </div>
-        </div>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="visible"
+                  checked={formData.visible}
+                  onChange={(e) => setFormData({ ...formData, visible: e.target.checked })}
+                  className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                />
+                <label htmlFor="visible" className="ml-2 text-sm font-medium text-gray-700">
+                  Visible
+                </label>
+              </div>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="active"
+                  checked={formData.active}
+                  onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
+                  className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                />
+                <label htmlFor="active" className="ml-2 text-sm font-medium text-gray-700">
+                  Active
+                </label>
+              </div>
+            </div>
+          </form>
+        </Modal>
       )}
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl p-6 max-w-md w-full">
-            <h2 className="text-2xl font-bold mb-4">Confirm Delete</h2>
-            <p className="text-gray-700 mb-6">
-              Are you sure you want to delete this attribute? This action cannot be undone and may
-              affect existing tickets with this attribute.
-            </p>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => {
-                  setShowDeleteModal(false);
-                  setAttributeToDelete(null);
-                }}
-                className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDelete}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
+        <Modal
+          title="Confirm Delete"
+          onClose={() => {
+            setShowDeleteModal(false);
+            setAttributeToDelete(null);
+          }}
+          actions={
+            <button
+              onClick={confirmDelete}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+            >
+              Delete
+            </button>
+          }
+        >
+          <p className="text-gray-700">
+            Are you sure you want to delete this attribute? This action cannot be undone and may
+            affect existing tickets with this attribute.
+          </p>
+        </Modal>
       )}
     </div>
   );
