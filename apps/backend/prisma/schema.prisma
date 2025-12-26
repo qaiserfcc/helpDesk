@@ -74,6 +74,10 @@ model User {
   updatedAt    DateTime       @updatedAt
   aiSuggestions AiSuggestion[]
   agentAssignments AgentAssignment[]
+  skills       UserSkill[]
+  knowledgeArticles KnowledgeArticle[]
+  cannedResponses CannedResponse[]
+  ticketTemplates TicketTemplate[]
 }
 
 model Ticket {
@@ -104,6 +108,7 @@ model Ticket {
   aiSuggestions AiSuggestion[]
   attributeValues TicketAttributeValue[]
   workflowSteps TicketWorkflowStep[]
+  tags        TicketTagRelation[]
 
   @@index([categoryId])
   @@index([subcategoryId])
@@ -167,6 +172,10 @@ model TicketCategory {
   workflows   WorkflowDefinition[]
   slas        TicketSLA[]
   agentAssignments AgentAssignment[]
+  knowledgeArticles KnowledgeArticle[]
+  cannedResponses CannedResponse[]
+  ticketTemplates TicketTemplate[]
+  assignmentRules AgentAssignmentRule[]
 }
 
 model TicketSubcategory {
@@ -181,6 +190,7 @@ model TicketSubcategory {
   tickets     Ticket[]
   slas        TicketSLA[]
   agentAssignments AgentAssignment[]
+  ticketTemplates TicketTemplate[]
 
   @@unique([categoryId, name])
   @@index([categoryId])
@@ -305,4 +315,140 @@ model AgentAssignment {
   @@index([categoryId])
   @@index([subcategoryId])
   @@index([agentId])
+// Agent Skills for skill-based routing
+model AgentSkill {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  userSkills  UserSkill[]
+  assignmentRules AgentAssignmentRule[]
+}
+
+model UserSkill {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skillId     String
+  skill       AgentSkill @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  proficiency Int      @default(1) // 1-5 scale
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, skillId])
+  @@index([userId])
+  @@index([skillId])
+}
+
+// Agent Assignment Rules for automated routing
+model AgentAssignmentRule {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  priority    Int      @default(0)
+  active      Boolean  @default(true)
+  conditions  Json     // Conditions for matching tickets
+  assignmentStrategy String @default("round_robin") // round_robin, skill_based, load_balanced
+  skillId     String?
+  skill       AgentSkill? @relation(fields: [skillId], references: [id], onDelete: SetNull)
+  categoryId  String?
+  category    TicketCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([categoryId])
+  @@index([skillId])
+  @@index([priority])
+}
+
+// Knowledge Base
+model KnowledgeArticle {
+  id          String   @id @default(uuid())
+  title       String
+  content     String   // Rich text content
+  summary     String?
+  categoryId  String?
+  category    TicketCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  tags        String[] // Array of tags
+  published   Boolean  @default(false)
+  views       Int      @default(0)
+  helpful     Int      @default(0)
+  notHelpful  Int      @default(0)
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([categoryId])
+  @@index([authorId])
+  @@index([published])
+}
+
+// Canned Responses for agents
+model CannedResponse {
+  id          String   @id @default(uuid())
+  title       String
+  shortcut    String   @unique // Quick access key like "/greeting"
+  content     String   // Template content
+  categoryId  String?
+  category    TicketCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  createdBy   String
+  creator     User     @relation(fields: [createdBy], references: [id])
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([categoryId])
+  @@index([createdBy])
+}
+
+// Ticket Templates
+model TicketTemplate {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  categoryId  String?
+  category    TicketCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  subcategoryId String?
+  subcategory TicketSubcategory? @relation(fields: [subcategoryId], references: [id], onDelete: SetNull)
+  priority    TicketPriority?
+  issueType   IssueType?
+  defaultDescription String?
+  attributeDefaults Json? // Default values for custom attributes
+  createdBy   String
+  creator     User     @relation(fields: [createdBy], references: [id])
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([categoryId])
+  @@index([subcategoryId])
+  @@index([createdBy])
+}
+
+// Ticket Tags
+model TicketTag {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  color       String?  // Hex color code
+  description String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  tickets     TicketTagRelation[]
+}
+
+model TicketTagRelation {
+  id          String   @id @default(uuid())
+  ticketId    String
+  ticket      Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  tagId       String
+  tag         TicketTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([ticketId, tagId])
+  @@index([ticketId])
+  @@index([tagId])
 }

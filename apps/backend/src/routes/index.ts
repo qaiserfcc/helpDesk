@@ -9,6 +9,12 @@ import attributesRouter from "./attributes.js";
 import workflowsRouter from "./workflows.js";
 import slasRouter from "./slas.js";
 import agentAssignmentsRouter from "./agentAssignments.js";
+import agentSkillsRouter from "./agentSkills.js";
+import agentAssignmentRouter from "./agentAssignment.js";
+import knowledgeBaseRouter from "./knowledgeBase.js";
+import cannedResponsesRouter from "./cannedResponses.js";
+import ticketTemplatesRouter from "./ticketTemplates.js";
+import ticketTagsRouter from "./ticketTags.js";
 
 const router = Router();
 
@@ -22,6 +28,12 @@ router.use("/attributes", attributesRouter);
 router.use("/workflows", workflowsRouter);
 router.use("/slas", slasRouter);
 router.use("/agent-assignments", agentAssignmentsRouter);
+router.use("/agent-skills", agentSkillsRouter);
+router.use("/agent-assignment", agentAssignmentRouter);
+router.use("/knowledge-base", knowledgeBaseRouter);
+router.use("/canned-responses", cannedResponsesRouter);
+router.use("/ticket-templates", ticketTemplatesRouter);
+router.use("/ticket-tags", ticketTagsRouter);
 
 router.get("/version", (_req, res) => {
   res.json({
