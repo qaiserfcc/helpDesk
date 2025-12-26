@@ -245,7 +245,7 @@ export default function WorkflowManagementPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#7C3AED] to-[#06B6D4] p-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 p-8">
       <div className="max-w-7xl mx-auto">
         <div className="mb-8 flex justify-between items-center">
           <h1 className="text-4xl font-bold text-white">Workflow Management</h1>
@@ -345,7 +345,7 @@ export default function WorkflowManagementPage() {
                   .map((step, index) => (
                     <div key={step.id} className="bg-white/20 backdrop-blur rounded-lg p-4">
                       <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center text-white font-bold">
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
                           {index + 1}
                         </div>
                         <div className="flex-1">
@@ -397,7 +397,7 @@ export default function WorkflowManagementPage() {
             <button
               type="submit"
               form="workflow-form"
-              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-purple-700 transition"
             >
               {editingWorkflow ? "Update" : "Create"}
             </button>
@@ -497,7 +497,7 @@ export default function WorkflowManagementPage() {
             <button
               type="submit"
               form="step-form"
-              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-purple-700 transition"
             >
               {editingStep ? "Update" : "Add"}
             </button>
