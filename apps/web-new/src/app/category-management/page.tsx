@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/useAuthStore";
+import { Modal } from "@/components/Modal";
 import {
   fetchCategories,
   createCategory,
@@ -357,92 +358,61 @@ export default function CategoryManagementPage() {
           </div>
         )}
 
-        {/* Form */}
+        {/* Form Modal */}
         {formVisible && (
-          <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-lg p-6 mb-6">
-            <h2 className="text-xl font-bold text-white mb-4">
-              {formMode === "create" ? "Create Category" : "Edit Category"}
-            </h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
+          <Modal
+            title={formMode === "create" ? "Create Category" : "Edit Category"}
+            onClose={handleCancelClick}
+            actions={
+              <button
+                form="category-form"
+                type="submit"
+                disabled={createMutation.isPending || updateMutation.isPending}
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 text-white font-medium rounded-lg transition-colors"
+              >
+                {formMode === "create" ? "Create" : "Update"}
+              </button>
+            }
+          >
+            <form id="category-form" onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Name *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Name *</label>
                 <input
                   type="text"
                   value={formValues.name}
-                  onChange={(e) =>
-                    setFormValues({ ...formValues, name: e.target.value })
-                  }
-                  className="w-full px-4 py-2 bg-slate-900/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                  onChange={(e) => setFormValues({ ...formValues, name: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="e.g., IT Support"
                 />
                 {formErrors.name && (
-                  <p className="mt-1 text-sm text-red-400">{formErrors.name}</p>
+                  <p className="mt-1 text-sm text-red-500">{formErrors.name}</p>
                 )}
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Description
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
                 <textarea
                   value={formValues.description}
-                  onChange={(e) =>
-                    setFormValues({
-                      ...formValues,
-                      description: e.target.value,
-                    })
-                  }
+                  onChange={(e) => setFormValues({ ...formValues, description: e.target.value })}
                   rows={3}
-                  className="w-full px-4 py-2 bg-slate-900/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Category description..."
                 />
                 {formErrors.description && (
-                  <p className="mt-1 text-sm text-red-400">
-                    {formErrors.description}
-                  </p>
+                  <p className="mt-1 text-sm text-red-500">{formErrors.description}</p>
                 )}
               </div>
-
               <div className="flex items-center">
                 <input
                   type="checkbox"
                   id="active"
                   checked={formValues.active}
-                  onChange={(e) =>
-                    setFormValues({ ...formValues, active: e.target.checked })
-                  }
-                  className="w-4 h-4 text-blue-600 bg-slate-900 border-slate-600 rounded focus:ring-blue-500"
+                  onChange={(e) => setFormValues({ ...formValues, active: e.target.checked })}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
-                <label
-                  htmlFor="active"
-                  className="ml-2 text-sm text-slate-300"
-                >
-                  Active
-                </label>
-              </div>
-
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="submit"
-                  disabled={
-                    createMutation.isPending || updateMutation.isPending
-                  }
-                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 text-white font-medium rounded-lg transition-colors"
-                >
-                  {formMode === "create" ? "Create" : "Update"}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCancelClick}
-                  className="px-6 py-2 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-lg transition-colors"
-                >
-                  Cancel
-                </button>
+                <label htmlFor="active" className="ml-2 text-sm font-medium text-gray-700">Active</label>
               </div>
             </form>
-          </div>
+          </Modal>
         )}
 
         {/* Categories List */}
@@ -533,21 +503,28 @@ export default function CategoryManagementPage() {
           </div>
 
           {subFormVisible && (
-            <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-lg p-6 mb-6">
-              <h3 className="text-xl font-bold text-white mb-4">
-                {subFormMode === "create" ? "Create Subcategory" : "Edit Subcategory"}
-              </h3>
-              <form onSubmit={handleSubSubmit} className="space-y-4">
+            <Modal
+              title={subFormMode === "create" ? "Create Subcategory" : "Edit Subcategory"}
+              onClose={handleSubCancelClick}
+              maxWidthClass="max-w-2xl"
+              actions={
+                <button
+                  form="subcategory-form"
+                  type="submit"
+                  disabled={createSubMutation.isPending || updateSubMutation.isPending}
+                  className="px-6 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-600/50 text-white font-medium rounded-lg transition-colors"
+                >
+                  {subFormMode === "create" ? "Create" : "Update"}
+                </button>
+              }
+            >
+              <form id="subcategory-form" onSubmit={handleSubSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Category *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Category *</label>
                   <select
                     value={subFormValues.categoryId}
-                    onChange={(e) =>
-                      setSubFormValues({ ...subFormValues, categoryId: e.target.value })
-                    }
-                    className="w-full px-4 py-2 bg-slate-900/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-purple-500"
+                    onChange={(e) => setSubFormValues({ ...subFormValues, categoryId: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
                   >
                     <option value="">Select category</option>
                     {categories.map((cat) => (
@@ -557,75 +534,47 @@ export default function CategoryManagementPage() {
                     ))}
                   </select>
                   {subFormErrors.categoryId && (
-                    <p className="mt-1 text-sm text-red-400">{subFormErrors.categoryId}</p>
+                    <p className="mt-1 text-sm text-red-500">{subFormErrors.categoryId}</p>
                   )}
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Name *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Name *</label>
                   <input
                     type="text"
                     value={subFormValues.name}
-                    onChange={(e) =>
-                      setSubFormValues({ ...subFormValues, name: e.target.value })
-                    }
-                    className="w-full px-4 py-2 bg-slate-900/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-purple-500"
+                    onChange={(e) => setSubFormValues({ ...subFormValues, name: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                     placeholder="e.g., Email Issues"
                   />
                   {subFormErrors.name && (
-                    <p className="mt-1 text-sm text-red-400">{subFormErrors.name}</p>
+                    <p className="mt-1 text-sm text-red-500">{subFormErrors.name}</p>
                   )}
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Description</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
                   <textarea
                     value={subFormValues.description}
-                    onChange={(e) =>
-                      setSubFormValues({ ...subFormValues, description: e.target.value })
-                    }
+                    onChange={(e) => setSubFormValues({ ...subFormValues, description: e.target.value })}
                     rows={3}
-                    className="w-full px-4 py-2 bg-slate-900/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-purple-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                     placeholder="Subcategory description..."
                   />
                   {subFormErrors.description && (
-                    <p className="mt-1 text-sm text-red-400">{subFormErrors.description}</p>
+                    <p className="mt-1 text-sm text-red-500">{subFormErrors.description}</p>
                   )}
                 </div>
-
                 <div className="flex items-center">
                   <input
                     type="checkbox"
                     id="sub-active"
                     checked={subFormValues.active}
-                    onChange={(e) =>
-                      setSubFormValues({ ...subFormValues, active: e.target.checked })
-                    }
-                    className="w-4 h-4 text-purple-600 bg-slate-900 border-slate-600 rounded focus:ring-purple-500"
+                    onChange={(e) => setSubFormValues({ ...subFormValues, active: e.target.checked })}
+                    className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
                   />
-                  <label htmlFor="sub-active" className="ml-2 text-sm text-slate-300">
-                    Active
-                  </label>
-                </div>
-
-                <div className="flex gap-3 pt-2">
-                  <button
-                    type="submit"
-                    disabled={createSubMutation.isPending || updateSubMutation.isPending}
-                    className="px-6 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-600/50 text-white font-medium rounded-lg transition-colors"
-                  >
-                    {subFormMode === "create" ? "Create" : "Update"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleSubCancelClick}
-                    className="px-6 py-2 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-lg transition-colors"
-                  >
-                    Cancel
-                  </button>
+                  <label htmlFor="sub-active" className="ml-2 text-sm font-medium text-gray-700">Active</label>
                 </div>
               </form>
-            </div>
+            </Modal>
           )}
 
           <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-lg overflow-hidden">

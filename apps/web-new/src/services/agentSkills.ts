@@ -1,6 +1,4 @@
-import axios from "axios";
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+import { apiClient } from "@/services/apiClient";
 
 export interface AgentSkill {
   id: string;
@@ -47,41 +45,41 @@ export interface AssignSkillPayload {
 }
 
 export async function fetchAgentSkills(activeOnly = false): Promise<AgentSkill[]> {
-  const { data } = await axios.get(`${API_BASE_URL}/api/agent-skills`, {
+  const { data } = await apiClient.get(`/api/agent-skills`, {
     params: { active: activeOnly },
   });
   return data.skills;
 }
 
 export async function fetchAgentSkill(id: string): Promise<AgentSkill> {
-  const { data } = await axios.get(`${API_BASE_URL}/api/agent-skills/${id}`);
+  const { data } = await apiClient.get(`/api/agent-skills/${id}`);
   return data.skill;
 }
 
 export async function createAgentSkill(payload: CreateAgentSkillPayload): Promise<AgentSkill> {
-  const { data } = await axios.post(`${API_BASE_URL}/api/agent-skills`, payload);
+  const { data } = await apiClient.post(`/api/agent-skills`, payload);
   return data.skill;
 }
 
 export async function updateAgentSkill(id: string, payload: UpdateAgentSkillPayload): Promise<AgentSkill> {
-  const { data } = await axios.patch(`${API_BASE_URL}/api/agent-skills/${id}`, payload);
+  const { data } = await apiClient.patch(`/api/agent-skills/${id}`, payload);
   return data.skill;
 }
 
 export async function deleteAgentSkill(id: string): Promise<void> {
-  await axios.delete(`${API_BASE_URL}/api/agent-skills/${id}`);
+  await apiClient.delete(`/api/agent-skills/${id}`);
 }
 
 export async function assignSkillToUser(payload: AssignSkillPayload): Promise<UserSkill> {
-  const { data } = await axios.post(`${API_BASE_URL}/api/agent-skills/assign`, payload);
+  const { data } = await apiClient.post(`/api/agent-skills/assign`, payload);
   return data.userSkill;
 }
 
 export async function removeSkillFromUser(userId: string, skillId: string): Promise<void> {
-  await axios.delete(`${API_BASE_URL}/api/agent-skills/assign/${userId}/${skillId}`);
+  await apiClient.delete(`/api/agent-skills/assign/${userId}/${skillId}`);
 }
 
 export async function fetchUserSkills(userId: string): Promise<UserSkill[]> {
-  const { data } = await axios.get(`${API_BASE_URL}/api/agent-skills/users/${userId}`);
+  const { data } = await apiClient.get(`/api/agent-skills/users/${userId}`);
   return data.skills;
 }

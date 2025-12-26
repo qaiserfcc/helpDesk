@@ -15,8 +15,10 @@ import {
 const router = Router();
 
 const createAssignmentSchema = z.object({
-  categoryId: z.string().uuid(),
-  subcategoryId: z.string().uuid().nullable().optional(),
+  // Accept non-UUID string IDs for categories/subcategories
+  categoryId: z.string().min(1),
+  subcategoryId: z.string().min(1).nullable().optional(),
+  // Agent IDs remain UUIDs
   agentId: z.string().uuid(),
   priority: z.nativeEnum(TicketPriority).nullable().optional(),
   active: z.boolean().optional(),
@@ -29,8 +31,8 @@ const updateAssignmentSchema = z.object({
 });
 
 const recommendAgentSchema = z.object({
-  categoryId: z.string().uuid(),
-  subcategoryId: z.string().uuid().nullable().optional(),
+  categoryId: z.string().min(1),
+  subcategoryId: z.string().min(1).nullable().optional(),
   priority: z.nativeEnum(TicketPriority).optional(),
 });
 

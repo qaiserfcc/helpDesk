@@ -23,7 +23,7 @@ export function Header() {
   if (!session) return null;
 
   return (
-    <header className="bg-transparent shadow-sm backdrop-blur-sm">
+    <header className="bg-transparent shadow-sm backdrop-blur-sm sticky top-0 z-[2000]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-6 gap-6">
           <h1 className="text-3xl font-bold text-white whitespace-nowrap">Help Desk</h1>
@@ -33,7 +33,7 @@ export function Header() {
               Tickets
             </Link>
             {(session.user.role === "admin" || session.user.role === "agent") && (
-              <div className="relative">
+              <div className="relative z-[2000]">
                 <button
                   onClick={() => setShowAdminMenu(!showAdminMenu)}
                   className="hover:text-white transition-colors flex items-center gap-1"
@@ -44,7 +44,7 @@ export function Header() {
                   </svg>
                 </button>
                 {showAdminMenu && (
-                  <div className="absolute top-full mt-2 left-0 bg-slate-800 rounded-lg shadow-xl py-2 min-w-[200px] z-50 border border-slate-700">
+                  <div className="absolute top-full mt-2 left-0 bg-slate-800 rounded-lg shadow-xl py-2 min-w-[200px] z-[2100] border border-slate-700">
                     {adminLinks.map((link) => (
                       <Link
                         key={link.href}

@@ -1,5 +1,5 @@
 import createError from "http-errors";
-import { TicketPriority } from "@prisma/client";
+import { TicketPriority, Role } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 
 export interface CreateAgentAssignmentInput {
@@ -366,17 +366,14 @@ export async function getRecommendedAgent(
   }
 
   return null;
-import { PrismaClient, Role } from "@prisma/client";
-import createError from "http-errors";
-
-const prisma = new PrismaClient();
+}
 
 export interface CreateAssignmentRulePayload {
   name: string;
   description?: string;
   priority?: number;
   active?: boolean;
-  conditions?: Record<string, unknown>;
+  conditions?: unknown;
   assignmentStrategy?: string;
   skillId?: string;
   categoryId?: string;
@@ -387,10 +384,9 @@ export interface UpdateAssignmentRulePayload {
   description?: string;
   priority?: number;
   active?: boolean;
-  conditions?: Record<string, unknown>;
+  conditions?: unknown;
   assignmentStrategy?: string;
   skillId?: string;
-  categoryId?: string;
 }
 
 export async function listAssignmentRules(activeOnly = false) {
@@ -441,9 +437,18 @@ export async function updateAssignmentRule(
   id: string,
   payload: UpdateAssignmentRulePayload,
 ) {
+  const updateData: any = {};
+  if (payload.name !== undefined) updateData.name = payload.name;
+  if (payload.description !== undefined) updateData.description = payload.description;
+  if (payload.priority !== undefined) updateData.priority = payload.priority;
+  if (payload.active !== undefined) updateData.active = payload.active;
+  if (payload.conditions !== undefined) updateData.conditions = payload.conditions;
+  if (payload.assignmentStrategy !== undefined) updateData.assignmentStrategy = payload.assignmentStrategy;
+  if (payload.skillId !== undefined) updateData.skillId = payload.skillId;
+  
   return prisma.agentAssignmentRule.update({
     where: { id },
-    data: payload,
+    data: updateData,
   });
 }
 

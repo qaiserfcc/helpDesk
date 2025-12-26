@@ -1,7 +1,6 @@
-import { PrismaClient, TicketPriority, IssueType } from "@prisma/client";
+import { TicketPriority, IssueType } from "@prisma/client";
+import { prisma } from "../lib/prisma.js";
 import createError from "http-errors";
-
-const prisma = new PrismaClient();
 
 export interface CreateTicketTemplatePayload {
   name: string;
@@ -19,12 +18,10 @@ export interface CreateTicketTemplatePayload {
 export interface UpdateTicketTemplatePayload {
   name?: string;
   description?: string;
-  categoryId?: string;
-  subcategoryId?: string;
   priority?: TicketPriority;
   issueType?: IssueType;
   defaultDescription?: string;
-  attributeDefaults?: Record<string, unknown>;
+  attributeDefaults?: unknown;
   active?: boolean;
 }
 
@@ -72,19 +69,24 @@ export async function getTicketTemplate(id: string) {
 export async function createTicketTemplate(
   payload: CreateTicketTemplatePayload,
 ) {
+  const createData: any = {
+    name: payload.name,
+    createdBy: payload.createdBy,
+    active: payload.active ?? true,
+  };
+  
+  if (payload.description !== undefined) createData.description = payload.description;
+  if (payload.categoryId !== undefined) createData.categoryId = payload.categoryId;
+  if (payload.subcategoryId !== undefined) createData.subcategoryId = payload.subcategoryId;
+  if (payload.priority !== undefined) createData.priority = payload.priority;
+  if (payload.issueType !== undefined) createData.issueType = payload.issueType;
+  if (payload.defaultDescription !== undefined) createData.defaultDescription = payload.defaultDescription;
+  if (payload.attributeDefaults !== undefined) {
+    createData.attributeDefaults = payload.attributeDefaults;
+  }
+  
   return prisma.ticketTemplate.create({
-    data: {
-      name: payload.name,
-      description: payload.description,
-      categoryId: payload.categoryId,
-      subcategoryId: payload.subcategoryId,
-      priority: payload.priority,
-      issueType: payload.issueType,
-      defaultDescription: payload.defaultDescription,
-      attributeDefaults: payload.attributeDefaults ?? {},
-      createdBy: payload.createdBy,
-      active: payload.active ?? true,
-    },
+    data: createData,
   });
 }
 
@@ -92,9 +94,18 @@ export async function updateTicketTemplate(
   id: string,
   payload: UpdateTicketTemplatePayload,
 ) {
+  const updateData: any = {};
+  if (payload.name !== undefined) updateData.name = payload.name;
+  if (payload.description !== undefined) updateData.description = payload.description;
+  if (payload.priority !== undefined) updateData.priority = payload.priority;
+  if (payload.issueType !== undefined) updateData.issueType = payload.issueType;
+  if (payload.defaultDescription !== undefined) updateData.defaultDescription = payload.defaultDescription;
+  if (payload.attributeDefaults !== undefined) updateData.attributeDefaults = payload.attributeDefaults;
+  if (payload.active !== undefined) updateData.active = payload.active;
+  
   return prisma.ticketTemplate.update({
     where: { id },
-    data: payload,
+    data: updateData,
   });
 }
 

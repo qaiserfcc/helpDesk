@@ -1,7 +1,5 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "../lib/prisma.js";
 import createError from "http-errors";
-
-const prisma = new PrismaClient();
 
 export interface CreateAgentSkillPayload {
   name: string;

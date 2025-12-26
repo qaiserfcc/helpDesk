@@ -315,6 +315,8 @@ model AgentAssignment {
   @@index([categoryId])
   @@index([subcategoryId])
   @@index([agentId])
+}
+
 // Agent Skills for skill-based routing
 model AgentSkill {
   id          String   @id @default(uuid())

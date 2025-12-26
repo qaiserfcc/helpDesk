@@ -47,6 +47,20 @@
   - [x] Applied web design with glassy theme and responsive layout
 
 ## Doing
+- [ ] Merge PR #7 into current branch
+- [ ] Implement UI pop-up forms and tree view hierarchies (web + mobile)
+
+## Done (Recent)
+- [x] Fix agentAssignmentService.ts merge artifact (removed duplicate imports, added closing brace)
+- [x] Fix TypeScript type errors in agentAssignmentService.ts and ticketTemplateService.ts
+- [x] Fix Prisma client instantiation across all service files (use shared instance)
+- [x] Fix frontend environment variable imports (process.env for Next.js)
+- [x] Run prisma migrate deploy (no pending migrations)
+- [x] Run prisma generate (Prisma client regenerated)
+- [x] Rebuild backend successfully (npm run build)
+- [x] Rebuild frontend successfully (next build)
+- [x] Start backend development server on port 4000
+- [x] Start frontend development server on port 3000/3001
 
 - **Milestone 6 kick-off (QA hardening + launch prep now in focus.)**
 - [x] **Milestone 6 – QA & Launch (3–5 days)**
