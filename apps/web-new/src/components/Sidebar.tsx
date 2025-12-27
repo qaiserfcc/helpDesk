@@ -45,9 +45,11 @@ export function Sidebar() {
   ];
 
   const filterByRole = (items: NavItem[]) => {
-    return items.filter(item => 
-      !item.roles || item.roles.includes(session.user.role as any)
-    );
+    return items.filter(item => {
+      if (!item.roles) return true;
+      const userRole = session.user.role as "admin" | "agent" | "user";
+      return item.roles.includes(userRole);
+    });
   };
 
   const isActive = (href: string) => {
