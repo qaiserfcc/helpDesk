@@ -362,4 +362,74 @@ router.post(
   },
 );
 
+// Add reply/comment to ticket
+const replySchema = z.object({
+  content: z.string().min(1),
+  cannedResponseId: z.string().uuid().optional(),
+  isInternal: z.boolean().optional(),
+});
+
+router.post("/:ticketId/replies", async (req, res, next) => {
+  if (!req.user) {
+    next(createError(401, "Authentication required"));
+    return;
+  }
+
+  try {
+    const parsed = replySchema.parse(req.body);
+    const { addTicketReply } = await import("../services/ticketService.js");
+    const activity = await addTicketReply(
+      req.params.ticketId,
+      parsed.content,
+      req.user,
+      parsed.cannedResponseId,
+      parsed.isInternal ?? false,
+    );
+    res.status(201).json({ activity });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Mark ticket for more information
+const markForInfoSchema = z.object({
+  notes: z.string().min(1),
+});
+
+router.post("/:ticketId/mark-for-info", async (req, res, next) => {
+  if (!req.user) {
+    next(createError(401, "Authentication required"));
+    return;
+  }
+
+  try {
+    const parsed = markForInfoSchema.parse(req.body);
+    const { markTicketForMoreInfo } = await import("../services/ticketService.js");
+    const activity = await markTicketForMoreInfo(
+      req.params.ticketId,
+      parsed.notes,
+      req.user,
+    );
+    res.status(201).json({ activity });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Clear info request flag
+router.delete("/:ticketId/mark-for-info", async (req, res, next) => {
+  if (!req.user) {
+    next(createError(401, "Authentication required"));
+    return;
+  }
+
+  try {
+    const { clearTicketInfoRequest } = await import("../services/ticketService.js");
+    const ticket = await clearTicketInfoRequest(req.params.ticketId, req.user);
+    res.json({ ticket });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;

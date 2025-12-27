@@ -218,7 +218,6 @@ async function main() {
       type: AttributeType.select,
       mandatory: true,
       options: JSON.stringify(['Karachi', 'Lahore', 'Islamabad', 'Faisalabad']),
-      options: JSON.stringify(['New York', 'San Francisco', 'London', 'Tokyo']),
       order: 1,
       active: true,
     },

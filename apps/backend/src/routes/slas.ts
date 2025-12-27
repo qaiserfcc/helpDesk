@@ -142,4 +142,41 @@ router.delete("/:slaId", async (req, res, next) => {
   }
 });
 
+// Get SLA status for a ticket
+router.get("/ticket/:ticketId/status", async (req, res, next) => {
+  if (!req.user) {
+    next(createError(401, "Authentication required"));
+    return;
+  }
+
+  try {
+    const { calculateTicketSLA } = await import("../services/slaService.js");
+    const slaStatus = await calculateTicketSLA(req.params.ticketId);
+    res.json({ slaStatus });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get tickets breaching SLA
+router.get("/breaches", async (req, res, next) => {
+  if (!req.user) {
+    next(createError(401, "Authentication required"));
+    return;
+  }
+
+  if (req.user.role !== Role.admin && req.user.role !== Role.agent) {
+    next(createError(403, "Only admins and agents can view SLA breaches"));
+    return;
+  }
+
+  try {
+    const { getTicketsBreachingSLA } = await import("../services/slaService.js");
+    const tickets = await getTicketsBreachingSLA();
+    res.json({ tickets });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;

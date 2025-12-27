@@ -14,6 +14,9 @@ import {
   fetchAdminProductivityReport,
   fetchTickets,
 } from "@/services/tickets";
+import { fetchTicketsBreachingSLA } from "@/services/slas";
+import { WorkflowOverviewCard } from "@/components/WorkflowOverviewCard";
+import { AgentPerformanceCard } from "@/components/AgentPerformanceCard";
 import HeroHeader from "@/components/HeroHeader";
 import StatusSnapshot from "@/components/StatusSnapshot";
 
@@ -65,6 +68,13 @@ export default function Dashboard() {
     queryKey: ["admin-productivity"],
     queryFn: () => fetchAdminProductivityReport(14),
     enabled: !!session && session.user.role === "admin",
+  });
+
+  const { data: slaBreaches } = useQuery({
+    queryKey: ["sla-breaches"],
+    queryFn: () => fetchTicketsBreachingSLA(),
+    enabled: !!session && (session.user.role === "admin" || session.user.role === "agent"),
+    refetchInterval: 60000, // Refresh every minute
   });
 
   if (!session) {
@@ -250,6 +260,51 @@ export default function Dashboard() {
                   </div>
                 </div>
               </div>
+            </RoleRestrictedView>
+
+            {/* SLA Breaches Card */}
+            <RoleRestrictedView permission="tickets:assign">
+              <div className="card overflow-hidden shadow rounded-lg">
+                <div className="p-5">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0">
+                      <div className="w-8 h-8 bg-red-500 rounded-md flex items-center justify-center">
+                        <span className="text-white text-sm font-medium">⚠️</span>
+                      </div>
+                    </div>
+                    <div className="ml-5 w-0 flex-1">
+                      <dl>
+                        <dt className="text-sm font-medium text-white/80 truncate">
+                          SLA Breaches
+                        </dt>
+                        <dd className="text-lg font-medium text-white">
+                          {slaBreaches?.length ?? 0}
+                        </dd>
+                        <dd className="text-sm mt-1 text-white/70">
+                          Response: {slaBreaches?.filter(t => t.slaResponseBreached).length ?? 0} • Resolution: {slaBreaches?.filter(t => t.slaResolutionBreached).length ?? 0}
+                        </dd>
+                      </dl>
+                    </div>
+                  </div>
+                </div>
+                <div className="card-footer px-5 py-3">
+                  <div className="text-sm">
+                    <Link href="/tickets?filter=sla-breach" className="font-medium text-red-400 hover:text-red-300">
+                      View breached tickets
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </RoleRestrictedView>
+
+            {/* Workflow Overview Card */}
+            <RoleRestrictedView permission="tickets:assign">
+              <WorkflowOverviewCard />
+            </RoleRestrictedView>
+
+            {/* Agent Performance Card */}
+            <RoleRestrictedView permission="admin:manage_users">
+              <AgentPerformanceCard />
             </RoleRestrictedView>
           </div>
 

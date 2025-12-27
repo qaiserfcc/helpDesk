@@ -81,3 +81,43 @@ export async function updateSLA(
 export async function deleteSLA(slaId: string): Promise<void> {
   await apiClient.delete(`/slas/${slaId}`);
 }
+
+export interface SLAStatus {
+  slaId: string | null;
+  responseTimeDue: string | null;
+  resolutionTimeDue: string | null;
+  responseTimeRemaining: number | null;
+  resolutionTimeRemaining: number | null;
+  isResponseBreached: boolean;
+  isResolutionBreached: boolean;
+  responseTimeUsed: number | null;
+  resolutionTimeUsed: number | null;
+}
+
+export async function fetchTicketSLAStatus(ticketId: string): Promise<SLAStatus> {
+  const response = await apiClient.get<{ slaStatus: SLAStatus }>(
+    `/slas/ticket/${ticketId}/status`,
+  );
+  return response.data.slaStatus;
+}
+
+export interface TicketWithSLA {
+  id: string;
+  description: string;
+  priority: TicketPriority;
+  status: string;
+  createdAt: string;
+  slaResponseBreached: boolean;
+  slaResolutionBreached: boolean;
+  creator: { id: string; name: string; email: string };
+  assignee?: { id: string; name: string; email: string } | null;
+  category?: { id: string; name: string } | null;
+  subcategory?: { id: string; name: string } | null;
+}
+
+export async function fetchTicketsBreachingSLA(): Promise<TicketWithSLA[]> {
+  const response = await apiClient.get<{ tickets: TicketWithSLA[] }>(
+    "/slas/breaches",
+  );
+  return response.data.tickets || [];
+}

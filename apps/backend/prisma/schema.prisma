@@ -29,6 +29,10 @@ enum TicketActivityType {
   assignment_change
   assignment_request
   ticket_update
+  comment
+  reply
+  mark_for_info
+  workflow_step_change
 }
 
 enum IssueType {
@@ -101,6 +105,13 @@ model Ticket {
   workflow    WorkflowDefinition? @relation(fields: [workflowId], references: [id])
   currentStepId String?
   currentStep WorkflowStep? @relation("TicketCurrentStep", fields: [currentStepId], references: [id])
+  slaId       String?
+  firstResponseAt DateTime?   // When first agent response was made
+  slaResponseBreached Boolean @default(false)
+  slaResolutionBreached Boolean @default(false)
+  markedForInfo Boolean @default(false) // Flag for "needs more information"
+  markedForInfoAt DateTime?
+  markedForInfoBy String?
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
   resolvedAt  DateTime?
@@ -113,6 +124,9 @@ model Ticket {
   @@index([categoryId])
   @@index([subcategoryId])
   @@index([workflowId])
+  @@index([status])
+  @@index([assignedTo])
+  @@index([createdBy])
 }
 
 model AiSuggestion {
@@ -138,15 +152,21 @@ model TicketActivity {
   actorId         String
   actor           User                @relation("TicketActivityActor", fields: [actorId], references: [id])
   type            TicketActivityType
+  content         String?             // For comments, replies, and mark_for_info notes
   fromStatus      TicketStatus?
   toStatus        TicketStatus?
   fromAssigneeId  String?
   fromAssignee    User?               @relation("TicketActivityFromAssignee", fields: [fromAssigneeId], references: [id])
   toAssigneeId    String?
   toAssignee      User?               @relation("TicketActivityToAssignee", fields: [toAssigneeId], references: [id])
+  fromStepId      String?
+  toStepId        String?
+  cannedResponseId String?
+  isInternal      Boolean             @default(false) // Internal notes vs public replies
   createdAt       DateTime            @default(now())
 
   @@index([ticketId])
+  @@index([actorId])
 }
 
 model DeviceToken {

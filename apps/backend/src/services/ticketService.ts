@@ -70,10 +70,15 @@ type ActivityLogInput = {
   ticketId: string;
   actorId: string;
   type: TicketActivityType;
+  content?: string | null;
   fromStatus?: TicketStatus | null;
   toStatus?: TicketStatus | null;
   fromAssigneeId?: string | null;
   toAssigneeId?: string | null;
+  fromStepId?: string | null;
+  toStepId?: string | null;
+  cannedResponseId?: string | null;
+  isInternal?: boolean;
 };
 
 async function logTicketActivity(input: ActivityLogInput) {
@@ -82,10 +87,15 @@ async function logTicketActivity(input: ActivityLogInput) {
       ticketId: input.ticketId,
       actorId: input.actorId,
       type: input.type,
+      content: input.content ?? null,
       fromStatus: input.fromStatus ?? null,
       toStatus: input.toStatus ?? null,
       fromAssigneeId: input.fromAssigneeId ?? null,
       toAssigneeId: input.toAssigneeId ?? null,
+      fromStepId: input.fromStepId ?? null,
+      toStepId: input.toStepId ?? null,
+      cannedResponseId: input.cannedResponseId ?? null,
+      isInternal: input.isInternal ?? false,
     },
     include: ticketActivityInclude,
   });
@@ -101,6 +111,8 @@ async function logTicketActivity(input: ActivityLogInput) {
     activity,
     audience,
   });
+  
+  return activity;
 }
 
 function notifyTicketChange(
@@ -263,6 +275,16 @@ export async function createTicket(
       toAssigneeId: assignedTo,
     });
   }
+
+  // Initialize SLA tracking
+  void (async () => {
+    try {
+      const { updateTicketSLAStatus } = await import("./slaService.js");
+      await updateTicketSLAStatus(ticket.id);
+    } catch (err) {
+      console.warn("SLA initialization failed", err);
+    }
+  })();
 
   notifyTicketChange(ticket, "tickets:created");
   // Fire-and-forget generation of suggestions/summaries (do not block ticket creation)
@@ -466,7 +488,7 @@ export async function assignTicket(
 
   const ticket = await prisma.ticket.findUnique({
     where: { id: ticketId },
-    select: ticketCoreSelect,
+    select: { ...ticketCoreSelect, currentStepId: true },
   });
   if (!ticket) {
     throw createError(404, "Ticket not found");
@@ -508,6 +530,7 @@ export async function assignTicket(
 
   notifyTicketChange(updatedTicket);
 
+  // Log assignment and status activity
   if (assignmentChanged) {
     await logTicketActivity({
       ticketId,
@@ -530,6 +553,28 @@ export async function assignTicket(
     });
   }
 
+  // Advance workflow if applicable
+  if (ticket.workflowId && ticket.currentStepId && statusChanged) {
+    const { advanceWorkflowStep } = await import("./workflowService.js");
+    const { newStepId } = await advanceWorkflowStep(
+      ticketId,
+      ticket.currentStepId,
+      assignee.role,
+      user.id,
+      "Ticket assigned and status changed to in_progress",
+    );
+
+    if (newStepId && newStepId !== ticket.currentStepId) {
+      await logTicketActivity({
+        ticketId,
+        actorId: user.id,
+        type: TicketActivityType.workflow_step_change,
+        fromStepId: ticket.currentStepId,
+        toStepId: newStepId,
+      });
+    }
+  }
+
   return updatedTicket;
 }
 
@@ -540,7 +585,7 @@ export async function resolveTicket(ticketId: string, user: RequestUser) {
 
   const ticket = await prisma.ticket.findUnique({
     where: { id: ticketId },
-    select: ticketCoreSelect,
+    select: { ...ticketCoreSelect, currentStepId: true },
   });
   if (!ticket) {
     throw createError(404, "Ticket not found");
@@ -580,6 +625,37 @@ export async function resolveTicket(ticketId: string, user: RequestUser) {
       fromAssigneeId: ticket.assignedTo,
       toAssigneeId: ticket.assignedTo,
     });
+
+    // Complete workflow if applicable
+    if (ticket.workflowId && ticket.currentStepId) {
+      const { advanceWorkflowStep } = await import("./workflowService.js");
+      const { newStepId, workflowCompleted } = await advanceWorkflowStep(
+        ticketId,
+        ticket.currentStepId,
+        user.role,
+        user.id,
+        "Ticket resolved",
+      );
+
+      if (newStepId && newStepId !== ticket.currentStepId) {
+        await logTicketActivity({
+          ticketId,
+          actorId: user.id,
+          type: TicketActivityType.workflow_step_change,
+          fromStepId: ticket.currentStepId,
+          toStepId: newStepId,
+        });
+      } else if (workflowCompleted) {
+        await logTicketActivity({
+          ticketId,
+          actorId: user.id,
+          type: TicketActivityType.workflow_step_change,
+          fromStepId: ticket.currentStepId,
+          toStepId: null,
+          content: "Workflow completed",
+        });
+      }
+    }
   }
 
   return updatedTicket;
@@ -842,6 +918,125 @@ export async function listRecentTicketActivity(
   }
 
   throw createError(403, "Unsupported role for ticket activity reports");
+}
+
+export async function addTicketReply(
+  ticketId: string,
+  content: string,
+  user: RequestUser,
+  cannedResponseId?: string,
+  isInternal = false,
+) {
+  const ticket = await getTicket(ticketId, user);
+
+  // Users can only add replies to their own tickets
+  // Agents and admins can add replies to any ticket
+  if (user.role === Role.user && ticket.createdBy !== user.id) {
+    throw createError(403, "You are not allowed to reply to this ticket");
+  }
+
+  // Agents and admins can add internal notes
+  // Users can only add public replies
+  if (isInternal && user.role === Role.user) {
+    throw createError(403, "Users cannot add internal notes");
+  }
+
+  // Track first response time for SLA
+  const updates: Prisma.TicketUpdateInput = {};
+  if (!ticket.firstResponseAt && (user.role === Role.agent || user.role === Role.admin)) {
+    updates.firstResponseAt = new Date();
+  }
+
+  // Update ticket if needed
+  if (Object.keys(updates).length > 0) {
+    await prisma.ticket.update({
+      where: { id: ticketId },
+      data: updates,
+    });
+  }
+
+  const activity = await logTicketActivity({
+    ticketId,
+    actorId: user.id,
+    type: isInternal ? TicketActivityType.comment : TicketActivityType.reply,
+    content,
+    cannedResponseId: cannedResponseId ?? null,
+    isInternal,
+  });
+
+  // Notify the ticket creator and assignee
+  notifyTicketChange(ticket, "tickets:updated");
+
+  return activity;
+}
+
+export async function markTicketForMoreInfo(
+  ticketId: string,
+  notes: string,
+  user: RequestUser,
+) {
+  const ticket = await getTicket(ticketId, user);
+
+  // Only agents and admins can mark for more info
+  if (user.role === Role.user) {
+    throw createError(403, "Only agents and admins can mark tickets for more information");
+  }
+
+  // Update ticket
+  await prisma.ticket.update({
+    where: { id: ticketId },
+    data: {
+      markedForInfo: true,
+      markedForInfoAt: new Date(),
+      markedForInfoBy: user.id,
+    },
+  });
+
+  const activity = await logTicketActivity({
+    ticketId,
+    actorId: user.id,
+    type: TicketActivityType.mark_for_info,
+    content: notes,
+    isInternal: false,
+  });
+
+  // Notify the ticket creator
+  notifyTicketChange(ticket, "tickets:updated");
+
+  return activity;
+}
+
+export async function clearTicketInfoRequest(
+  ticketId: string,
+  user: RequestUser,
+) {
+  const ticket = await getTicket(ticketId, user);
+
+  // Only the ticket creator or agents/admins can clear the info request
+  if (user.role === Role.user && ticket.createdBy !== user.id) {
+    throw createError(403, "You are not allowed to update this ticket");
+  }
+
+  // Update ticket
+  await prisma.ticket.update({
+    where: { id: ticketId },
+    data: {
+      markedForInfo: false,
+      markedForInfoAt: null,
+      markedForInfoBy: null,
+    },
+  });
+
+  const updatedTicket = await prisma.ticket.findUnique({
+    where: { id: ticketId },
+    include: ticketInclude,
+  });
+
+  if (updatedTicket) {
+    notifyTicketChange(updatedTicket, "tickets:updated");
+  }
+
+  return updatedTicket;
 }
 
 export async function getTicketStatusSummary(user: RequestUser) {
