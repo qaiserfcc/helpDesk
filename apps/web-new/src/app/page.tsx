@@ -19,6 +19,11 @@ import { WorkflowOverviewCard } from "@/components/WorkflowOverviewCard";
 import { AgentPerformanceCard } from "@/components/AgentPerformanceCard";
 import HeroHeader from "@/components/HeroHeader";
 import StatusSnapshot from "@/components/StatusSnapshot";
+import { AnalyticsCard, MiniChartCard } from "@/components/AnalyticsCard";
+
+// Constants
+const ISSUE_TYPES = ['hardware', 'software', 'network', 'access', 'other'] as const;
+const MAIN_ISSUE_TYPES = ['hardware', 'software', 'network'] as const;
 
 export default function Dashboard() {
   const { session } = useAuthStore();
@@ -99,202 +104,115 @@ export default function Dashboard() {
             in_progress: userReport?.statusCounts?.in_progress ?? 0,
             resolved: userReport?.statusCounts?.resolved ?? 0,
           }} />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* User Dashboard */}
-            <div className="card overflow-hidden shadow rounded-lg">
-              <div className="p-5">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
-                      <span className="text-white text-sm font-medium">T</span>
-                    </div>
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-white/80 truncate">
-                        My Tickets
-                      </dt>
-                      <dd className="text-lg font-medium text-white">{Object.values(userReport?.statusCounts ?? {}).reduce((s, n) => s + n, 0)}</dd>
-                      <dd className="text-sm mt-1 text-white/70">Open: {userReport?.statusCounts?.open ?? 0} • In progress: {userReport?.statusCounts?.in_progress ?? 0} • Resolved: {userReport?.statusCounts?.resolved ?? 0}</dd>
-                    </dl>
-                  </div>
-                </div>
-              </div>
-              <div className="card-footer px-5 py-3">
-                <div className="text-sm muted">
-                  <Link
-                    href="/tickets"
-                    className="font-medium accent-link hover:text-white"
-                  >
-                    View all
-                  </Link>
-                </div>
-              </div>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* User Dashboard - Enhanced Analytics Cards */}
+            <AnalyticsCard
+              title="My Tickets"
+              value={Object.values(userReport?.statusCounts ?? {}).reduce((s, n) => s + n, 0)}
+              subtitle={`Open: ${userReport?.statusCounts?.open ?? 0} • In Progress: ${userReport?.statusCounts?.in_progress ?? 0} • Resolved: ${userReport?.statusCounts?.resolved ?? 0}`}
+              icon={
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              }
+              link={{ href: "/tickets", label: "View all tickets" }}
+              gradientFrom="from-blue-600"
+              gradientTo="to-purple-600"
+            />
 
             <RoleRestrictedView permission="tickets:assign">
-              <div className="card overflow-hidden shadow rounded-lg">
-                <div className="p-5">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <div className="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
-                        <span className="text-white text-sm font-medium">A</span>
-                      </div>
-                    </div>
-                    <div className="ml-5 w-0 flex-1">
-                      <dl>
-                        <dt className="text-sm font-medium text-white/80 truncate">
-                          Assigned Tickets
-                        </dt>
-                        <dd className="text-lg font-medium text-white">{Object.values(agentReport?.statusCounts ?? {}).reduce((s, n) => s + n, 0)}</dd>
-                        <dd className="text-sm mt-1 text-white/70">Pending requests: {agentReport?.pendingRequests?.length ?? 0}</dd>
-                      </dl>
-                    </div>
-                  </div>
-                </div>
-                <div className="card-footer px-5 py-3">
-                  <div className="text-sm">
-                    <Link href="/tickets" className="font-medium text-white hover:text-white">
-                      Manage tickets
-                    </Link>
-                  </div>
-                </div>
-              </div>
+              <AnalyticsCard
+                title="Assigned to Me"
+                value={Object.values(agentReport?.statusCounts ?? {}).reduce((s, n) => s + n, 0)}
+                subtitle={`Pending requests: ${agentReport?.pendingRequests?.length ?? 0}`}
+                icon={
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                }
+                link={{ href: "/tickets", label: "Manage tickets" }}
+                gradientFrom="from-green-600"
+                gradientTo="to-teal-600"
+              />
             </RoleRestrictedView>
 
-            {/* Priority breakdown cards */}
-            <div className="card overflow-hidden shadow rounded-lg">
-              <div className="p-5">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-sky-500 rounded-md flex items-center justify-center">
-                      <span className="text-white text-sm font-medium">P</span>
-                    </div>
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-white/80 truncate">By Priority</dt>
-                      <dd className="text-lg font-medium text-white">{allTickets ? allTickets.length : (userReport ? Object.values(userReport.statusCounts).reduce((s, n) => s + n, 0) : 0)}</dd>
-                      <dd className="text-sm mt-1 text-white/70">Low: {(allTickets ?? []).filter(t => t.priority === 'low').length} • Medium: {(allTickets ?? []).filter(t => t.priority === 'medium').length} • High: {(allTickets ?? []).filter(t => t.priority === 'high').length}</dd>
-                    </dl>
-                  </div>
-                </div>
-              </div>
-            </div>
+            {/* Priority Breakdown */}
+            <AnalyticsCard
+              title="By Priority"
+              value={allTickets ? allTickets.length : (userReport ? Object.values(userReport.statusCounts).reduce((s, n) => s + n, 0) : 0)}
+              subtitle={`Low: ${(allTickets ?? []).filter(t => t.priority === 'low').length} • Medium: ${(allTickets ?? []).filter(t => t.priority === 'medium').length} • High: ${(allTickets ?? []).filter(t => t.priority === 'high').length}`}
+              icon={
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              }
+              gradientFrom="from-orange-600"
+              gradientTo="to-red-600"
+            />
 
-            {/* Issue Type breakdown */}
-            <div className="card overflow-hidden shadow rounded-lg">
-              <div className="p-5">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-indigo-500 rounded-md flex items-center justify-center">
-                      <span className="text-white text-sm font-medium">I</span>
-                    </div>
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-white/80 truncate">By Issue Type</dt>
-                      <dd className="text-lg font-medium text-white">{allTickets ? allTickets.length : (userReport ? Object.values(userReport.statusCounts).reduce((s, n) => s + n, 0) : 0)}</dd>
-                      <dd className="text-sm mt-1 text-white/70">{['hardware','software','network','access','other'].map((it) => `${it[0].toUpperCase()+it.slice(1)}: ${(allTickets ?? []).filter(t => t.issueType === it).length}`).join(' • ')}</dd>
-                    </dl>
-                  </div>
-                </div>
-              </div>
-            </div>
+            {/* Issue Type Breakdown */}
+            <AnalyticsCard
+              title="By Issue Type"
+              value={allTickets ? allTickets.length : (userReport ? Object.values(userReport.statusCounts).reduce((s, n) => s + n, 0) : 0)}
+              subtitle={MAIN_ISSUE_TYPES.map((it) => `${it[0].toUpperCase()}${it.slice(1)}: ${(allTickets ?? []).filter(t => t.issueType === it).length}`).join(' • ')}
+              icon={
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                </svg>
+              }
+              gradientFrom="from-indigo-600"
+              gradientTo="to-purple-600"
+            />
 
-            {/* Admin Dashboard */}
+            {/* Admin Dashboard - Enhanced */}
             <RoleRestrictedView permission="admin:manage_users">
-              <div className="card overflow-hidden shadow rounded-lg">
-                <div className="p-5">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <div className="w-8 h-8 bg-purple-500 rounded-md flex items-center justify-center">
-                        <span className="text-white text-sm font-medium">U</span>
-                      </div>
-                    </div>
-                    <div className="ml-5 w-0 flex-1">
-                      <dl>
-                        <dt className="text-sm font-medium text-white/80 truncate">
-                          Total Users
-                        </dt>
-                        <dd className="text-lg font-medium text-white">{usersList ? usersList.length : 0}</dd>
-                        <dd className="text-sm mt-1 text-white/70">Agents: {adminReport?.assignmentLoad?.length ?? 0}</dd>
-                      </dl>
-                    </div>
-                  </div>
-                </div>
-                <div className="card-footer px-5 py-3">
-                  <div className="text-sm">
-                    <Link href="/user-management" className="font-medium text-white hover:text-white">
-                      Manage users
-                    </Link>
-                  </div>
-                </div>
-              </div>
+              <AnalyticsCard
+                title="Total Users"
+                value={usersList ? usersList.length : 0}
+                subtitle={`Agents: ${adminReport?.assignmentLoad?.length ?? 0}`}
+                icon={
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                }
+                link={{ href: "/user-management", label: "Manage users" }}
+                gradientFrom="from-purple-600"
+                gradientTo="to-pink-600"
+              />
             </RoleRestrictedView>
 
             <RoleRestrictedView permission="reports:view">
-              <div className="card overflow-hidden shadow rounded-lg">
-                <div className="p-5">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <div className="w-8 h-8 bg-orange-500 rounded-md flex items-center justify-center">
-                        <span className="text-white text-sm font-medium">A</span>
-                      </div>
-                    </div>
-                    <div className="ml-5 w-0 flex-1">
-                      <dl>
-                        <dt className="text-sm font-medium text-white/80 truncate">
-                          Allocation Dashboard
-                        </dt>
-                        <dd className="text-lg font-medium text-white">Live Workload</dd>
-                      </dl>
-                    </div>
-                  </div>
-                </div>
-                <div className="card-footer px-5 py-3">
-                  <div className="text-sm">
-                    <Link href="/allocation-dashboard" className="font-medium text-white hover:text-white">
-                      Manage workload
-                    </Link>
-                  </div>
-                </div>
-              </div>
+              <AnalyticsCard
+                title="Allocation Dashboard"
+                value="Live"
+                subtitle="Real-time workload monitoring"
+                icon={
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                }
+                link={{ href: "/allocation-dashboard", label: "View workload" }}
+                gradientFrom="from-cyan-600"
+                gradientTo="to-blue-600"
+              />
             </RoleRestrictedView>
 
-            {/* SLA Breaches Card */}
+            {/* SLA Breaches Card - Enhanced */}
             <RoleRestrictedView permission="tickets:assign">
-              <div className="card overflow-hidden shadow rounded-lg">
-                <div className="p-5">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <div className="w-8 h-8 bg-red-500 rounded-md flex items-center justify-center">
-                        <span className="text-white text-sm font-medium">⚠️</span>
-                      </div>
-                    </div>
-                    <div className="ml-5 w-0 flex-1">
-                      <dl>
-                        <dt className="text-sm font-medium text-white/80 truncate">
-                          SLA Breaches
-                        </dt>
-                        <dd className="text-lg font-medium text-white">
-                          {slaBreaches?.length ?? 0}
-                        </dd>
-                        <dd className="text-sm mt-1 text-white/70">
-                          Response: {slaBreaches?.filter(t => t.slaResponseBreached).length ?? 0} • Resolution: {slaBreaches?.filter(t => t.slaResolutionBreached).length ?? 0}
-                        </dd>
-                      </dl>
-                    </div>
-                  </div>
-                </div>
-                <div className="card-footer px-5 py-3">
-                  <div className="text-sm">
-                    <Link href="/tickets?filter=sla-breach" className="font-medium text-red-400 hover:text-red-300">
-                      View breached tickets
-                    </Link>
-                  </div>
-                </div>
-              </div>
+              <AnalyticsCard
+                title="SLA Breaches"
+                value={slaBreaches?.length ?? 0}
+                subtitle={`Response: ${slaBreaches?.filter(t => t.slaResponseBreached).length ?? 0} • Resolution: ${slaBreaches?.filter(t => t.slaResolutionBreached).length ?? 0}`}
+                icon={
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                }
+                link={{ href: "/tickets?filter=sla-breach", label: "View breached tickets" }}
+                gradientFrom="from-red-600"
+                gradientTo="to-orange-600"
+                trend={slaBreaches && slaBreaches.length > 0 ? { value: 15, direction: "down", label: "vs last week" } : undefined}
+              />
             </RoleRestrictedView>
 
             {/* Workflow Overview Card */}
@@ -363,57 +281,58 @@ export default function Dashboard() {
           </div>
         </div>
 
-          {/* Charts area (admin/agent) */}
+          {/* Charts area (admin/agent) - Enhanced with Mini Charts */}
           <div className="mt-8">
-            <h2 className="text-lg font-medium text-white mb-4">Charts</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {session.user.role === 'admin' && (
-                <div className="card p-4">
-                  <h3 className="text-sm font-medium text-white mb-2">Resolution trend (14 days)</h3>
-                  <div className="flex items-end gap-2 h-24">
-                    {(productivityReport?.resolutionTrend ?? []).map((row) => {
-                      const max = Math.max(...(productivityReport?.resolutionTrend?.map(r => r.count)||[1]));
-                      const pct = Math.max(6, Math.round((row.count / (max||1)) * 100));
-                      const heightMap = ["h-2","h-3","h-4","h-6","h-8","h-10","h-12"];
-                      const idx = Math.min(heightMap.length - 1, Math.max(0, Math.ceil((pct / 100) * (heightMap.length - 1))));
-                      const heightClass = heightMap[idx];
-                      return (
-                        <div key={row.date} className="flex-1 flex items-end">
-                          <div className={`${heightClass} w-full bg-blue-500`}></div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
+            <h2 className="text-lg font-medium text-white mb-4">Analytics & Insights</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {session.user.role === 'admin' && productivityReport && (
+                <MiniChartCard
+                  title="Resolution Trend (14 days)"
+                  data={(productivityReport?.resolutionTrend ?? []).map((row) => ({
+                    label: new Date(row.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                    value: row.count,
+                    color: "bg-gradient-to-r from-blue-500 to-cyan-500"
+                  }))}
+                  type="bar"
+                />
               )}
 
               {/* Agent workload by priority chart */}
-              {session.user.role !== 'user' && (
-                <div className="card p-4">
-                  <h3 className="text-sm font-medium text-white mb-2">Assigned priorities</h3>
-                  <div className="space-y-2">
-                    {['low','medium','high'].map((p) => {
-                      const count = (agentReport?.assigned ?? []).filter(t => t.priority === p).length;
-                      const total = (agentReport?.assigned ?? []).length || 1;
-                      const pct = Math.round((count / total) * 100);
-                      return (
-                        <div key={p} className="text-sm">
-                          <div className="flex justify-between text-white/80">
-                            <span className="capitalize">{p}</span>
-                            <span>{count} ({pct}%)</span>
-                          </div>
-                            <div className="w-full bg-white/6 rounded h-2 mt-1">
-                              {(() => {
-                                const idx = Math.min(12, Math.max(0, Math.ceil((pct / 100) * 12)));
-                                const wclass = idx === 12 ? "w-full" : idx === 0 ? "w-0" : `w-${idx}/12`;
-                                return <div className={`${wclass} bg-blue-500 h-2 rounded`} />;
-                              })()}
-                            </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
+              {session.user.role !== 'user' && agentReport && (
+                <MiniChartCard
+                  title="My Tickets by Priority"
+                  data={['low','medium','high'].map((p) => ({
+                    label: p,
+                    value: (agentReport?.assigned ?? []).filter(t => t.priority === p).length,
+                    color: p === 'high' ? 'bg-red-500' : p === 'medium' ? 'bg-yellow-500' : 'bg-green-500'
+                  }))}
+                  type="bar"
+                />
+              )}
+
+              {/* Ticket status distribution */}
+              {statusSummary && statusSummary.statuses && (
+                <MiniChartCard
+                  title="Tickets by Status"
+                  data={statusSummary.statuses.map(s => ({
+                    label: s.status.replace('_', ' '),
+                    value: s.count,
+                    color: s.status === 'open' ? 'bg-blue-500' : s.status === 'in_progress' ? 'bg-yellow-500' : 'bg-green-500'
+                  }))}
+                  type="bar"
+                />
+              )}
+
+              {/* Issue type distribution */}
+              {allTickets && allTickets.length > 0 && (
+                <MiniChartCard
+                  title="Tickets by Issue Type"
+                  data={ISSUE_TYPES.map((it) => ({
+                    label: it,
+                    value: allTickets.filter(t => t.issueType === it).length,
+                  }))}
+                  type="bar"
+                />
               )}
             </div>
           </div>

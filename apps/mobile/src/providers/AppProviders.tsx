@@ -5,6 +5,7 @@ import { startSyncLoop, stopSyncLoop } from "@/services/syncService";
 import { queryClient } from "@/lib/queryClient";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useOfflineStore } from "@/store/useOfflineStore";
+import { useThemeStore } from "@/store/useThemeStore";
 import {
   shutdownTicketSocket,
   syncTicketSocketSession,
@@ -21,6 +22,12 @@ export function AppProviders({ children }: Props) {
   const refreshSession = useAuthStore((state) => state.refreshSession);
   const flushAuthIntents = useAuthStore((state) => state.flushAuthIntents);
   const setOffline = useOfflineStore((state) => state.setOffline);
+  const loadTheme = useThemeStore((state) => state.loadTheme);
+
+  // Load saved theme on app start
+  useEffect(() => {
+    void loadTheme();
+  }, [loadTheme]);
 
   useEffect(() => {
     startSyncLoop();
