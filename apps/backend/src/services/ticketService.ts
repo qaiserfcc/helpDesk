@@ -14,8 +14,10 @@ import { dispatchTicketEmail } from "../notifications/ticketMailer.js";
 import {
   evaluateWorkflowForTicket,
   getNextWorkflowStep,
+  canUserPerformAction,
 } from "./workflowService.js";
 import { getRecommendedAgent } from "./agentAssignmentService.js";
+import { WorkflowStepAction } from "@prisma/client";
 
 const ticketInclude = {
   creator: { select: { id: true, name: true, email: true } },
@@ -146,6 +148,45 @@ function buildVisibilityWhere(user: RequestUser): Prisma.TicketWhereInput {
     return { createdBy: user.id };
   }
   return {};
+}
+
+/**
+ * Validates if an action is allowed based on the ticket's current workflow step
+ */
+async function validateWorkflowAction(
+  ticketId: string,
+  action: WorkflowStepAction,
+  userRole: Role,
+): Promise<{ allowed: boolean; reason?: string }> {
+  const ticket = await prisma.ticket.findUnique({
+    where: { id: ticketId },
+    select: { currentStepId: true, workflowId: true },
+  });
+
+  if (!ticket) {
+    return { allowed: false, reason: "Ticket not found" };
+  }
+
+  // If no workflow, action is allowed
+  if (!ticket.workflowId || !ticket.currentStepId) {
+    return { allowed: true };
+  }
+
+  // Check if user can perform this action at the current step
+  const canPerform = await canUserPerformAction(
+    ticket.currentStepId,
+    action,
+    userRole,
+  );
+
+  if (!canPerform) {
+    return {
+      allowed: false,
+      reason: `Action '${action}' is not allowed at the current workflow step`,
+    };
+  }
+
+  return { allowed: true };
 }
 
 export async function listTickets(filters: TicketFilters, user: RequestUser) {
@@ -362,6 +403,16 @@ export async function updateTicket(
     );
   }
 
+  // Validate workflow constraints for update action
+  const workflowValidation = await validateWorkflowAction(
+    ticketId,
+    WorkflowStepAction.update,
+    user.role,
+  );
+  if (!workflowValidation.allowed) {
+    throw createError(403, workflowValidation.reason || "Workflow constraint violation");
+  }
+
   const nextStatus = updates.status ?? ticket.status;
   const statusChanged = nextStatus !== ticket.status;
   const descriptionChanged =
@@ -511,6 +562,16 @@ export async function assignTicket(
     throw createError(400, "Assignee must be an agent");
   }
 
+  // Validate workflow constraints for assign action
+  const workflowValidation = await validateWorkflowAction(
+    ticketId,
+    WorkflowStepAction.assign,
+    user.role,
+  );
+  if (!workflowValidation.allowed) {
+    throw createError(403, workflowValidation.reason || "Workflow constraint violation");
+  }
+
   const nextStatus =
     ticket.status === TicketStatus.open
       ? TicketStatus.in_progress
@@ -593,6 +654,16 @@ export async function resolveTicket(ticketId: string, user: RequestUser) {
 
   if (ticket.assignedTo !== user.id) {
     throw createError(403, "Only the assigned agent can resolve this ticket");
+  }
+
+  // Validate workflow constraints for resolve action
+  const workflowValidation = await validateWorkflowAction(
+    ticketId,
+    WorkflowStepAction.resolve,
+    user.role,
+  );
+  if (!workflowValidation.allowed) {
+    throw createError(403, workflowValidation.reason || "Workflow constraint violation");
   }
 
   const alreadyResolved = ticket.status === TicketStatus.resolved;
@@ -939,6 +1010,16 @@ export async function addTicketReply(
   // Users can only add public replies
   if (isInternal && user.role === Role.user) {
     throw createError(403, "Users cannot add internal notes");
+  }
+
+  // Validate workflow constraints for comment action
+  const workflowValidation = await validateWorkflowAction(
+    ticketId,
+    WorkflowStepAction.comment,
+    user.role,
+  );
+  if (!workflowValidation.allowed) {
+    throw createError(403, workflowValidation.reason || "Workflow constraint violation");
   }
 
   // Track first response time for SLA
