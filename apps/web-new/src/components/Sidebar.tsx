@@ -5,50 +5,86 @@ import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { NotificationBell } from "@/components/NotificationBell";
+import { hasPermission, type Permission } from "@/utils/permissions";
 import { useState } from "react";
 
 interface NavItem {
   href: string;
   label: string;
   icon: string;
-  roles?: ("admin" | "agent" | "user")[];
+  permission?: Permission | Permission[];
+  requiresAllPermissions?: boolean; // If true, user needs all permissions; if false, needs any one
 }
 
 export function Sidebar() {
   const { session } = useAuthStore();
   const pathname = usePathname();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const [expandedSection, setExpandedSection] = useState<string | null>("main");
+  
+  // Intelligently determine initial expanded section based on current route
+  const getInitialExpandedSection = () => {
+    if (pathname === "/" || pathname === "/tickets") return "main";
+    
+    // Check admin routes
+    const adminRoutes = [
+      "/category-management", "/sla-management", "/workflow-management",
+      "/attribute-management", "/agent-assignment", "/agent-skills",
+      "/knowledge-base", "/canned-responses", "/user-management"
+    ];
+    if (adminRoutes.some(route => pathname.startsWith(route))) return "admin";
+    
+    // Check report routes
+    const reportRoutes = ["/reports", "/status-summary"];
+    if (reportRoutes.some(route => pathname.startsWith(route))) return "reports";
+    
+    return "main";
+  };
+  
+  const [expandedSection, setExpandedSection] = useState<string | null>(getInitialExpandedSection());
 
   if (!session) return null;
 
   const mainNavItems: NavItem[] = [
     { href: "/", label: "Dashboard", icon: "📊" },
-    { href: "/tickets", label: "Tickets", icon: "🎫" },
+    { href: "/tickets", label: "Tickets", icon: "🎫", permission: "tickets:view" },
   ];
 
   const adminNavItems: NavItem[] = [
-    { href: "/category-management", label: "Categories", icon: "🗂️", roles: ["admin", "agent"] },
-    { href: "/sla-management", label: "SLAs", icon: "⏱️", roles: ["admin", "agent"] },
-    { href: "/workflow-management", label: "Workflows", icon: "🔄", roles: ["admin", "agent"] },
-    { href: "/attribute-management", label: "Attributes", icon: "🏷️", roles: ["admin", "agent"] },
-    { href: "/agent-assignment", label: "Agent Assignments", icon: "👥", roles: ["admin"] },
-    { href: "/agent-skills", label: "Agent Skills", icon: "⭐", roles: ["admin"] },
-    { href: "/knowledge-base", label: "Knowledge Base", icon: "📚", roles: ["admin", "agent"] },
-    { href: "/canned-responses", label: "Canned Responses", icon: "💬", roles: ["admin", "agent"] },
-    { href: "/user-management", label: "Users", icon: "👤", roles: ["admin"] },
+    { href: "/category-management", label: "Categories", icon: "🗂️", permission: ["tickets:assign", "reports:view"] },
+    { href: "/sla-management", label: "SLAs", icon: "⏱️", permission: ["tickets:assign", "reports:view"] },
+    { href: "/workflow-management", label: "Workflows", icon: "🔄", permission: ["tickets:assign", "reports:view"] },
+    { href: "/attribute-management", label: "Attributes", icon: "🏷️", permission: ["tickets:assign", "reports:view"] },
+    { href: "/agent-assignment", label: "Agent Assignments", icon: "👥", permission: "admin:manage_users" },
+    { href: "/agent-skills", label: "Agent Skills", icon: "⭐", permission: "admin:manage_users" },
+    { href: "/knowledge-base", label: "Knowledge Base", icon: "📚", permission: ["tickets:assign", "reports:view"] },
+    { href: "/canned-responses", label: "Canned Responses", icon: "💬", permission: ["tickets:assign", "reports:view"] },
+    { href: "/user-management", label: "Users", icon: "👤", permission: "admin:manage_users" },
   ];
 
   const reportNavItems: NavItem[] = [
-    { href: "/reports", label: "Reports", icon: "📈", roles: ["admin", "agent"] },
-    { href: "/status-summary", label: "Status Summary", icon: "📋", roles: ["admin"] },
+    { href: "/reports", label: "Reports", icon: "📈", permission: "reports:view" },
+    { href: "/status-summary", label: "Status Summary", icon: "📋", permission: "admin:view_reports" },
   ];
 
   const filterByRole = (items: NavItem[]) => {
     return items.filter(item => {
-      if (!item.roles) return true;
+      if (!item.permission) return true;
+      
       const userRole = session.user.role as "admin" | "agent" | "user";
-      return item.roles.includes(userRole);
+      
+      // Handle array of permissions
+      if (Array.isArray(item.permission)) {
+        if (item.requiresAllPermissions) {
+          // User needs ALL permissions
+          return item.permission.every(perm => hasPermission(userRole, perm));
+        } else {
+          // User needs ANY ONE permission (default behavior)
+          return item.permission.some(perm => hasPermission(userRole, perm));
+        }
+      }
+      
+      // Handle single permission
+      return hasPermission(userRole, item.permission);
     });
   };
 
@@ -178,22 +214,18 @@ export function Sidebar() {
             </div>
 
             {/* Admin Tools */}
-            {(session.user.role === "admin" || session.user.role === "agent") && (
-              <NavSection
-                title="Admin Tools"
-                items={adminNavItems}
-                sectionKey="admin"
-              />
-            )}
+            <NavSection
+              title="Admin Tools"
+              items={adminNavItems}
+              sectionKey="admin"
+            />
 
             {/* Reports */}
-            {(session.user.role === "admin" || session.user.role === "agent") && (
-              <NavSection
-                title="Reports & Analytics"
-                items={reportNavItems}
-                sectionKey="reports"
-              />
-            )}
+            <NavSection
+              title="Reports & Analytics"
+              items={reportNavItems}
+              sectionKey="reports"
+            />
           </nav>
 
           {/* User Profile & Actions */}
