@@ -15,6 +15,22 @@ export type TicketUser = {
   email: string;
 };
 
+export type TicketAttributeValue = {
+  id: string;
+  ticketId: string;
+  attributeId: string;
+  value: string;
+  createdAt: string;
+  updatedAt: string;
+  attribute: {
+    id: string;
+    name: string;
+    label: string;
+    type: string;
+    options: string[];
+  };
+};
+
 export type Ticket = {
   id: string;
   description: string;
@@ -28,6 +44,7 @@ export type Ticket = {
   creator: TicketUser;
   assignee: TicketUser | null;
   assignmentRequest: TicketUser | null;
+  attributeValues?: TicketAttributeValue[];
 };
 
 export type ReportTicket = {
@@ -125,6 +142,7 @@ export type CreateTicketPayload = {
   priority: TicketPriority;
   issueType: IssueType;
   attachments?: string[];
+  attributes?: Record<string, string>;
 };
 
 export type UpdateTicketPayload = Partial<CreateTicketPayload> & {
