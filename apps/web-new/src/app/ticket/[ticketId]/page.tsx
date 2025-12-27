@@ -28,6 +28,7 @@ import {
 import { TicketReplySection } from "@/components/TicketReplySection";
 import { WorkflowProgressIndicator } from "@/components/WorkflowProgressIndicator";
 import { SLATimer } from "@/components/SLATimer";
+import { WorkflowActionControls } from "@/components/WorkflowActionControls";
 
 const formatStatus = formatTicketStatus;
 
@@ -472,6 +473,15 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
               <WorkflowProgressIndicator
                 workflowId={ticket.workflowId}
                 currentStepId={ticket.currentStep?.id || null}
+              />
+            )}
+
+            {/* Workflow Action Controls */}
+            {ticket?.workflowId && authUser && (
+              <WorkflowActionControls
+                ticketId={ticketId}
+                ticketStatus={ticket.status}
+                userRole={authUser.role}
               />
             )}
           </div>
