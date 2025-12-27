@@ -478,7 +478,7 @@ export async function assignTicket(
 
   const ticket = await prisma.ticket.findUnique({
     where: { id: ticketId },
-    select: ticketCoreSelect,
+    select: { ...ticketCoreSelect, currentStepId: true },
   });
   if (!ticket) {
     throw createError(404, "Ticket not found");
@@ -520,6 +520,7 @@ export async function assignTicket(
 
   notifyTicketChange(updatedTicket);
 
+  // Log assignment and status activity
   if (assignmentChanged) {
     await logTicketActivity({
       ticketId,
@@ -542,6 +543,28 @@ export async function assignTicket(
     });
   }
 
+  // Advance workflow if applicable
+  if (ticket.workflowId && ticket.currentStepId && statusChanged) {
+    const { advanceWorkflowStep } = await import("./workflowService.js");
+    const { newStepId } = await advanceWorkflowStep(
+      ticketId,
+      ticket.currentStepId,
+      assignee.role,
+      user.id,
+      "Ticket assigned and status changed to in_progress",
+    );
+
+    if (newStepId && newStepId !== ticket.currentStepId) {
+      await logTicketActivity({
+        ticketId,
+        actorId: user.id,
+        type: TicketActivityType.workflow_step_change,
+        fromStepId: ticket.currentStepId,
+        toStepId: newStepId,
+      });
+    }
+  }
+
   return updatedTicket;
 }
 
@@ -552,7 +575,7 @@ export async function resolveTicket(ticketId: string, user: RequestUser) {
 
   const ticket = await prisma.ticket.findUnique({
     where: { id: ticketId },
-    select: ticketCoreSelect,
+    select: { ...ticketCoreSelect, currentStepId: true },
   });
   if (!ticket) {
     throw createError(404, "Ticket not found");
@@ -592,6 +615,37 @@ export async function resolveTicket(ticketId: string, user: RequestUser) {
       fromAssigneeId: ticket.assignedTo,
       toAssigneeId: ticket.assignedTo,
     });
+
+    // Complete workflow if applicable
+    if (ticket.workflowId && ticket.currentStepId) {
+      const { advanceWorkflowStep } = await import("./workflowService.js");
+      const { newStepId, workflowCompleted } = await advanceWorkflowStep(
+        ticketId,
+        ticket.currentStepId,
+        user.role,
+        user.id,
+        "Ticket resolved",
+      );
+
+      if (newStepId && newStepId !== ticket.currentStepId) {
+        await logTicketActivity({
+          ticketId,
+          actorId: user.id,
+          type: TicketActivityType.workflow_step_change,
+          fromStepId: ticket.currentStepId,
+          toStepId: newStepId,
+        });
+      } else if (workflowCompleted) {
+        await logTicketActivity({
+          ticketId,
+          actorId: user.id,
+          type: TicketActivityType.workflow_step_change,
+          fromStepId: ticket.currentStepId,
+          toStepId: null,
+          content: "Workflow completed",
+        });
+      }
+    }
   }
 
   return updatedTicket;

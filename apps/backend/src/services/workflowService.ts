@@ -453,3 +453,77 @@ export async function canUserPerformAction(
   const allowedActions = step.allowedActions as unknown as WorkflowStepAction[];
   return allowedActions.includes(action);
 }
+
+export async function advanceWorkflowStep(
+  ticketId: string,
+  currentStepId: string | null,
+  userRole: Role,
+  actorId: string,
+  notes?: string,
+): Promise<{ newStepId: string | null; workflowCompleted: boolean }> {
+  // Get ticket with workflow
+  const ticket = await prisma.ticket.findUnique({
+    where: { id: ticketId },
+    include: { workflow: true, currentStep: true },
+  });
+
+  if (!ticket) {
+    throw createError(404, "Ticket not found");
+  }
+
+  if (!ticket.workflowId) {
+    // No workflow attached to this ticket
+    return { newStepId: null, workflowCompleted: false };
+  }
+
+  // Close current step if exists
+  if (currentStepId) {
+    // Find the current step record
+    const currentStepRecord = await prisma.ticketWorkflowStep.findFirst({
+      where: {
+        ticketId,
+        stepId: currentStepId,
+        exitedAt: null,
+      },
+    });
+
+    if (currentStepRecord) {
+      await prisma.ticketWorkflowStep.update({
+        where: { id: currentStepRecord.id },
+        data: {
+          exitedAt: new Date(),
+          notes,
+        },
+      });
+    }
+  }
+
+  // Get next step
+  const nextStep = await getNextWorkflowStep(
+    currentStepId,
+    userRole,
+    ticket.workflowId,
+  );
+
+  if (!nextStep) {
+    // Workflow completed
+    return { newStepId: null, workflowCompleted: true };
+  }
+
+  // Create new step record
+  await prisma.ticketWorkflowStep.create({
+    data: {
+      ticketId,
+      stepId: nextStep.id,
+      actorId,
+    },
+  });
+
+  // Update ticket's current step
+  await prisma.ticket.update({
+    where: { id: ticketId },
+    data: { currentStepId: nextStep.id },
+  });
+
+  return { newStepId: nextStep.id, workflowCompleted: false };
+}
