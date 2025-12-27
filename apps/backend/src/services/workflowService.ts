@@ -1,5 +1,5 @@
 import createError from "http-errors";
-import { Prisma, Role, WorkflowStepAction } from "@prisma/client";
+import { Prisma, Role, WorkflowStepAction, TicketStatus } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 
 export type WorkflowWithSteps = Prisma.WorkflowDefinitionGetPayload<{
@@ -506,7 +506,15 @@ export async function advanceWorkflowStep(
   );
 
   if (!nextStep) {
-    // Workflow completed
+    // Workflow completed - auto-resolve ticket
+    await prisma.ticket.update({
+      where: { id: ticketId },
+      data: {
+        currentStepId: null,
+        status: TicketStatus.resolved,
+        resolvedAt: new Date(),
+      },
+    });
     return { newStepId: null, workflowCompleted: true };
   }
 

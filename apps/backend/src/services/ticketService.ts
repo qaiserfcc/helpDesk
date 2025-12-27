@@ -414,6 +414,18 @@ export async function updateTicket(
   }
 
   const nextStatus = updates.status ?? ticket.status;
+  
+  // Block manual resolution if workflow is attached and not complete
+  if (
+    nextStatus === TicketStatus.resolved &&
+    ticket.workflowId &&
+    ticket.currentStepId
+  ) {
+    throw createError(
+      403,
+      "Cannot manually resolve ticket with active workflow. Complete all workflow steps first.",
+    );
+  }
   const statusChanged = nextStatus !== ticket.status;
   const descriptionChanged =
     updates.description !== undefined &&
@@ -664,6 +676,14 @@ export async function resolveTicket(ticketId: string, user: RequestUser) {
   );
   if (!workflowValidation.allowed) {
     throw createError(403, workflowValidation.reason || "Workflow constraint violation");
+  }
+
+  // Block manual resolution if workflow is attached and not complete
+  if (ticket.workflowId && ticket.currentStepId) {
+    throw createError(
+      403,
+      "Cannot manually resolve ticket with active workflow. Complete all workflow steps first.",
+    );
   }
 
   const alreadyResolved = ticket.status === TicketStatus.resolved;
