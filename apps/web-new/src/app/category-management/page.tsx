@@ -495,26 +495,14 @@ export default function CategoryManagementPage() {
           </div>
 
           {subFormVisible && (
-            <Modal
+            <CrudModal
               title={subFormMode === "create" ? "Create Subcategory" : "Edit Subcategory"}
               onClose={handleSubCancelClick}
-              maxWidthClass="max-w-2xl"
-              actions={
-                <button
-                  form="subcategory-form"
-                  type="submit"
-                  disabled={createSubMutation.isPending || updateSubMutation.isPending}
-                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 text-white font-medium rounded-lg transition-colors"
-                >
-                  {subFormMode === "create" ? "Create" : "Update"}
-                </button>
-              }
+              onSubmit={handleSubSubmit}
+              formId="subcategory-form"
+              submitLabel={subFormMode === "create" ? "Create" : "Update"}
+              isSubmitting={createSubMutation.isPending || updateSubMutation.isPending}
             >
-              <form
-                id="subcategory-form"
-                onSubmit={handleSubSubmit}
-                className="grid grid-cols-1 md:grid-cols-2 gap-4"
-              >
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Category *</label>
                   <select
@@ -569,8 +557,7 @@ export default function CategoryManagementPage() {
                   />
                   <label htmlFor="sub-active" className="ml-2 text-sm font-medium text-gray-700">Active</label>
                 </div>
-              </form>
-            </Modal>
+            </CrudModal>
           )}
 
           <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-lg overflow-hidden">

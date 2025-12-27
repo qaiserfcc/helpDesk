@@ -118,10 +118,7 @@ export function AppNavigator() {
               name="SLAManagement"
               component={SLAManagementScreen}
             />
-            <Stack.Screen
-              name="AgentSkills"
-              component={AgentSkillsScreen}
-            />
+            <Stack.Screen name="AgentSkills" component={AgentSkillsScreen} />
             <Stack.Screen
               name="AgentAssignment"
               component={AgentAssignmentScreen}

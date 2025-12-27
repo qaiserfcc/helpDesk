@@ -54,7 +54,13 @@ export function CannedResponsesScreen() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<CannedResponse> }) => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<CannedResponse>;
+    }) => {
       const response = await apiClient.put(`/canned-responses/${id}`, data);
       return response.data;
     },
@@ -129,7 +135,10 @@ export function CannedResponsesScreen() {
   return (
     <SafeAreaView style={commonStyles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
+        <Pressable
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+        >
           <Text style={styles.backText}>← Back</Text>
         </Pressable>
         <Text style={styles.title}>Canned Responses</Text>
@@ -137,7 +146,9 @@ export function CannedResponsesScreen() {
           style={styles.addButton}
           onPress={() => setShowForm(!showForm)}
         >
-          <Text style={styles.addButtonText}>{showForm ? "Cancel" : "+ Add"}</Text>
+          <Text style={styles.addButtonText}>
+            {showForm ? "Cancel" : "+ Add"}
+          </Text>
         </Pressable>
       </View>
 
@@ -155,7 +166,9 @@ export function CannedResponsesScreen() {
             placeholder="Category (optional)"
             placeholderTextColor={colors.textMuted}
             value={formData.category}
-            onChangeText={(text) => setFormData({ ...formData, category: text })}
+            onChangeText={(text) =>
+              setFormData({ ...formData, category: text })
+            }
           />
           <TextInput
             style={[styles.input, styles.textArea]}

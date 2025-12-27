@@ -45,7 +45,9 @@ export function KnowledgeBaseScreen() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: Omit<KnowledgeArticle, "id" | "createdAt" | "updatedAt">) => {
+    mutationFn: async (
+      data: Omit<KnowledgeArticle, "id" | "createdAt" | "updatedAt">,
+    ) => {
       const response = await apiClient.post("/knowledge-articles", data);
       return response.data;
     },
@@ -56,7 +58,13 @@ export function KnowledgeBaseScreen() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<KnowledgeArticle> }) => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<KnowledgeArticle>;
+    }) => {
       const response = await apiClient.put(`/knowledge-articles/${id}`, data);
       return response.data;
     },
@@ -131,7 +139,10 @@ export function KnowledgeBaseScreen() {
   return (
     <SafeAreaView style={commonStyles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
+        <Pressable
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+        >
           <Text style={styles.backText}>← Back</Text>
         </Pressable>
         <Text style={styles.title}>Knowledge Base</Text>
@@ -139,7 +150,9 @@ export function KnowledgeBaseScreen() {
           style={styles.addButton}
           onPress={() => setShowForm(!showForm)}
         >
-          <Text style={styles.addButtonText}>{showForm ? "Cancel" : "+ Add"}</Text>
+          <Text style={styles.addButtonText}>
+            {showForm ? "Cancel" : "+ Add"}
+          </Text>
         </Pressable>
       </View>
 
@@ -157,7 +170,9 @@ export function KnowledgeBaseScreen() {
             placeholder="Category (optional)"
             placeholderTextColor={colors.textMuted}
             value={formData.category}
-            onChangeText={(text) => setFormData({ ...formData, category: text })}
+            onChangeText={(text) =>
+              setFormData({ ...formData, category: text })
+            }
           />
           <TextInput
             style={[styles.input, styles.textArea]}

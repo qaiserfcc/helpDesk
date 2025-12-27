@@ -28,7 +28,11 @@ import {
   updateTicket,
 } from "@/services/tickets";
 import { fetchCategories, type Category } from "@/services/categories";
-import { fetchAttributes, setTicketAttributeValue, type TicketAttribute } from "@/services/attributes";
+import {
+  fetchAttributes,
+  setTicketAttributeValue,
+  type TicketAttribute,
+} from "@/services/attributes";
 import { queueTicket } from "@/storage/offline-db";
 import { colors } from "@/theme/colors";
 import { commonStyles } from "@/theme/commonStyles";
@@ -81,7 +85,9 @@ export function TicketFormScreen({ route, navigation }: Props) {
   const [attachments, setAttachments] = useState<AttachmentDraft[]>([]);
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [subcategoryId, setSubcategoryId] = useState<string | null>(null);
-  const [attributeValues, setAttributeValues] = useState<Record<string, string>>({});
+  const [attributeValues, setAttributeValues] = useState<
+    Record<string, string>
+  >({});
   const isResolvedTicket = Boolean(ticket && ticket.status === "resolved");
   const lockedFromEditing = Boolean(isEdit && isResolvedTicket);
 
@@ -98,17 +104,17 @@ export function TicketFormScreen({ route, navigation }: Props) {
 
   const selectedCategory = useMemo(
     () => categories.find((cat) => cat.id === categoryId),
-    [categories, categoryId]
+    [categories, categoryId],
   );
 
   const subcategories = useMemo(
     () => selectedCategory?.subcategories ?? [],
-    [selectedCategory]
+    [selectedCategory],
   );
 
   const visibleAttributes = useMemo(
     () => attributes.filter((attr) => attr.visible && attr.active),
-    [attributes]
+    [attributes],
   );
 
   useEffect(() => {
@@ -238,7 +244,7 @@ export function TicketFormScreen({ route, navigation }: Props) {
             .map((attr) =>
               setTicketAttributeValue(savedTicket!.id, attr.id, {
                 value: attributeValues[attr.id].trim(),
-              })
+              }),
             );
           await Promise.all(attributeSavePromises);
         }
@@ -363,12 +369,24 @@ export function TicketFormScreen({ route, navigation }: Props) {
         {categories.length > 0 && (
           <>
             <Text style={styles.label}>Category</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.optionRow}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.optionRow}
+            >
               <Pressable
-                style={[styles.optionChip, categoryId === null && styles.optionChipActive]}
+                style={[
+                  styles.optionChip,
+                  categoryId === null && styles.optionChipActive,
+                ]}
                 onPress={() => setCategoryId(null)}
               >
-                <Text style={[styles.optionText, categoryId === null && styles.optionTextActive]}>
+                <Text
+                  style={[
+                    styles.optionText,
+                    categoryId === null && styles.optionTextActive,
+                  ]}
+                >
                   None
                 </Text>
               </Pressable>
@@ -377,10 +395,18 @@ export function TicketFormScreen({ route, navigation }: Props) {
                 return (
                   <Pressable
                     key={cat.id}
-                    style={[styles.optionChip, selected && styles.optionChipActive]}
+                    style={[
+                      styles.optionChip,
+                      selected && styles.optionChipActive,
+                    ]}
                     onPress={() => setCategoryId(cat.id)}
                   >
-                    <Text style={[styles.optionText, selected && styles.optionTextActive]}>
+                    <Text
+                      style={[
+                        styles.optionText,
+                        selected && styles.optionTextActive,
+                      ]}
+                    >
                       {cat.name}
                     </Text>
                   </Pressable>
@@ -394,12 +420,24 @@ export function TicketFormScreen({ route, navigation }: Props) {
         {subcategories.length > 0 && (
           <>
             <Text style={styles.label}>Subcategory</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.optionRow}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.optionRow}
+            >
               <Pressable
-                style={[styles.optionChip, subcategoryId === null && styles.optionChipActive]}
+                style={[
+                  styles.optionChip,
+                  subcategoryId === null && styles.optionChipActive,
+                ]}
                 onPress={() => setSubcategoryId(null)}
               >
-                <Text style={[styles.optionText, subcategoryId === null && styles.optionTextActive]}>
+                <Text
+                  style={[
+                    styles.optionText,
+                    subcategoryId === null && styles.optionTextActive,
+                  ]}
+                >
                   None
                 </Text>
               </Pressable>
@@ -408,10 +446,18 @@ export function TicketFormScreen({ route, navigation }: Props) {
                 return (
                   <Pressable
                     key={sub.id}
-                    style={[styles.optionChip, selected && styles.optionChipActive]}
+                    style={[
+                      styles.optionChip,
+                      selected && styles.optionChipActive,
+                    ]}
                     onPress={() => setSubcategoryId(sub.id)}
                   >
-                    <Text style={[styles.optionText, selected && styles.optionTextActive]}>
+                    <Text
+                      style={[
+                        styles.optionText,
+                        selected && styles.optionTextActive,
+                      ]}
+                    >
                       {sub.name}
                     </Text>
                   </Pressable>
@@ -435,7 +481,10 @@ export function TicketFormScreen({ route, navigation }: Props) {
                   <TextInput
                     value={attributeValues[attr.id] || ""}
                     onChangeText={(text) =>
-                      setAttributeValues((prev) => ({ ...prev, [attr.id]: text }))
+                      setAttributeValues((prev) => ({
+                        ...prev,
+                        [attr.id]: text,
+                      }))
                     }
                     placeholder={`Enter ${attr.label.toLowerCase()}`}
                     placeholderTextColor={colors.muted}
@@ -446,7 +495,10 @@ export function TicketFormScreen({ route, navigation }: Props) {
                   <TextInput
                     value={attributeValues[attr.id] || ""}
                     onChangeText={(text) =>
-                      setAttributeValues((prev) => ({ ...prev, [attr.id]: text }))
+                      setAttributeValues((prev) => ({
+                        ...prev,
+                        [attr.id]: text,
+                      }))
                     }
                     placeholder={`Enter ${attr.label.toLowerCase()}`}
                     placeholderTextColor={colors.muted}
@@ -458,7 +510,10 @@ export function TicketFormScreen({ route, navigation }: Props) {
                   <TextInput
                     value={attributeValues[attr.id] || ""}
                     onChangeText={(text) =>
-                      setAttributeValues((prev) => ({ ...prev, [attr.id]: text }))
+                      setAttributeValues((prev) => ({
+                        ...prev,
+                        [attr.id]: text,
+                      }))
                     }
                     placeholder="YYYY-MM-DD"
                     placeholderTextColor={colors.muted}
@@ -472,12 +527,23 @@ export function TicketFormScreen({ route, navigation }: Props) {
                       return (
                         <Pressable
                           key={option}
-                          style={[styles.optionChip, selected && styles.optionChipActive]}
+                          style={[
+                            styles.optionChip,
+                            selected && styles.optionChipActive,
+                          ]}
                           onPress={() =>
-                            setAttributeValues((prev) => ({ ...prev, [attr.id]: option }))
+                            setAttributeValues((prev) => ({
+                              ...prev,
+                              [attr.id]: option,
+                            }))
                           }
                         >
-                          <Text style={[styles.optionText, selected && styles.optionTextActive]}>
+                          <Text
+                            style={[
+                              styles.optionText,
+                              selected && styles.optionTextActive,
+                            ]}
+                          >
                             {option}
                           </Text>
                         </Pressable>
@@ -486,18 +552,33 @@ export function TicketFormScreen({ route, navigation }: Props) {
                   </View>
                 )}
                 {attr.type === "select" && attr.options && (
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.optionRow}>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={styles.optionRow}
+                  >
                     {attr.options.map((option) => {
                       const selected = attributeValues[attr.id] === option;
                       return (
                         <Pressable
                           key={option}
-                          style={[styles.optionChip, selected && styles.optionChipActive]}
+                          style={[
+                            styles.optionChip,
+                            selected && styles.optionChipActive,
+                          ]}
                           onPress={() =>
-                            setAttributeValues((prev) => ({ ...prev, [attr.id]: option }))
+                            setAttributeValues((prev) => ({
+                              ...prev,
+                              [attr.id]: option,
+                            }))
                           }
                         >
-                          <Text style={[styles.optionText, selected && styles.optionTextActive]}>
+                          <Text
+                            style={[
+                              styles.optionText,
+                              selected && styles.optionTextActive,
+                            ]}
+                          >
                             {option}
                           </Text>
                         </Pressable>
@@ -509,7 +590,10 @@ export function TicketFormScreen({ route, navigation }: Props) {
                   <TextInput
                     value={attributeValues[attr.id] || ""}
                     onChangeText={(text) =>
-                      setAttributeValues((prev) => ({ ...prev, [attr.id]: text }))
+                      setAttributeValues((prev) => ({
+                        ...prev,
+                        [attr.id]: text,
+                      }))
                     }
                     placeholder="Enter values separated by commas"
                     placeholderTextColor={colors.muted}

@@ -66,7 +66,11 @@ export function UserReportScreen() {
       <ScrollView
         style={styles.container}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={() => refetch()} tintColor={colors.accentMuted} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => refetch()}
+            tintColor={colors.accentMuted}
+          />
         }
       >
         <View style={styles.header}>

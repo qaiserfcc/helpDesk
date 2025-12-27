@@ -128,10 +128,7 @@ export function SLAManagementScreen() {
         <Text style={styles.slaDescription}>{item.description}</Text>
       )}
       <View style={styles.actionButtons}>
-        <Pressable
-          style={styles.editButton}
-          onPress={() => handleEdit(item)}
-        >
+        <Pressable style={styles.editButton} onPress={() => handleEdit(item)}>
           <Text style={styles.buttonText}>Edit</Text>
         </Pressable>
         <Pressable
@@ -147,7 +144,10 @@ export function SLAManagementScreen() {
   return (
     <SafeAreaView style={commonStyles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
+        <Pressable
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+        >
           <Text style={styles.backText}>← Back</Text>
         </Pressable>
         <Text style={styles.title}>SLA Management</Text>
@@ -155,7 +155,9 @@ export function SLAManagementScreen() {
           style={styles.addButton}
           onPress={() => setShowForm(!showForm)}
         >
-          <Text style={styles.addButtonText}>{showForm ? "Cancel" : "+ Add"}</Text>
+          <Text style={styles.addButtonText}>
+            {showForm ? "Cancel" : "+ Add"}
+          </Text>
         </Pressable>
       </View>
 
@@ -173,7 +175,9 @@ export function SLAManagementScreen() {
             placeholder="Priority"
             placeholderTextColor={colors.textMuted}
             value={formData.priority}
-            onChangeText={(text) => setFormData({ ...formData, priority: text })}
+            onChangeText={(text) =>
+              setFormData({ ...formData, priority: text })
+            }
           />
           <TextInput
             style={styles.input}

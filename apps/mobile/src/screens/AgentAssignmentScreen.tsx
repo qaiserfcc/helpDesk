@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -6,11 +6,10 @@ import {
   SafeAreaView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { colors } from "@/theme/colors";
 import { commonStyles } from "@/theme/commonStyles";
 import { apiClient } from "@/services/apiClient";
@@ -27,8 +26,6 @@ interface AgentAssignment {
 
 export function AgentAssignmentScreen() {
   const navigation = useNavigation();
-  const queryClient = useQueryClient();
-  const [showForm, setShowForm] = useState(false);
 
   const { data: assignments = [], isLoading } = useQuery({
     queryKey: ["agent-assignments"],
@@ -58,7 +55,10 @@ export function AgentAssignmentScreen() {
   return (
     <SafeAreaView style={commonStyles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
+        <Pressable
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+        >
           <Text style={styles.backText}>← Back</Text>
         </Pressable>
         <Text style={styles.title}>Agent Assignments</Text>

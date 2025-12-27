@@ -32,7 +32,11 @@ import {
   type UpdateSubcategoryPayload,
 } from "@/services/categories";
 
-type FormMode = "create-category" | "edit-category" | "create-subcategory" | "edit-subcategory";
+type FormMode =
+  | "create-category"
+  | "edit-category"
+  | "create-subcategory"
+  | "edit-subcategory";
 
 export function CategoryManagementScreen() {
   const navigation =
@@ -40,8 +44,12 @@ export function CategoryManagementScreen() {
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
-  const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(
+    null,
+  );
+  const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>(
+    null,
+  );
 
   // Form modal state
   const [modalVisible, setModalVisible] = useState(false);
@@ -96,7 +104,10 @@ export function CategoryManagementScreen() {
     setModalVisible(true);
   };
 
-  const openEditSubcategoryModal = (category: Category, subcategory: Subcategory) => {
+  const openEditSubcategoryModal = (
+    category: Category,
+    subcategory: Subcategory,
+  ) => {
     setFormMode("edit-subcategory");
     setSelectedCategory(category);
     setFormName(subcategory.name);
@@ -173,7 +184,7 @@ export function CategoryManagementScreen() {
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -197,12 +208,14 @@ export function CategoryManagementScreen() {
             }
           },
         },
-      ]
+      ],
     );
   };
 
   const toggleCategoryExpansion = (categoryId: string) => {
-    setExpandedCategoryId(expandedCategoryId === categoryId ? null : categoryId);
+    setExpandedCategoryId(
+      expandedCategoryId === categoryId ? null : categoryId,
+    );
   };
 
   const getFormTitle = () => {
@@ -232,7 +245,10 @@ export function CategoryManagementScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerRow}>
-          <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
+          <Pressable
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
             <Text style={styles.backGlyph}>←</Text>
           </Pressable>
           <View>
@@ -240,7 +256,10 @@ export function CategoryManagementScreen() {
             <Text style={styles.title}>Category Management</Text>
           </View>
         </View>
-        <Pressable style={styles.createButton} onPress={openCreateCategoryModal}>
+        <Pressable
+          style={styles.createButton}
+          onPress={openCreateCategoryModal}
+        >
           <Text style={styles.createButtonText}>+ Category</Text>
         </Pressable>
       </View>
@@ -259,24 +278,29 @@ export function CategoryManagementScreen() {
                 <View style={styles.categoryInfo}>
                   <Text style={styles.categoryName}>{category.name}</Text>
                   {category.description && (
-                    <Text style={styles.categoryDescription}>{category.description}</Text>
+                    <Text style={styles.categoryDescription}>
+                      {category.description}
+                    </Text>
                   )}
                   <View style={styles.badgeRow}>
                     <View
                       style={[
                         styles.badge,
-                        category.active ? styles.badgeActive : styles.badgeInactive,
+                        category.active
+                          ? styles.badgeActive
+                          : styles.badgeInactive,
                       ]}
                     >
                       <Text style={styles.badgeText}>
                         {category.active ? "Active" : "Inactive"}
                       </Text>
                     </View>
-                    {category.subcategories && category.subcategories.length > 0 && (
-                      <Text style={styles.subcategoryCount}>
-                        {category.subcategories.length} subcategories
-                      </Text>
-                    )}
+                    {category.subcategories &&
+                      category.subcategories.length > 0 && (
+                        <Text style={styles.subcategoryCount}>
+                          {category.subcategories.length} subcategories
+                        </Text>
+                      )}
                   </View>
                 </View>
                 <Text style={styles.expandIcon}>{isExpanded ? "▼" : "▶"}</Text>
@@ -303,47 +327,66 @@ export function CategoryManagementScreen() {
                 </Pressable>
               </View>
 
-              {isExpanded && category.subcategories && category.subcategories.length > 0 && (
-                <View style={styles.subcategoriesContainer}>
-                  {category.subcategories.map((subcategory) => (
-                    <View key={subcategory.id} style={styles.subcategoryCard}>
-                      <View style={styles.subcategoryInfo}>
-                        <Text style={styles.subcategoryName}>{subcategory.name}</Text>
-                        {subcategory.description && (
-                          <Text style={styles.subcategoryDescription}>
-                            {subcategory.description}
+              {isExpanded &&
+                category.subcategories &&
+                category.subcategories.length > 0 && (
+                  <View style={styles.subcategoriesContainer}>
+                    {category.subcategories.map((subcategory) => (
+                      <View key={subcategory.id} style={styles.subcategoryCard}>
+                        <View style={styles.subcategoryInfo}>
+                          <Text style={styles.subcategoryName}>
+                            {subcategory.name}
                           </Text>
-                        )}
-                        <View
-                          style={[
-                            styles.badge,
-                            styles.badgeSmall,
-                            subcategory.active ? styles.badgeActive : styles.badgeInactive,
-                          ]}
-                        >
-                          <Text style={[styles.badgeText, styles.badgeTextSmall]}>
-                            {subcategory.active ? "Active" : "Inactive"}
-                          </Text>
+                          {subcategory.description && (
+                            <Text style={styles.subcategoryDescription}>
+                              {subcategory.description}
+                            </Text>
+                          )}
+                          <View
+                            style={[
+                              styles.badge,
+                              styles.badgeSmall,
+                              subcategory.active
+                                ? styles.badgeActive
+                                : styles.badgeInactive,
+                            ]}
+                          >
+                            <Text
+                              style={[styles.badgeText, styles.badgeTextSmall]}
+                            >
+                              {subcategory.active ? "Active" : "Inactive"}
+                            </Text>
+                          </View>
+                        </View>
+                        <View style={styles.subcategoryActions}>
+                          <Pressable
+                            style={styles.smallActionButton}
+                            onPress={() =>
+                              openEditSubcategoryModal(category, subcategory)
+                            }
+                          >
+                            <Text style={styles.smallActionButtonText}>
+                              Edit
+                            </Text>
+                          </Pressable>
+                          <Pressable
+                            style={[
+                              styles.smallActionButton,
+                              styles.smallDeleteButton,
+                            ]}
+                            onPress={() =>
+                              handleDeleteSubcategory(subcategory.id)
+                            }
+                          >
+                            <Text style={styles.smallDeleteButtonText}>
+                              Delete
+                            </Text>
+                          </Pressable>
                         </View>
                       </View>
-                      <View style={styles.subcategoryActions}>
-                        <Pressable
-                          style={styles.smallActionButton}
-                          onPress={() => openEditSubcategoryModal(category, subcategory)}
-                        >
-                          <Text style={styles.smallActionButtonText}>Edit</Text>
-                        </Pressable>
-                        <Pressable
-                          style={[styles.smallActionButton, styles.smallDeleteButton]}
-                          onPress={() => handleDeleteSubcategory(subcategory.id)}
-                        >
-                          <Text style={styles.smallDeleteButtonText}>Delete</Text>
-                        </Pressable>
-                      </View>
-                    </View>
-                  ))}
-                </View>
-              )}
+                    ))}
+                  </View>
+                )}
             </View>
           );
         }}

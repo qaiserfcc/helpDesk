@@ -25,7 +25,9 @@ function applyAuthHeader(
 let tokenProvider: (() => string | undefined) | undefined;
 let applySessionHandler: ((session: any) => Promise<void>) | undefined;
 let signOutHandler: (() => Promise<void>) | undefined;
-let getSessionHandler: (() => { accessToken?: string; refreshToken?: string } | null) | undefined;
+let getSessionHandler:
+  | (() => { accessToken?: string; refreshToken?: string } | null)
+  | undefined;
 
 export function registerAuthTokenProvider(fn: () => string | undefined) {
   tokenProvider = fn;
@@ -55,7 +57,14 @@ apiClient.interceptors.response.use(
     try {
       const status = error.response?.status;
       if (status && status >= 500) {
-        console.error("apiClient: Server error for request:", error.config?.url, "status:", status, "response:", error.response?.data);
+        console.error(
+          "apiClient: Server error for request:",
+          error.config?.url,
+          "status:",
+          status,
+          "response:",
+          error.response?.data,
+        );
       }
     } catch (logErr) {
       console.error("apiClient: failed to log error details", logErr);

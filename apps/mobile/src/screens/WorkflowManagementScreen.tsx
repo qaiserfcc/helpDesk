@@ -5,7 +5,7 @@ import { commonStyles } from "@/theme/commonStyles";
 
 export function WorkflowManagementScreen() {
   return (
-    <SafeAreaView style={[commonStyles.safeArea, styles.safeArea]}> 
+    <SafeAreaView style={[commonStyles.safeArea, styles.safeArea]}>
       <ScrollView contentContainerStyle={styles.container}>
         <Text style={styles.title}>Workflow management</Text>
         <Text style={styles.subtitle}>

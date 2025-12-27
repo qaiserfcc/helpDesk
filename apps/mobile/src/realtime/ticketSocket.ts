@@ -14,7 +14,10 @@ type ServerToClientEvents = {
     ticketId: string;
     activity: TicketActivityEntry;
   }) => void;
-  "tickets:ai:suggestion": (payload: { ticketId: string; suggestion: any }) => void;
+  "tickets:ai:suggestion": (payload: {
+    ticketId: string;
+    suggestion: any;
+  }) => void;
 };
 
 let socket: Socket<ServerToClientEvents> | null = null;
@@ -144,7 +147,9 @@ function attachListeners(instance: Socket<ServerToClientEvents>) {
 
   instance.on("tickets:ai:suggestion", ({ ticketId }) => {
     invalidateTicketLists(ticketId);
-    void queryClient.invalidateQueries({ queryKey: ["ai-suggestions", ticketId] });
+    void queryClient.invalidateQueries({
+      queryKey: ["ai-suggestions", ticketId],
+    });
   });
 
   instance.on("connect_error", (error) => {
@@ -165,9 +170,10 @@ function attachListeners(instance: Socket<ServerToClientEvents>) {
       const notificationStore = useNotificationStore.getState();
       notificationStore.addNotification({
         id: `realtime-offline-${Date.now()}`,
-        ticketId: 'system',
+        ticketId: "system",
         actor: "System",
-        summary: "Realtime unavailable — updates will arrive via periodic polling",
+        summary:
+          "Realtime unavailable — updates will arrive via periodic polling",
         createdAt: new Date().toISOString(),
         type: "activity",
       });
@@ -181,11 +187,14 @@ function attachListeners(instance: Socket<ServerToClientEvents>) {
       startPollingFallback();
     }
   });
-  instance.on('connect', () => {
+  instance.on("connect", () => {
     // We have an active socket — stop the polling fallback if it was running.
     stopPollingFallback();
     realtimeOfflineNotified = false;
-    console.info('Realtime socket connected via', instance.io.engine.transport.name);
+    console.info(
+      "Realtime socket connected via",
+      instance.io.engine.transport.name,
+    );
   });
 }
 
@@ -238,7 +247,10 @@ function startPollingFallback() {
   stopPollingFallback();
   pollingFallbackId = setInterval(async () => {
     try {
-      await queryClient.invalidateQueries({ queryKey: ['tickets'], exact: false });
+      await queryClient.invalidateQueries({
+        queryKey: ["tickets"],
+        exact: false,
+      });
     } catch (err) {
       // intentionally ignore
     }

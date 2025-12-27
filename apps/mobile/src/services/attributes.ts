@@ -1,6 +1,12 @@
 import { apiClient } from "./apiClient";
 
-export type AttributeType = "text" | "number" | "select" | "multiselect" | "date" | "boolean";
+export type AttributeType =
+  | "text"
+  | "number"
+  | "select"
+  | "multiselect"
+  | "date"
+  | "boolean";
 
 export interface TicketAttribute {
   id: string;
@@ -67,7 +73,7 @@ export async function fetchAttribute(id: string): Promise<TicketAttribute> {
 }
 
 export async function createAttribute(
-  payload: CreateAttributePayload
+  payload: CreateAttributePayload,
 ): Promise<TicketAttribute> {
   const response = await apiClient.post("/attributes", payload);
   return response.data;
@@ -75,7 +81,7 @@ export async function createAttribute(
 
 export async function updateAttribute(
   id: string,
-  payload: UpdateAttributePayload
+  payload: UpdateAttributePayload,
 ): Promise<TicketAttribute> {
   const response = await apiClient.put(`/attributes/${id}`, payload);
   return response.data;
@@ -87,7 +93,7 @@ export async function deleteAttribute(id: string): Promise<void> {
 
 // Attribute Values
 export async function fetchTicketAttributeValues(
-  ticketId: string
+  ticketId: string,
 ): Promise<TicketAttributeValue[]> {
   const response = await apiClient.get(`/tickets/${ticketId}/attributes`);
   return response.data;
@@ -96,11 +102,11 @@ export async function fetchTicketAttributeValues(
 export async function setTicketAttributeValue(
   ticketId: string,
   attributeId: string,
-  payload: SetAttributeValuePayload
+  payload: SetAttributeValuePayload,
 ): Promise<TicketAttributeValue> {
   const response = await apiClient.post(
     `/tickets/${ticketId}/attributes/${attributeId}`,
-    payload
+    payload,
   );
   return response.data;
 }

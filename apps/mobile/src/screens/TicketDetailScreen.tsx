@@ -388,27 +388,43 @@ export function TicketDetailScreen({ route, navigation }: Props) {
         <Text style={styles.sectionLabel}>AI Suggestions</Text>
         {aiSuggestions.length === 0 ? (
           <View style={{ marginTop: 8 }}>
-            <Text style={styles.sectionHint}>No suggestions are available for this ticket yet.</Text>
-            <Pressable style={[styles.primaryBtn, { marginTop: 12 }]} onPress={handleGenerateSuggestion}>
+            <Text style={styles.sectionHint}>
+              No suggestions are available for this ticket yet.
+            </Text>
+            <Pressable
+              style={[styles.primaryBtn, { marginTop: 12 }]}
+              onPress={handleGenerateSuggestion}
+            >
               <Text style={styles.primaryText}>Generate suggestion</Text>
             </Pressable>
           </View>
         ) : (
           <View style={{ marginTop: 8 }}>
             {aiSuggestions.map((s) => (
-              <View key={s.id} style={[styles.activityItem, { marginBottom: 10 }]}>
-                <Text style={styles.activityDescription}>{s.result?.text ?? JSON.stringify(s.result)}</Text>
+              <View
+                key={s.id}
+                style={[styles.activityItem, { marginBottom: 10 }]}
+              >
+                <Text style={styles.activityDescription}>
+                  {s.result?.text ?? JSON.stringify(s.result)}
+                </Text>
                 <Pressable
                   style={[styles.secondaryBtn, { marginTop: 8 }]}
                   onPress={() => {
-                    Alert.alert("AI Suggestion", s.result?.text ?? "(no content)");
+                    Alert.alert(
+                      "AI Suggestion",
+                      s.result?.text ?? "(no content)",
+                    );
                   }}
                 >
                   <Text style={styles.secondaryText}>Copy</Text>
                 </Pressable>
               </View>
             ))}
-            <Pressable style={[styles.primaryBtn, { marginTop: 4 }]} onPress={handleGenerateSuggestion}>
+            <Pressable
+              style={[styles.primaryBtn, { marginTop: 4 }]}
+              onPress={handleGenerateSuggestion}
+            >
               <Text style={styles.primaryText}>Regenerate</Text>
             </Pressable>
           </View>
