@@ -271,7 +271,7 @@ export default function AttributesPage() {
                     }
                     rows={4}
                     className="w-full px-3 py-2 border border-transparent rounded-lg focus:ring-2 focus:ring-white text-white card"
-                    placeholder="low&#10;medium&#10;high"
+                    placeholder="low\nmedium\nhigh"
                     required
                   />
                 </div>

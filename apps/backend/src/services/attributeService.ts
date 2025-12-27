@@ -219,7 +219,7 @@ export async function validateTicketAttributes(
   for (const attr of attributes) {
     if (attr.isMandatory) {
       const value = attributeValues[attr.id];
-      if (!value || value.trim() === "") {
+      if (!value?.trim()) {
         errors.push(`${attr.label} is required`);
       }
     }

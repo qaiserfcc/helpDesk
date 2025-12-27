@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchTicket, updateTicket, type UpdateTicketPayload, type IssueType, type TicketPriority } from "@/services/tickets";
 import { listAttributes, type TicketAttribute } from "@/services/attributes";
+import { serializeMultiselectValue, deserializeMultiselectValue } from "@/utils/attributeValues";
 
 const priorityOptions: TicketPriority[] = ["low", "medium", "high"];
 const issueOptions: IssueType[] = [
@@ -260,10 +261,10 @@ export default function EditTicketPage({ params }: EditTicketPageProps) {
                 {attr.type === "multiselect" && (
                   <select
                     multiple
-                    value={(attributeValues[attr.id] || "").split(",").filter(v => v)}
+                    value={deserializeMultiselectValue(attributeValues[attr.id] || "")}
                     onChange={(e) => {
                       const selected = Array.from(e.target.selectedOptions, opt => opt.value);
-                      setAttributeValues({ ...attributeValues, [attr.id]: selected.join(",") });
+                      setAttributeValues({ ...attributeValues, [attr.id]: serializeMultiselectValue(selected) });
                     }}
                     className="w-full px-3 py-2 border border-transparent rounded-lg focus:ring-2 focus:ring-white card text-white"
                     required={attr.isMandatory}

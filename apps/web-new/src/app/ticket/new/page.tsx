@@ -7,6 +7,7 @@ import { createTicket, type CreateTicketPayload, type IssueType, type TicketPrio
 import { listAttributes, type TicketAttribute } from "@/services/attributes";
 import { useNotificationStore } from "@/store/useNotificationStore";
 import { useAuthStore } from "@/store/useAuthStore";
+import { serializeMultiselectValue, deserializeMultiselectValue } from "@/utils/attributeValues";
 
 const priorityOptions: TicketPriority[] = ["low", "medium", "high"];
 const issueOptions: IssueType[] = [
@@ -222,10 +223,10 @@ export default function NewTicketPage() {
                 {attr.type === "multiselect" && (
                   <select
                     multiple
-                    value={(attributeValues[attr.id] || "").split(",").filter(v => v)}
+                    value={deserializeMultiselectValue(attributeValues[attr.id] || "")}
                     onChange={(e) => {
                       const selected = Array.from(e.target.selectedOptions, opt => opt.value);
-                      setAttributeValues({ ...attributeValues, [attr.id]: selected.join(",") });
+                      setAttributeValues({ ...attributeValues, [attr.id]: serializeMultiselectValue(selected) });
                     }}
                     className="w-full px-3 py-2 border border-transparent rounded-lg focus:ring-2 focus:ring-white text-white card"
                     required={attr.isMandatory}

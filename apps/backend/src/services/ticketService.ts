@@ -308,8 +308,7 @@ export async function updateTicket(
   const nextStatus = updates.status ?? ticket.status;
   const statusChanged = nextStatus !== ticket.status;
   const descriptionChanged =
-    updates.description !== undefined &&
-    updates.description !== ticket.description;
+    updates.description !== undefined && updates.description !== ticket.description;
   const priorityChanged =
     updates.priority !== undefined && updates.priority !== ticket.priority;
   const issueTypeChanged =
