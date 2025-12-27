@@ -15,6 +15,7 @@ export function TicketReplySection({ ticketId, ticketCreatorId }: TicketReplySec
   const [replyContent, setReplyContent] = useState("");
   const [isInternal, setIsInternal] = useState(false);
   const [showCannedResponses, setShowCannedResponses] = useState(false);
+  const [selectedCannedResponseId, setSelectedCannedResponseId] = useState<string | undefined>();
   const authUser = useAuthStore((state) => state.session?.user);
   const queryClient = useQueryClient();
 
@@ -39,6 +40,7 @@ export function TicketReplySection({ ticketId, ticketCreatorId }: TicketReplySec
       setReplyContent("");
       setIsInternal(false);
       setShowCannedResponses(false);
+      setSelectedCannedResponseId(undefined);
     },
   });
 
@@ -49,17 +51,14 @@ export function TicketReplySection({ ticketId, ticketCreatorId }: TicketReplySec
     addReplyMutation.mutate({
       content: replyContent.trim(),
       isInternal,
+      cannedResponseId: selectedCannedResponseId,
     });
   };
 
   const handleCannedResponseSelect = (response: any) => {
     setReplyContent(response.content);
+    setSelectedCannedResponseId(response.id);
     setShowCannedResponses(false);
-    addReplyMutation.mutate({
-      content: response.content,
-      isInternal,
-      cannedResponseId: response.id,
-    });
   };
 
   if (!canAddReply) return null;

@@ -106,9 +106,9 @@ export function WorkflowProgressIndicator({
         })}
       </View>
 
-      {currentStepIndex === totalSteps - 1 && (
+      {currentStepIndex >= 0 && currentStepIndex === totalSteps - 1 && (
         <View style={styles.completeMessage}>
-          <Text style={styles.completeMessageText}>✅ Workflow Complete</Text>
+          <Text style={styles.completeMessageText}>✅ On Final Workflow Step</Text>
         </View>
       )}
     </View>

@@ -126,10 +126,10 @@ export function WorkflowProgressIndicator({
         })}
       </div>
 
-      {/* Workflow Complete */}
-      {currentStepIndex === totalSteps - 1 && (
+      {/* Workflow Complete or On Final Step */}
+      {currentStepIndex >= 0 && currentStepIndex === totalSteps - 1 && (
         <div className="mt-4 p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 text-sm text-center">
-          ✅ Workflow Complete
+          ✅ On Final Workflow Step
         </div>
       )}
     </div>
