@@ -25,6 +25,9 @@ import {
   describeTicketActivity,
   formatTicketStatus,
 } from "@/utils/ticketActivity";
+import { TicketReplySection } from "@/components/TicketReplySection";
+import { WorkflowProgressIndicator } from "@/components/WorkflowProgressIndicator";
+import { SLATimer } from "@/components/SLATimer";
 
 const formatStatus = formatTicketStatus;
 
@@ -460,9 +463,23 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
                 </div>
               )}
             </div>
+
+            {/* Ticket Reply Section */}
+            {ticket && <TicketReplySection ticketId={ticketId} ticketCreatorId={ticket.creator?.id || ""} />}
+
+            {/* Workflow Progress Indicator */}
+            {ticket?.workflowId && (
+              <WorkflowProgressIndicator
+                workflowId={ticket.workflowId}
+                currentStepId={ticket.currentStep?.id || null}
+              />
+            )}
           </div>
 
           <div className="space-y-6">
+            {/* SLA Timer */}
+            <SLATimer ticketId={ticketId} />
+
             {/* Assignment Panel */}
             {canAssign && (
               <div className="card shadow rounded-lg p-6">

@@ -15,6 +15,8 @@ import {
   fetchTickets,
 } from "@/services/tickets";
 import { fetchTicketsBreachingSLA } from "@/services/slas";
+import { WorkflowOverviewCard } from "@/components/WorkflowOverviewCard";
+import { AgentPerformanceCard } from "@/components/AgentPerformanceCard";
 import HeroHeader from "@/components/HeroHeader";
 import StatusSnapshot from "@/components/StatusSnapshot";
 
@@ -293,6 +295,16 @@ export default function Dashboard() {
                   </div>
                 </div>
               </div>
+            </RoleRestrictedView>
+
+            {/* Workflow Overview Card */}
+            <RoleRestrictedView permission="tickets:assign">
+              <WorkflowOverviewCard />
+            </RoleRestrictedView>
+
+            {/* Agent Performance Card */}
+            <RoleRestrictedView permission="admin:manage_users">
+              <AgentPerformanceCard />
             </RoleRestrictedView>
           </div>
 
