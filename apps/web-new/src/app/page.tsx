@@ -21,6 +21,10 @@ import HeroHeader from "@/components/HeroHeader";
 import StatusSnapshot from "@/components/StatusSnapshot";
 import { AnalyticsCard, MiniChartCard } from "@/components/AnalyticsCard";
 
+// Constants
+const ISSUE_TYPES = ['hardware', 'software', 'network', 'access', 'other'] as const;
+const MAIN_ISSUE_TYPES = ['hardware', 'software', 'network'] as const;
+
 export default function Dashboard() {
   const { session } = useAuthStore();
 
@@ -150,7 +154,7 @@ export default function Dashboard() {
             <AnalyticsCard
               title="By Issue Type"
               value={allTickets ? allTickets.length : (userReport ? Object.values(userReport.statusCounts).reduce((s, n) => s + n, 0) : 0)}
-              subtitle={['hardware','software','network'].map((it) => `${it[0].toUpperCase()+it.slice(1)}: ${(allTickets ?? []).filter(t => t.issueType === it).length}`).join(' • ')}
+              subtitle={MAIN_ISSUE_TYPES.map((it) => `${it[0].toUpperCase()}${it.slice(1)}: ${(allTickets ?? []).filter(t => t.issueType === it).length}`).join(' • ')}
               icon={
                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
@@ -323,7 +327,7 @@ export default function Dashboard() {
               {allTickets && allTickets.length > 0 && (
                 <MiniChartCard
                   title="Tickets by Issue Type"
-                  data={['hardware','software','network','access','other'].map((it) => ({
+                  data={ISSUE_TYPES.map((it) => ({
                     label: it,
                     value: allTickets.filter(t => t.issueType === it).length,
                   }))}

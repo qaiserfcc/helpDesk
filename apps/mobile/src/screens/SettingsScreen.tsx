@@ -139,7 +139,6 @@ const styles = StyleSheet.create({
   },
   backGlyph: {
     fontSize: 20,
-    color: colors.text,
   },
   eyebrow: {
     color: colors.textMuted,
