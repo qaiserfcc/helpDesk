@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useNotificationStore } from "@/store/useNotificationStore";
 import axios from "axios";
@@ -18,7 +18,7 @@ import {
 } from "@/services/tickets";
 import { suggestReply, fetchSuggestions } from "@/services/ai";
 import { fetchUsers, type UserSummary } from "@/services/users";
-import { fetchWorkflow } from "@/services/workflows";
+import { fetchWorkflow, advanceWorkflowStep } from "@/services/workflows";
 import { fetchTicketAttributeValues } from "@/services/attributes";
 import { env } from "@/config/env";
 import {
@@ -29,6 +29,7 @@ import { TicketReplySection } from "@/components/TicketReplySection";
 import { WorkflowProgressIndicator } from "@/components/WorkflowProgressIndicator";
 import { SLATimer } from "@/components/SLATimer";
 import { WorkflowActionControls } from "@/components/WorkflowActionControls";
+import { AxiosError } from "axios";
 
 const formatStatus = formatTicketStatus;
 
@@ -57,6 +58,9 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
   const [isAssigning, setIsAssigning] = useState(false);
   const [isResolving, setIsResolving] = useState(false);
   const [isRequesting, setIsRequesting] = useState(false);
+  const [isCompletingStep, setIsCompletingStep] = useState(false);
+  const [showCompleteStepDialog, setShowCompleteStepDialog] = useState(false);
+  const [completionNotes, setCompletionNotes] = useState("");
 
   const { data: ticket, isLoading } = useQuery({
     queryKey: ["ticket", ticketId],
@@ -89,6 +93,18 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
       !isAssignedAgent,
   );
   const canReopen = Boolean(isAdmin && isTicketResolved);
+  
+  // Check if current user can complete the workflow step
+  // User can complete step if:
+  // 1. Ticket has a workflow and current step
+  // 2. User is the assignee of the ticket
+  // 3. Ticket is not resolved
+  const canCompleteStep = Boolean(
+    ticket?.workflowId &&
+    ticket?.currentStepId &&
+    authUser?.id === ticket?.assignee?.id &&
+    !isTicketResolved
+  );
 
   const { data: agents = [], isLoading: agentsLoading } = useQuery({
     queryKey: ["users", "agents"],
@@ -230,6 +246,36 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
     } catch (err) {
       console.error("ai suggestion failed", err);
       toastAdd({ type: "error", title: "AI suggestion failed", message: "Try again", timestamp: new Date().toISOString() });
+    }
+  };
+
+  const handleCompleteStep = async () => {
+    setIsCompletingStep(true);
+    try {
+      await advanceWorkflowStep(ticketId, completionNotes || undefined);
+      await invalidateTickets();
+      await queryClient.invalidateQueries({ queryKey: ["workflow-actions", ticketId] });
+      await queryClient.invalidateQueries({ queryKey: ["ticket-activity", ticketId] });
+      setShowCompleteStepDialog(false);
+      setCompletionNotes("");
+      toastAdd({ 
+        type: "success", 
+        title: "Step completed", 
+        message: "Workflow step has been completed successfully", 
+        timestamp: new Date().toISOString() 
+      });
+    } catch (error: unknown) {
+      console.error("complete step failed", error);
+      const axiosError = error as AxiosError<{ message?: string }>;
+      const message = axiosError.response?.data?.message || "Failed to complete workflow step";
+      toastAdd({ 
+        type: "error", 
+        title: "Failed to complete step", 
+        message, 
+        timestamp: new Date().toISOString() 
+      });
+    } finally {
+      setIsCompletingStep(false);
     }
   };
 
@@ -538,6 +584,57 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
                   </button>
                 )}
 
+                {canCompleteStep && (
+                  <button
+                    onClick={() => setShowCompleteStepDialog(true)}
+                    disabled={isCompletingStep}
+                    className="w-full bg-gradient-to-r from-purple-600 to-cyan-600 text-white py-2 px-4 rounded-lg hover:from-purple-700 hover:to-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {isCompletingStep ? (
+                      <>
+                        <svg
+                          className="animate-spin h-5 w-5"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          />
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          />
+                        </svg>
+                        Completing...
+                      </>
+                    ) : (
+                      <>
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                        Complete Step
+                      </>
+                    )}
+                  </button>
+                )}
+
                 {canRequestAssignment && (
                   <button
                     onClick={handleRequestAssignment}
@@ -609,6 +706,65 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
           </div>
         </div>
       </div>
+
+      {/* Complete Step Dialog */}
+      {showCompleteStepDialog && (
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="complete-step-dialog-title"
+        >
+          <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl p-6 max-w-md w-full mx-4 border border-white/10">
+            <h3 
+              id="complete-step-dialog-title"
+              className="text-xl font-semibold text-white mb-4"
+            >
+              Complete Workflow Step
+            </h3>
+            <p className="text-white/70 text-sm mb-4">
+              You are about to mark the current workflow step as complete and advance to the next step.
+            </p>
+            
+            <div className="mb-4">
+              <label 
+                htmlFor="completion-notes"
+                className="block text-sm font-medium text-white/80 mb-2"
+              >
+                Notes (optional)
+              </label>
+              <textarea
+                id="completion-notes"
+                value={completionNotes}
+                onChange={(e) => setCompletionNotes(e.target.value)}
+                className="input w-full h-24 resize-none"
+                placeholder="Add notes about completing this step..."
+                aria-label="Notes for step completion"
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowCompleteStepDialog(false);
+                  setCompletionNotes("");
+                }}
+                className="btn btn-secondary flex-1"
+                disabled={isCompletingStep}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCompleteStep}
+                className="btn btn-primary flex-1"
+                disabled={isCompletingStep}
+              >
+                {isCompletingStep ? "Completing..." : "Confirm"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
