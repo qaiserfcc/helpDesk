@@ -351,4 +351,54 @@ router.post("/can-perform-action", async (req, res, next) => {
   }
 });
 
+// Get allowed actions for a ticket's current workflow step
+router.get("/tickets/:ticketId/allowed-actions", async (req, res, next) => {
+  if (!req.user) {
+    next(createError(401, "Authentication required"));
+    return;
+  }
+
+  try {
+    const { getAllowedActionsForTicket } = await import("../services/workflowService.js");
+    const result = await getAllowedActionsForTicket(
+      req.params.ticketId,
+      req.user.role,
+    );
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Manually advance a ticket's workflow step
+const advanceStepSchema = z.object({
+  notes: z.string().optional(),
+});
+
+router.post("/tickets/:ticketId/advance", async (req, res, next) => {
+  if (!req.user) {
+    next(createError(401, "Authentication required"));
+    return;
+  }
+
+  const parsed = advanceStepSchema.safeParse(req.body);
+  if (!parsed.success) {
+    next(createError(400, "Invalid advance step payload"));
+    return;
+  }
+
+  try {
+    const { advanceTicketWorkflowStep } = await import("../services/workflowService.js");
+    const result = await advanceTicketWorkflowStep(
+      req.params.ticketId,
+      req.user.role,
+      req.user.id,
+      parsed.data.notes,
+    );
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;

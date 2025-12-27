@@ -1,5 +1,5 @@
 import createError from "http-errors";
-import { Prisma, Role, WorkflowStepAction } from "@prisma/client";
+import { Prisma, Role, WorkflowStepAction, TicketStatus } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 
 export type WorkflowWithSteps = Prisma.WorkflowDefinitionGetPayload<{
@@ -506,7 +506,15 @@ export async function advanceWorkflowStep(
   );
 
   if (!nextStep) {
-    // Workflow completed
+    // Workflow completed - auto-resolve ticket
+    await prisma.ticket.update({
+      where: { id: ticketId },
+      data: {
+        currentStepId: null,
+        status: TicketStatus.resolved,
+        resolvedAt: new Date(),
+      },
+    });
     return { newStepId: null, workflowCompleted: true };
   }
 
@@ -526,4 +534,120 @@ export async function advanceWorkflowStep(
   });
 
   return { newStepId: nextStep.id, workflowCompleted: false };
+}
+
+/**
+ * Get allowed actions for a ticket's current workflow step
+ */
+export async function getAllowedActionsForTicket(
+  ticketId: string,
+  userRole: Role,
+): Promise<{
+  currentStep: WorkflowStepWithWorkflow | null;
+  allowedActions: WorkflowStepAction[];
+  canAdvance: boolean;
+}> {
+  const ticket = await prisma.ticket.findUnique({
+    where: { id: ticketId },
+    select: { currentStepId: true, workflowId: true },
+  });
+
+  if (!ticket || !ticket.workflowId || !ticket.currentStepId) {
+    // No workflow or step, allow basic actions only (don't return all actions)
+    return {
+      currentStep: null,
+      allowedActions: [
+        WorkflowStepAction.comment,
+        WorkflowStepAction.update,
+      ],
+      canAdvance: false,
+    };
+  }
+
+  const currentStep = await getWorkflowStep(ticket.currentStepId);
+
+  // Check if user role matches the step's initiator role (if specified)
+  const roleMatch =
+    !currentStep.initiatorRole || currentStep.initiatorRole === userRole;
+
+  if (!roleMatch) {
+    return {
+      currentStep,
+      allowedActions: [],
+      canAdvance: false,
+    };
+  }
+
+  const allowedActions =
+    (currentStep.allowedActions as unknown as WorkflowStepAction[]) || [];
+
+  // Check if there's a next step available
+  const nextStep = await getNextWorkflowStep(
+    ticket.currentStepId,
+    userRole,
+    ticket.workflowId,
+  );
+
+  return {
+    currentStep,
+    allowedActions,
+    canAdvance: nextStep !== null,
+  };
+}
+
+/**
+ * Manually advance a ticket to the next workflow step
+ */
+export async function advanceTicketWorkflowStep(
+  ticketId: string,
+  userRole: Role,
+  actorId: string,
+  notes?: string,
+): Promise<{
+  success: boolean;
+  newStep: WorkflowStepWithWorkflow | null;
+  workflowCompleted: boolean;
+  message: string;
+}> {
+  const ticket = await prisma.ticket.findUnique({
+    where: { id: ticketId },
+    select: { currentStepId: true, workflowId: true },
+  });
+
+  if (!ticket) {
+    throw createError(404, "Ticket not found");
+  }
+
+  if (!ticket.workflowId) {
+    return {
+      success: false,
+      newStep: null,
+      workflowCompleted: false,
+      message: "Ticket has no workflow",
+    };
+  }
+
+  const result = await advanceWorkflowStep(
+    ticketId,
+    ticket.currentStepId,
+    userRole,
+    actorId,
+    notes,
+  );
+
+  let newStep: WorkflowStepWithWorkflow | null = null;
+  if (result.newStepId) {
+    newStep = await getWorkflowStep(result.newStepId);
+  }
+
+  return {
+    success: true,
+    newStep,
+    workflowCompleted: result.workflowCompleted,
+    message: result.workflowCompleted
+      ? "Workflow completed"
+      : result.newStepId
+        ? `Advanced to step: ${newStep?.name}`
+        : "No more steps",
+  };
 }

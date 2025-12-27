@@ -128,6 +128,34 @@ export async function deleteWorkflowStep(stepId: string) {
   await apiClient.delete(`/workflows/steps/${stepId}`);
 }
 
+export type AllowedActionsResult = {
+  currentStep: WorkflowStep | null;
+  allowedActions: string[];
+  canAdvance: boolean;
+};
+
+export async function fetchAllowedActions(ticketId: string) {
+  const { data } = await apiClient.get<AllowedActionsResult>(
+    `/workflows/tickets/${ticketId}/allowed-actions`,
+  );
+  return data;
+}
+
+export type AdvanceWorkflowResult = {
+  success: boolean;
+  newStep: WorkflowStep | null;
+  workflowCompleted: boolean;
+  message: string;
+};
+
+export async function advanceWorkflowStep(ticketId: string, notes?: string) {
+  const { data } = await apiClient.post<AdvanceWorkflowResult>(
+    `/workflows/tickets/${ticketId}/advance`,
+    { notes },
+  );
+  return data;
+}
+
 export default {
   fetchWorkflows,
   fetchWorkflow,
@@ -138,4 +166,6 @@ export default {
   createWorkflowStep,
   updateWorkflowStep,
   deleteWorkflowStep,
+  fetchAllowedActions,
+  advanceWorkflowStep,
 };
