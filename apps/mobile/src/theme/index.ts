@@ -7,3 +7,5 @@ export const spacing = {
   lg: 24,
   xl: 32,
 } as const;
+
+export { darkColors, lightColors } from "./colors";

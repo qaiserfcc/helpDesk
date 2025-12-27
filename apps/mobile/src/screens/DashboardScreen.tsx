@@ -352,6 +352,51 @@ export function DashboardScreen() {
             navigation.navigate("AttributeManagement"),
           ),
         },
+        {
+          key: "slas",
+          title: "SLAs",
+          subtitle: "Service agreements",
+          glyph: "⏱️",
+          onPress: createDrawerHandler(() =>
+            navigation.navigate("SLAManagement"),
+          ),
+        },
+        {
+          key: "agent-skills",
+          title: "Agent Skills",
+          subtitle: "Skill management",
+          glyph: "⭐",
+          onPress: createDrawerHandler(() =>
+            navigation.navigate("AgentSkills"),
+          ),
+        },
+        {
+          key: "agent-assignment",
+          title: "Agent Assignments",
+          subtitle: "Assignment rules",
+          glyph: "👥",
+          onPress: createDrawerHandler(() =>
+            navigation.navigate("AgentAssignment"),
+          ),
+        },
+        {
+          key: "knowledge-base",
+          title: "Knowledge Base",
+          subtitle: "Help articles",
+          glyph: "📚",
+          onPress: createDrawerHandler(() =>
+            navigation.navigate("KnowledgeBase"),
+          ),
+        },
+        {
+          key: "canned-responses",
+          title: "Canned Responses",
+          subtitle: "Quick replies",
+          glyph: "💬",
+          onPress: createDrawerHandler(() =>
+            navigation.navigate("CannedResponses"),
+          ),
+        },
       );
     }
 

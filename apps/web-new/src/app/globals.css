@@ -1,13 +1,41 @@
 @import "tailwindcss";
 
 :root {
-  /* Gradient theme colors */
+  /* Gradient theme colors - Dark Mode */
   --gradient-start: #7c3aed; /* purple */
   --gradient-end: #06b6d4; /* cyan */
   --background: linear-gradient(180deg, var(--gradient-start), var(--gradient-end));
   --foreground: #ffffff;
-  --card-bg: rgba(255,255,255,0.06);
-  --card-border: rgba(255,255,255,0.08);
+  --card-bg: rgba(255,255,255,0.08);
+  --card-border: rgba(255,255,255,0.12);
+  --muted: rgba(255,255,255,0.85);
+  --accent: #07b6dc;
+  --focus-ring: rgba(7,182,220,0.24);
+  --focus-border: rgba(6,182,212,0.95);
+}
+
+/* Light theme */
+.light-theme {
+  --gradient-start: #e0e7ff; /* light indigo */
+  --gradient-end: #cffafe; /* light cyan */
+  --background: linear-gradient(180deg, var(--gradient-start), var(--gradient-end));
+  --foreground: #0f172a;
+  --card-bg: rgba(255,255,255,0.7);
+  --card-border: rgba(148,163,184,0.3);
+  --muted: rgba(15,23,42,0.7);
+  --accent: #0891b2;
+  --focus-ring: rgba(8,145,178,0.24);
+  --focus-border: rgba(8,145,178,0.95);
+}
+
+/* Dark theme (explicit) */
+.dark-theme {
+  --gradient-start: #7c3aed;
+  --gradient-end: #06b6d4;
+  --background: linear-gradient(180deg, var(--gradient-start), var(--gradient-end));
+  --foreground: #ffffff;
+  --card-bg: rgba(255,255,255,0.08);
+  --card-border: rgba(255,255,255,0.12);
   --muted: rgba(255,255,255,0.85);
   --accent: #07b6dc;
   --focus-ring: rgba(7,182,220,0.24);
@@ -42,8 +70,13 @@ body {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
   color: var(--foreground);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+}
+
+.light-theme .card {
+  box-shadow: 0 8px 32px rgba(0,0,0,0.05);
 }
 
 .card-footer {
@@ -165,7 +198,7 @@ input:focus, textarea:focus, select:focus, button:focus, .primary-btn:focus {
 
 /* Notification popover needs high z-index and strong contrast */
 .notification-popover {
-  z-index: 9999 !important;
+  z-index: 10000 !important;
   position: fixed;
   left: var(--notif-left, auto);
   top: var(--notif-top, 3.6rem);
@@ -174,6 +207,8 @@ input:focus, textarea:focus, select:focus, button:focus, .primary-btn:focus {
   border: 1px solid rgba(255,255,255,0.06) !important;
   box-shadow: 0 8px 30px rgba(0,0,0,0.5);
   border-radius: 0.5rem;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 /* Make dismiss/close button visible on dark backgrounds */

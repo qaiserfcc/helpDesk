@@ -18,6 +18,11 @@ import { CacheInspectorScreen } from "@/screens/CacheInspectorScreen";
 import { CategoryManagementScreen } from "@/screens/CategoryManagementScreen";
 import { WorkflowManagementScreen } from "@/screens/WorkflowManagementScreen";
 import { AttributeManagementScreen } from "@/screens/AttributeManagementScreen";
+import { SLAManagementScreen } from "@/screens/SLAManagementScreen";
+import { AgentSkillsScreen } from "@/screens/AgentSkillsScreen";
+import { AgentAssignmentScreen } from "@/screens/AgentAssignmentScreen";
+import { KnowledgeBaseScreen } from "@/screens/KnowledgeBaseScreen";
+import { CannedResponsesScreen } from "@/screens/CannedResponsesScreen";
 import { useAuthStore } from "@/store/useAuthStore";
 import { colors } from "@/theme/colors";
 import { navigationRef } from "./navigationRef";
@@ -38,6 +43,11 @@ export type RootStackParamList = {
   CategoryManagement: undefined;
   WorkflowManagement: undefined;
   AttributeManagement: undefined;
+  SLAManagement: undefined;
+  AgentSkills: undefined;
+  AgentAssignment: undefined;
+  KnowledgeBase: undefined;
+  CannedResponses: undefined;
   TicketDetail: { ticketId: string };
   TicketForm: { ticketId?: string } | undefined;
 };
@@ -103,6 +113,26 @@ export function AppNavigator() {
             <Stack.Screen
               name="AttributeManagement"
               component={AttributeManagementScreen}
+            />
+            <Stack.Screen
+              name="SLAManagement"
+              component={SLAManagementScreen}
+            />
+            <Stack.Screen
+              name="AgentSkills"
+              component={AgentSkillsScreen}
+            />
+            <Stack.Screen
+              name="AgentAssignment"
+              component={AgentAssignmentScreen}
+            />
+            <Stack.Screen
+              name="KnowledgeBase"
+              component={KnowledgeBaseScreen}
+            />
+            <Stack.Screen
+              name="CannedResponses"
+              component={CannedResponsesScreen}
             />
             <Stack.Screen name="TicketDetail" component={TicketDetailScreen} />
             <Stack.Screen name="TicketForm" component={TicketFormScreen} />
