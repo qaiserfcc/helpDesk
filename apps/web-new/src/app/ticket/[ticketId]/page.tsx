@@ -270,6 +270,21 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
                 </div>
               </div>
 
+              {/* Custom Attributes */}
+              {ticket.attributeValues && ticket.attributeValues.length > 0 && (
+                <div className="mb-4">
+                  <h3 className="text-lg font-semibold text-white mb-3">Custom Attributes</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {ticket.attributeValues.map((attrVal) => (
+                      <div key={attrVal.id} className="bg-white/5 p-4 rounded-lg">
+                        <p className="text-sm text-white/80">{attrVal.attribute.label}</p>
+                        <p className="text-lg font-medium text-white">{attrVal.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-4">
                 <div>
                   <p className="text-sm text-white/80">Creator</p>
