@@ -4,11 +4,16 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchAllowedActions, advanceWorkflowStep } from "@/services/workflows";
 import { useToastStore } from "@/store/useToastStore";
+import { AxiosError } from "axios";
 
 interface WorkflowActionControlsProps {
   ticketId: string;
   ticketStatus: string;
   userRole: string;
+}
+
+interface ApiError {
+  message?: string;
 }
 
 const ACTION_LABELS: Record<string, string> = {
@@ -60,11 +65,12 @@ export function WorkflowActionControls({
       queryClient.invalidateQueries({ queryKey: ["workflow-actions", ticketId] });
       queryClient.invalidateQueries({ queryKey: ["ticket-activity", ticketId] });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
+      const axiosError = error as AxiosError<ApiError>;
       addNotification({
         type: "error",
         title: "Failed to Advance Workflow",
-        message: error.response?.data?.message || "Failed to advance workflow step",
+        message: axiosError.response?.data?.message || "Failed to advance workflow step",
       });
     },
   });
@@ -191,9 +197,17 @@ export function WorkflowActionControls({
 
       {/* Advance Dialog */}
       {showAdvanceDialog && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="advance-dialog-title"
+        >
           <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl p-6 max-w-md w-full mx-4 border border-white/10">
-            <h3 className="text-xl font-semibold text-white mb-4">
+            <h3 
+              id="advance-dialog-title"
+              className="text-xl font-semibold text-white mb-4"
+            >
               Advance Workflow Step
             </h3>
             <p className="text-white/70 text-sm mb-4">
@@ -201,14 +215,19 @@ export function WorkflowActionControls({
             </p>
             
             <div className="mb-4">
-              <label className="block text-sm font-medium text-white/80 mb-2">
+              <label 
+                htmlFor="workflow-notes"
+                className="block text-sm font-medium text-white/80 mb-2"
+              >
                 Notes (optional)
               </label>
               <textarea
+                id="workflow-notes"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 className="input w-full h-24 resize-none"
                 placeholder="Add notes about this step advancement..."
+                aria-label="Notes for workflow step advancement"
               />
             </div>
 

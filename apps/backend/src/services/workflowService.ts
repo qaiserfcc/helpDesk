@@ -545,10 +545,13 @@ export async function getAllowedActionsForTicket(
   });
 
   if (!ticket || !ticket.workflowId || !ticket.currentStepId) {
-    // No workflow or step, all actions allowed
+    // No workflow or step, allow basic actions only (don't return all actions)
     return {
       currentStep: null,
-      allowedActions: Object.values(WorkflowStepAction),
+      allowedActions: [
+        WorkflowStepAction.comment,
+        WorkflowStepAction.update,
+      ],
       canAdvance: false,
     };
   }
