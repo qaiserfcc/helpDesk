@@ -276,6 +276,16 @@ export async function createTicket(
     });
   }
 
+  // Initialize SLA tracking
+  void (async () => {
+    try {
+      const { updateTicketSLAStatus } = await import("./slaService.js");
+      await updateTicketSLAStatus(ticket.id);
+    } catch (err) {
+      console.warn("SLA initialization failed", err);
+    }
+  })();
+
   notifyTicketChange(ticket, "tickets:created");
   // Fire-and-forget generation of suggestions/summaries (do not block ticket creation)
   void (async () => {
