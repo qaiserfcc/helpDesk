@@ -163,7 +163,7 @@ export function Sidebar() {
                   }`}
                   onClick={() => {
                     // Close mobile menu on navigation
-                    if (window.innerWidth < 1024) {
+                    if (typeof window !== "undefined" && window.innerWidth < 1024) {
                       setIsCollapsed(true);
                     }
                   }}

@@ -250,13 +250,6 @@ export default function NewTicketPage() {
                 </select>
               </div>
             )}
-                      className="mr-2"
-                    />
-                    <span className="capitalize text-white">{option}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
 
             {/* Custom Attributes */}
             {attributes.map((attr) => (

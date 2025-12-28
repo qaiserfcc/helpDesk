@@ -48,9 +48,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setThemeState(newTheme);
   };
 
-  // Prevent flash of unstyled content
+  // Prevent flash of unstyled content - render children with dark theme as default
   if (!mounted) {
-    return null;
+    return <>{children}</>;
   }
 
   return (
