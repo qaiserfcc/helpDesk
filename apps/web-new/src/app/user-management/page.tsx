@@ -18,6 +18,10 @@ import {
   type UserFormValues,
   type UserFormErrors,
 } from "@/utils/userFormValidation";
+import { Modal, ModalActions } from "@/components/Modal";
+import { DataList } from "@/components/DataTable";
+import { FormField } from "@/components/FormField";
+import { Button } from "@/components/Button";
 
 type RoleFilterValue = "all" | "admin" | "agent" | "user";
 
@@ -235,15 +239,12 @@ export default function UserManagementPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="max-w-md mx-auto card rounded-lg shadow p-8 text-center">
           <h1 className="text-2xl font-bold text-white mb-4">Admins Only</h1>
-          <p className="text-white/90 mb-6">
+          <p className="text-white/80 mb-6">
             You need admin access to manage organization members.
           </p>
-          <button
-            onClick={() => router.back()}
-            className="bg-white/10 text-white px-4 py-2 rounded-lg hover:bg-white/20"
-          >
+          <Button variant="secondary" onClick={() => router.back()}>
             Back
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -253,26 +254,28 @@ export default function UserManagementPage() {
     <div className="min-h-screen">
       <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => router.back()}
-            className="text-blue-600 hover:text-blue-500 mb-4"
+            className="mb-4"
           >
             ← Back
-          </button>
+          </Button>
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-3xl font-bold text-white">User Management</h1>
-                  <p className="text-white/90 mt-2">
+                  <p className="text-white/70 mt-2">
                 Review agent workloads and assignment coverage
               </p>
             </div>
-            <button
+            <Button
+              variant="secondary"
               onClick={handleRefresh}
-              disabled={refreshing}
-              className="bg-white/10 text-white px-4 py-2 rounded-lg hover:bg-white/20 disabled:opacity-50"
+              isLoading={refreshing}
             >
-              {refreshing ? "Refreshing..." : "Refresh"}
-            </button>
+              Refresh
+            </Button>
           </div>
         </div>
 
@@ -309,14 +312,11 @@ export default function UserManagementPage() {
           <div className="flex justify-between items-start mb-6">
             <div>
               <h2 className="text-xl font-semibold text-white">Workspace Directory</h2>
-              <p className="text-white/90 mt-1">{userSectionSubtitle}</p>
+              <p className="text-white/70 mt-1">{userSectionSubtitle}</p>
             </div>
-            <button
-              onClick={openCreateForm}
-              className="bg-white/10 text-white px-4 py-2 rounded-lg hover:bg-white/20"
-            >
+            <Button variant="secondary" onClick={openCreateForm}>
               Add Member
-            </button>
+            </Button>
           </div>
 
           {/* Role Filters */}
@@ -340,210 +340,160 @@ export default function UserManagementPage() {
           </div>
 
           {/* Users List */}
-            {usersInitialLoading ? (
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white/80"></div>
-          ) : usersError ? (
-            <p className="text-white/80">{usersErrorMessage}</p>
-          ) : memberList.length === 0 ? (
-            <p className="text-white/80">No members match this filter.</p>
+          {usersError ? (
+            <div className="card rounded-lg p-6">
+              <p className="text-white/80">{usersErrorMessage}</p>
+            </div>
           ) : (
-            <div className="space-y-4">
-              {memberList.map((entry) => (
-                <div key={entry.id} className="flex justify-between items-center py-4 border-b border-white/6">
+            <DataList
+              data={memberList}
+              getRowKey={(entry) => entry.id}
+              isLoading={usersInitialLoading}
+              emptyMessage="No members match this filter."
+              renderItem={(entry) => (
+                <div className="card rounded-lg p-4 flex justify-between items-center hover:bg-white/5 transition-colors">
                   <div className="flex-1">
                     <p className="font-medium text-white">{entry.name}</p>
-                    <p className="text-sm text-white/80">{entry.email}</p>
+                    <p className="text-sm text-white/70">{entry.email}</p>
                   </div>
                   <div className="flex items-center space-x-4">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        entry.role === "admin"
-                          ? "bg-white/5 text-white"
-                          : entry.role === "agent"
-                          ? "bg-white/5 text-white"
-                          : "bg-white/5 text-white"
-                      }`}
-                    >
+                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-primary-alpha-15 text-white border border-primary-alpha-20">
                       {roleLabels[entry.role]}
                     </span>
                     <div className="flex space-x-2">
-                      <button
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => openEditForm(entry)}
-                        className="px-3 py-1 text-sm border border-white/10 rounded hover:bg-white/8"
                       >
                         Edit
-                      </button>
-                      <button
+                      </Button>
+                      <Button
+                        variant="danger"
+                        size="sm"
                         onClick={() => confirmRemove(entry)}
-                        disabled={pendingDeleteId === entry.id}
-                        className="px-3 py-1 text-sm border border-red-300 text-red-600 rounded hover:bg-red-50 disabled:opacity-50"
+                        isLoading={pendingDeleteId === entry.id}
                       >
-                        {pendingDeleteId === entry.id ? "Removing..." : "Remove"}
-                      </button>
+                        Remove
+                      </Button>
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
+              )}
+            />
           )}
         </div>
       </div>
 
       {/* User Form Modal */}
-      {formVisible && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="card rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-white">
-                  {formMode === "create"
-                    ? "Add Workspace Member"
-                    : "Edit Workspace Member"}
-                </h3>
-                <button
-                  onClick={closeForm}
-                  className="text-white/60 hover:text-white/80"
-                >
-                  ✕
-                </button>
-              </div>
+      <Modal
+        isOpen={formVisible}
+        onClose={closeForm}
+        title={formMode === "create" ? "Add Workspace Member" : "Edit Workspace Member"}
+        size="md"
+      >
+        <p className="text-white/80 mb-6">
+          Invite teammates or adjust their access level. Password updates apply immediately.
+        </p>
 
-              <p className="text-white/80 mb-6">
-                Invite teammates or adjust their access level. Password updates
-                apply immediately.
-              </p>
+        <FormField
+          label="Full name"
+          type="text"
+          placeholder="Casey Admin"
+          value={formValues.name}
+          onChange={(e) =>
+            setFormValues((prev) => ({ ...prev, name: e.target.value }))
+          }
+          error={formErrors.name}
+          required
+        />
 
-              {/* Name Field */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-white/90 mb-1">
-                  Full name
-                </label>
-                <input
-                  type="text"
-                  placeholder="Casey Admin"
-                  value={formValues.name}
-                  onChange={(e) =>
-                    setFormValues((prev) => ({ ...prev, name: e.target.value }))
-                  }
-                  className="w-full px-3 py-2 border border-white/10 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white/5 text-white"
-                />
-                {formErrors.name && (
-                  <p className="text-red-600 text-sm mt-1">{formErrors.name}</p>
-                )}
-              </div>
+        <FormField
+          label="Email"
+          type="email"
+          placeholder="casey@example.com"
+          value={formValues.email}
+          onChange={(e) =>
+            setFormValues((prev) => ({ ...prev, email: e.target.value }))
+          }
+          error={formErrors.email}
+          required
+        />
 
-              {/* Email Field */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-white/90 mb-1">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  placeholder="casey@example.com"
-                  value={formValues.email}
-                  onChange={(e) =>
-                    setFormValues((prev) => ({ ...prev, email: e.target.value }))
-                  }
-                  className="w-full px-3 py-2 border border-white/10 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white/5 text-white"
-                />
-                {formErrors.email && (
-                  <p className="text-red-600 text-sm mt-1">{formErrors.email}</p>
-                )}
-              </div>
+        <FormField
+          label={formMode === "create" ? "Temporary password" : "Reset password"}
+          type="password"
+          placeholder="At least 6 characters"
+          value={formValues.password}
+          onChange={(e) =>
+            setFormValues((prev) => ({ ...prev, password: e.target.value }))
+          }
+          error={formErrors.password}
+          required={formMode === "create"}
+          helperText={formMode === "edit" ? "Leave blank to keep current password" : undefined}
+        />
 
-              {/* Password Field */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-white/90 mb-1">
-                  {formMode === "create"
-                    ? "Temporary password"
-                    : "Reset password"}
-                </label>
-                <input
-                  type="password"
-                  placeholder="At least 6 characters"
-                  value={formValues.password}
-                  onChange={(e) =>
-                    setFormValues((prev) => ({ ...prev, password: e.target.value }))
-                  }
-                  className="w-full px-3 py-2 border border-white/10 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white/5 text-white"
-                />
-                {formErrors.password && (
-                  <p className="text-red-600 text-sm mt-1">{formErrors.password}</p>
-                )}
-              </div>
-
-              {/* Role Selection */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-white/90 mb-3">
-                  Role
-                </label>
-                <div className="space-y-3">
-                  {roleFilters
-                    .filter((filter) => filter.value !== "all")
-                    .map((filter) => {
-                      const roleValue = filter.value as "admin" | "agent" | "user";
-                      const selected = formValues.role === roleValue;
-                      return (
-                        <div
-                          key={`role-${roleValue}`}
-                          onClick={() =>
-                            setFormValues((prev) => ({
-                              ...prev,
-                              role: roleValue,
-                            }))
-                          }
-                          className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                            selected
-                              ? "border-white/10 bg-white/5"
-                              : "border-white/6 hover:border-white/20"
-                          }`}
-                        >
-                          <p
-                            className={`font-medium ${selected ? "text-white" : "text-white/90"}`}
-                          >
-                            {filter.label.replace(/s$/, "")}
-                          </p>
-                          <p className="text-sm text-white/80 mt-1">
-                            {roleValue === "admin"
-                              ? "Full access"
-                              : roleValue === "agent"
-                              ? "Can work assigned tickets"
-                              : "Submitters only"}
-                          </p>
-                        </div>
-                      );
-                    })}
-                </div>
-              </div>
-
-              {formErrors.general && (
-                <p className="text-red-600 text-sm mb-4">{formErrors.general}</p>
-              )}
-
-              {/* Action Buttons */}
-              <div className="flex justify-end space-x-3">
-                <button
-                  onClick={closeForm}
-                  className="px-4 py-2 text-white/70 border border-white/10 rounded-md hover:bg-white/6"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSubmitForm}
-                  disabled={saving}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-                >
-                  {saving
-                    ? "Saving..."
-                    : formMode === "create"
-                    ? "Create User"
-                    : "Save Changes"}
-                </button>
-              </div>
-            </div>
+        {/* Role Selection */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-white/90 mb-3">
+            Role <span className="text-red-400 ml-1">*</span>
+          </label>
+          <div className="space-y-3">
+            {roleFilters
+              .filter((filter) => filter.value !== "all")
+              .map((filter) => {
+                const roleValue = filter.value as "admin" | "agent" | "user";
+                const selected = formValues.role === roleValue;
+                return (
+                  <div
+                    key={`role-${roleValue}`}
+                    onClick={() =>
+                      setFormValues((prev) => ({
+                        ...prev,
+                        role: roleValue,
+                      }))
+                    }
+                    className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                      selected
+                        ? "border-primary-blue bg-primary-alpha-8"
+                        : "border-white/10 hover:border-white/20 hover:bg-white/5"
+                    }`}
+                  >
+                    <p className={`font-medium ${selected ? "text-white" : "text-white/90"}`}>
+                      {filter.label.replace(/s$/, "")}
+                    </p>
+                    <p className="text-sm text-white/70 mt-1">
+                      {roleValue === "admin"
+                        ? "Full access to all features"
+                        : roleValue === "agent"
+                        ? "Can work on assigned tickets"
+                        : "Can create and view own tickets"}
+                    </p>
+                  </div>
+                );
+              })}
           </div>
         </div>
-      )}
+
+        {formErrors.general && (
+          <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-md">
+            <p className="text-red-400 text-sm">{formErrors.general}</p>
+          </div>
+        )}
+
+        <ModalActions>
+          <Button variant="ghost" onClick={closeForm}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleSubmitForm}
+            isLoading={saving}
+          >
+            {formMode === "create" ? "Create User" : "Save Changes"}
+          </Button>
+        </ModalActions>
+      </Modal>
     </div>
   );
 }
