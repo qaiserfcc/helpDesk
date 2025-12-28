@@ -1,11 +1,11 @@
 @import "tailwindcss";
 
 :root {
-  /* Light Blue and Black Theme - Fixed color scheme */
+  /* Light Blue and Glassy Dark Theme - Fixed color scheme */
   --primary-blue: #60a5fa; /* light blue */
   --primary-blue-dark: #3b82f6; /* darker blue for hover states */
   --primary-blue-light: #93c5fd; /* lighter blue for accents */
-  --background: #000000; /* pure black background */
+  --background: #0f1419; /* dark gray background (lighter than black) */
   --foreground: #ffffff; /* white text */
   
   /* Alpha variations of primary blue for consistent theming */
@@ -17,13 +17,14 @@
   --primary-alpha-30: rgba(96, 165, 250, 0.3);
   --primary-alpha-80: rgba(96, 165, 250, 0.8);
   
-  --card-bg: var(--primary-alpha-8); /* light blue tint on black */
+  /* Glassmorphism card backgrounds */
+  --card-bg: rgba(255, 255, 255, 0.05); /* glassy white overlay */
   --card-border: var(--primary-alpha-20); /* light blue border */
   --muted: rgba(255, 255, 255, 0.7); /* muted white text */
   --accent: #60a5fa; /* light blue accent */
   --focus-ring: var(--primary-alpha-30); /* light blue focus ring */
   --focus-border: var(--primary-alpha-80); /* light blue focus border */
-  --notification-bg: rgba(0, 0, 0, 0.95); /* notification background */
+  --notification-bg: rgba(15, 20, 25, 0.95); /* notification background */
 }
 
 @theme inline {
@@ -37,18 +38,20 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
-  /* Fixed black background - no system preference changes */
+  /* Fixed dark gray background with subtle gradient for depth */
+  background: linear-gradient(135deg, #0f1419 0%, #1a1f26 100%);
   background-repeat: no-repeat;
   background-attachment: fixed;
 }
 
-/* Card component used across the app for panels */
+/* Card component with glassmorphism effect */
 .card {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
   color: var(--foreground);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
 
 .card-footer {
@@ -173,6 +176,22 @@ button.bg-purple-600, .bg-purple-600 {
 .bg-white\/5:hover, .bg-white\/6:hover, .hover\:bg-white\/8:hover {
   background-color: var(--primary-alpha-15) !important;
   box-shadow: 0 2px 6px var(--primary-alpha-20);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-out;
 }
 
 /* Additional utility classes for consistent theming */

@@ -1,7 +1,12 @@
 # Theme Configuration Guide
 
 ## Overview
-The web-new application uses a **fixed light blue and black color scheme** that remains consistent regardless of system appearance settings (light/dark mode).
+The web-new application uses a **fixed light blue and glassy dark theme** that remains consistent regardless of system appearance settings (light/dark mode).
+
+The theme features:
+- **Lighter background**: Dark gray (#0f1419) with subtle gradient instead of pure black
+- **Glassmorphism effects**: Frosted glass appearance with backdrop blur on cards and modals
+- **Light blue accents**: Consistent light blue color (#60a5fa) for interactive elements
 
 ## Theme Colors
 
@@ -11,11 +16,12 @@ The web-new application uses a **fixed light blue and black color scheme** that 
 - **Primary Blue Light**: `#93c5fd` - Lighter accents and secondary highlights
 
 ### Background Colors
-- **Background**: `#000000` - Pure black background (always fixed)
+- **Background**: `#0f1419` - Dark gray background (lighter than pure black)
+- **Background Gradient**: Linear gradient from `#0f1419` to `#1a1f26` for depth
 - **Foreground**: `#ffffff` - White text color
 
 ### Component Colors
-- **Card Background**: `rgba(96, 165, 250, 0.08)` - Light blue tint on black
+- **Card Background**: `rgba(255, 255, 255, 0.05)` - Glassy white overlay with backdrop blur
 - **Card Border**: `rgba(96, 165, 250, 0.2)` - Light blue border
 - **Muted Text**: `rgba(255, 255, 255, 0.7)` - Secondary text color
 
@@ -35,9 +41,23 @@ All color values are defined in CSS custom properties in the `:root` selector. T
   --primary-blue: #60a5fa;        /* Change this to your desired primary color */
   --primary-blue-dark: #3b82f6;   /* Adjust for hover states */
   --primary-blue-light: #93c5fd;  /* Adjust for lighter accents */
-  --background: #000000;          /* Background color */
+  --background: #0f1419;          /* Background color (dark gray, not pure black) */
   --foreground: #ffffff;          /* Text color */
   /* ... other variables */
+}
+
+/* Body background with gradient for depth */
+body {
+  background: linear-gradient(135deg, #0f1419 0%, #1a1f26 100%);
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+/* Cards with glassmorphism effect */
+.card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
 ```
 
@@ -78,11 +98,104 @@ export const theme = {
 
 1. **No System Preference Detection**: The theme does NOT change based on system light/dark mode preferences. The `@media (prefers-color-scheme: dark)` query has been intentionally removed.
 
-2. **Consistent Across All Pages**: All pages use the same theme variables, ensuring a uniform look throughout the application.
+2. **Glassmorphism Design**: All cards and modals use a frosted glass effect with `backdrop-filter: blur(12px)` for a modern, layered appearance.
 
-3. **Tailwind Color Overrides**: Common Tailwind utility classes like `bg-blue-600`, `text-blue-500`, etc., are overridden to use the theme colors automatically.
+3. **Consistent Across All Pages**: All pages use the same theme variables, ensuring a uniform look throughout the application.
 
-4. **Easy Maintenance**: To change the entire application's color scheme, simply update the values in `src/app/globals.css` `:root` section.
+4. **Tailwind Color Overrides**: Common Tailwind utility classes like `bg-blue-600`, `text-blue-500`, etc., are overridden to use the theme colors automatically.
+
+5. **Easy Maintenance**: To change the entire application's color scheme, simply update the values in `src/app/globals.css` `:root` section.
+
+## Generic Components
+
+The application now includes reusable generic components for consistent UI across all CRUD operations:
+
+### Modal Component (`src/components/Modal.tsx`)
+A reusable modal dialog with glassmorphism design:
+```tsx
+import { Modal, ModalActions } from "@/components/Modal";
+
+<Modal
+  isOpen={isOpen}
+  onClose={closeHandler}
+  title="Modal Title"
+  size="md" // sm, md, lg, xl
+>
+  {/* Modal content */}
+  <ModalActions>
+    <Button variant="ghost" onClick={closeHandler}>Cancel</Button>
+    <Button variant="primary" onClick={saveHandler}>Save</Button>
+  </ModalActions>
+</Modal>
+```
+
+### DataTable Component (`src/components/DataTable.tsx`)
+A reusable table for listing data:
+```tsx
+import { DataTable, Column } from "@/components/DataTable";
+
+const columns: Column<YourType>[] = [
+  { key: "id", label: "ID" },
+  { key: "name", label: "Name", render: (item) => <span>{item.name}</span> },
+];
+
+<DataTable
+  columns={columns}
+  data={items}
+  getRowKey={(item) => item.id}
+  isLoading={loading}
+  emptyMessage="No items found"
+  actions={(item) => <button>Edit</button>}
+/>
+```
+
+### DataList Component (`src/components/DataTable.tsx`)
+A card-based alternative to DataTable:
+```tsx
+import { DataList } from "@/components/DataTable";
+
+<DataList
+  data={items}
+  getRowKey={(item) => item.id}
+  renderItem={(item) => <div className="card">{item.name}</div>}
+  isLoading={loading}
+/>
+```
+
+### Form Components (`src/components/FormField.tsx`)
+Consistent form inputs:
+```tsx
+import { FormField, FormSelect, FormTextArea } from "@/components/FormField";
+
+<FormField
+  label="Name"
+  type="text"
+  value={value}
+  onChange={handler}
+  error={error}
+  required
+/>
+
+<FormSelect
+  label="Role"
+  options={[{ value: "admin", label: "Admin" }]}
+  value={role}
+  onChange={handler}
+/>
+```
+
+### Button Component (`src/components/Button.tsx`)
+Consistent buttons with variants:
+```tsx
+import { Button } from "@/components/Button";
+
+<Button variant="primary" size="md" isLoading={saving}>
+  Save Changes
+</Button>
+
+// Variants: primary, secondary, danger, ghost
+// Sizes: sm, md, lg
+```
 
 ## Example Theme Change
 
