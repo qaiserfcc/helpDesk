@@ -1,4 +1,4 @@
-import { api } from "@/lib/api";
+import { apiClient } from "./apiClient";
 
 export interface Category {
   id: string;
@@ -52,19 +52,19 @@ export interface UpdateSubcategoryData {
 
 // Categories
 export async function fetchCategories(): Promise<Category[]> {
-  const response = await api.get("/categories");
+  const response = await apiClient.get("/categories");
   return response.data;
 }
 
 export async function fetchCategory(id: string): Promise<Category> {
-  const response = await api.get(`/categories/${id}`);
+  const response = await apiClient.get(`/categories/${id}`);
   return response.data;
 }
 
 export async function createCategory(
   data: CreateCategoryData
 ): Promise<Category> {
-  const response = await api.post("/categories", data);
+  const response = await apiClient.post("/categories", data);
   return response.data;
 }
 
@@ -72,19 +72,19 @@ export async function updateCategory(
   id: string,
   data: UpdateCategoryData
 ): Promise<Category> {
-  const response = await api.put(`/categories/${id}`, data);
+  const response = await apiClient.put(`/categories/${id}`, data);
   return response.data;
 }
 
 export async function deleteCategory(id: string): Promise<void> {
-  await api.delete(`/categories/${id}`);
+  await apiClient.delete(`/categories/${id}`);
 }
 
 // Subcategories
 export async function fetchSubcategories(
   categoryId: string
 ): Promise<Subcategory[]> {
-  const response = await api.get(`/categories/${categoryId}/subcategories`);
+  const response = await apiClient.get(`/categories/${categoryId}/subcategories`);
   return response.data;
 }
 
@@ -92,7 +92,7 @@ export async function createSubcategory(
   categoryId: string,
   data: CreateSubcategoryData
 ): Promise<Subcategory> {
-  const response = await api.post(
+  const response = await apiClient.post(
     `/categories/${categoryId}/subcategories`,
     data
   );
@@ -104,7 +104,7 @@ export async function updateSubcategory(
   subcategoryId: string,
   data: UpdateSubcategoryData
 ): Promise<Subcategory> {
-  const response = await api.put(
+  const response = await apiClient.put(
     `/categories/${categoryId}/subcategories/${subcategoryId}`,
     data
   );
@@ -115,5 +115,5 @@ export async function deleteSubcategory(
   categoryId: string,
   subcategoryId: string
 ): Promise<void> {
-  await api.delete(`/categories/${categoryId}/subcategories/${subcategoryId}`);
+  await apiClient.delete(`/categories/${categoryId}/subcategories/${subcategoryId}`);
 }

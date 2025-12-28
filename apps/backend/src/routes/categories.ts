@@ -1,12 +1,12 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma.js";
-import { authenticateToken } from "../middleware/auth.js";
-import { requireAdmin } from "../middleware/requireAdmin.js";
+import { requireAuth, requireRole } from "../middleware/auth.js";
+import { Role } from "@prisma/client";
 
 const router = Router();
 
 // Get all categories (public for authenticated users)
-router.get("/", authenticateToken, async (req, res, next) => {
+router.get("/", requireAuth, async (req, res, next) => {
   try {
     const categories = await prisma.category.findMany({
       where: { isActive: true },
@@ -26,7 +26,7 @@ router.get("/", authenticateToken, async (req, res, next) => {
 });
 
 // Get single category
-router.get("/:id", authenticateToken, async (req, res, next) => {
+router.get("/:id", requireAuth, async (req, res, next) => {
   try {
     const { id } = req.params;
 
@@ -51,7 +51,7 @@ router.get("/:id", authenticateToken, async (req, res, next) => {
 });
 
 // Create category (admin only)
-router.post("/", authenticateToken, requireAdmin, async (req, res, next) => {
+router.post("/", requireAuth, requireRole(Role.admin), async (req, res, next) => {
   try {
     const { name, description, isActive, order } = req.body;
 
@@ -75,7 +75,7 @@ router.post("/", authenticateToken, requireAdmin, async (req, res, next) => {
 });
 
 // Update category (admin only)
-router.put("/:id", authenticateToken, requireAdmin, async (req, res, next) => {
+router.put("/:id", requireAuth, requireRole(Role.admin), async (req, res, next) => {
   try {
     const { id } = req.params;
     const { name, description, isActive, order } = req.body;
@@ -99,8 +99,8 @@ router.put("/:id", authenticateToken, requireAdmin, async (req, res, next) => {
 // Delete category (admin only)
 router.delete(
   "/:id",
-  authenticateToken,
-  requireAdmin,
+  requireAuth,
+  requireRole(Role.admin),
   async (req, res, next) => {
     try {
       const { id } = req.params;
@@ -117,7 +117,7 @@ router.delete(
 );
 
 // Get all subcategories for a category
-router.get("/:id/subcategories", authenticateToken, async (req, res, next) => {
+router.get("/:id/subcategories", requireAuth, async (req, res, next) => {
   try {
     const { id } = req.params;
 
@@ -138,8 +138,8 @@ router.get("/:id/subcategories", authenticateToken, async (req, res, next) => {
 // Create subcategory (admin only)
 router.post(
   "/:id/subcategories",
-  authenticateToken,
-  requireAdmin,
+  requireAuth,
+  requireRole(Role.admin),
   async (req, res, next) => {
     try {
       const { id } = req.params;
@@ -169,8 +169,8 @@ router.post(
 // Update subcategory (admin only)
 router.put(
   "/:categoryId/subcategories/:id",
-  authenticateToken,
-  requireAdmin,
+  requireAuth,
+  requireRole(Role.admin),
   async (req, res, next) => {
     try {
       const { id } = req.params;
@@ -196,8 +196,8 @@ router.put(
 // Delete subcategory (admin only)
 router.delete(
   "/:categoryId/subcategories/:id",
-  authenticateToken,
-  requireAdmin,
+  requireAuth,
+  requireRole(Role.admin),
   async (req, res, next) => {
     try {
       const { id } = req.params;
