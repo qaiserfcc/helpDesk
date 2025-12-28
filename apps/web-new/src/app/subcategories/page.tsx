@@ -14,7 +14,7 @@ import {
 } from "@/services/subcategories";
 import { Modal, ModalActions } from "@/components/Modal";
 import { DataTable, type Column } from "@/components/DataTable";
-import { FormField } from "@/components/FormField";
+import { FormField, FormSelect } from "@/components/FormField";
 import { Button } from "@/components/Button";
 
 type SubcategoryFormValues = {
@@ -321,23 +321,22 @@ export default function SubcategoriesPage() {
               )}
 
               {/* Category Selector */}
-              <FormField
+              <FormSelect
                 label="Category"
-                type="select"
                 value={formValues.categoryId}
                 onChange={(e) =>
                   setFormValues((prev) => ({ ...prev, categoryId: e.target.value }))
                 }
                 error={formErrors.categoryId}
                 required
-              >
-                <option value="">-- Select Category --</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </FormField>
+                options={[
+                  { value: "", label: "-- Select Category --" },
+                  ...categories.map((cat) => ({
+                    value: cat.id,
+                    label: cat.name,
+                  })),
+                ]}
+              />
 
               {/* Name */}
               <FormField
