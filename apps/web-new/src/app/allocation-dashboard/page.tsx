@@ -149,118 +149,96 @@ export default function AllocationDashboardPage() {
           </div>
         </div>
 
-        {/* Status Highlights */}
+        {/* Metrics Cards - Real-Data Visualizations */}
         {user?.role === "admin" ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {statusBuckets.map((bucket) => (
-            <div key={bucket.status} className="card rounded-lg shadow p-6">
-              <p className="text-sm text-white/80 uppercase">
-                {formatStatus(bucket.status)}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {/* SLA Health Metric */}
+            <div className="card rounded-lg shadow p-6 bg-gradient-to-br from-blue-600/20 to-blue-900/20">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm text-white/80 uppercase">SLA Health</p>
+                <div className="text-2xl">📊</div>
+              </div>
+              <p className="text-3xl font-bold text-white mt-2">
+                {escData?.highPriority?.length === 0 ? "100" : escData ? `${Math.round((1 - (escData.highPriority?.length ?? 0) / Math.max(totalTickets, 1)) * 100)}` : "—"}%
               </p>
-              <p className="text-3xl font-bold text-white mt-2">{bucket.count}</p>
-              <p className="text-sm text-white/80 mt-1">
-                {totalTickets
-                  ? `${Math.round((bucket.count / totalTickets) * 100)}%`
-                  : "0%"}{" "}
-                of tracked
+              <p className="text-xs text-white/80 mt-2">Tickets on track</p>
+              {escData?.highPriority && escData.highPriority.length > 0 && (
+                <p className="text-xs text-red-300 mt-1">{escData.highPriority.length} at risk</p>
+              )}
+            </div>
+
+            {/* Avg Resolution Time */}
+            <div className="card rounded-lg shadow p-6 bg-gradient-to-br from-green-600/20 to-green-900/20">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm text-white/80 uppercase">Avg Resolution</p>
+                <div className="text-2xl">⏱️</div>
+              </div>
+              <p className="text-3xl font-bold text-white mt-2">
+                {trendSummary.avgResolutionHours ? `${Math.round(trendSummary.avgResolutionHours)}h` : "—"}
+              </p>
+              <p className="text-xs text-white/80 mt-2">Time to resolve</p>
+              {trendSummary.trend && (
+                <p className={`text-xs mt-1 ${trendSummary.trend === 'improving' ? 'text-green-300' : trendSummary.trend === 'worsening' ? 'text-red-300' : 'text-yellow-300'}`}>
+                  {trendSummary.trend === 'improving' ? '↑ Improving' : trendSummary.trend === 'worsening' ? '↓ Worsening' : '→ Stable'}
+                </p>
+              )}
+            </div>
+
+            {/* Workload Distribution */}
+            <div className="card rounded-lg shadow p-6 bg-gradient-to-br from-purple-600/20 to-purple-900/20">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm text-white/80 uppercase">Workload</p>
+                <div className="text-2xl">👥</div>
+              </div>
+              <p className="text-3xl font-bold text-white mt-2">{workloadStats.totalAgents}</p>
+              <p className="text-xs text-white/80 mt-2">Active agents</p>
+              <p className="text-xs text-white/70 mt-1">Avg {workloadStats.averageLoad} tickets each</p>
+            </div>
+
+            {/* Priority Distribution */}
+            <div className="card rounded-lg shadow p-6 bg-gradient-to-br from-amber-600/20 to-amber-900/20">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm text-white/80 uppercase">High Priority</p>
+                <div className="text-2xl">⚡</div>
+              </div>
+              <p className="text-3xl font-bold text-white mt-2">
+                {escData?.highPriority?.length ?? 0}
+              </p>
+              <p className="text-xs text-white/80 mt-2">Escalations</p>
+              <p className="text-xs text-white/70 mt-1">
+                {totalTickets > 0 ? `${Math.round(((escData?.highPriority?.length ?? 0) / totalTickets) * 100)}%` : "0%"} of total
               </p>
             </div>
-          ))}
           </div>
         ) : user?.role === 'agent' && agentOverview ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            {buildStatusBuckets(agentOverview?.statusCounts).map((bucket) => (
-              <div key={bucket.status} className="card rounded-lg shadow p-6">
-                <p className="text-sm text-white/80 uppercase">{formatStatus(bucket.status)}</p>
-                <p className="text-3xl font-bold text-white mt-2">{bucket.count}</p>
-              </div>
-            ))}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div className="card rounded-lg shadow p-6 bg-gradient-to-br from-blue-600/20 to-blue-900/20">
+              <p className="text-sm text-white/80 uppercase">Your Queue</p>
+              <p className="text-3xl font-bold text-white mt-2">{buildStatusBuckets(agentOverview?.statusCounts).reduce((s, b) => s + b.count, 0)}</p>
+              <p className="text-xs text-white/80 mt-2">Total assigned</p>
+            </div>
+            <div className="card rounded-lg shadow p-6 bg-gradient-to-br from-green-600/20 to-green-900/20">
+              <p className="text-sm text-white/80 uppercase">In Progress</p>
+              <p className="text-3xl font-bold text-white mt-2">{agentOverview?.statusCounts?.in_progress ?? 0}</p>
+              <p className="text-xs text-white/80 mt-2">Active work</p>
+            </div>
           </div>
         ) : user?.role === 'user' && userOverview ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            {buildStatusBuckets(userOverview?.statusCounts).map((bucket) => (
-              <div key={bucket.status} className="card rounded-lg shadow p-6">
-                <p className="text-sm text-white/80 uppercase">{formatStatus(bucket.status)}</p>
-                <p className="text-3xl font-bold text-white mt-2">{bucket.count}</p>
-              </div>
-            ))}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div className="card rounded-lg shadow p-6 bg-gradient-to-br from-blue-600/20 to-blue-900/20">
+              <p className="text-sm text-white/80 uppercase">Your Tickets</p>
+              <p className="text-3xl font-bold text-white mt-2">{Object.values(userOverview?.statusCounts ?? {}).reduce((s, n) => s + n, 0)}</p>
+              <p className="text-xs text-white/80 mt-2">All statuses</p>
+            </div>
+            <div className="card rounded-lg shadow p-6 bg-gradient-to-br from-green-600/20 to-green-900/20">
+              <p className="text-sm text-white/80 uppercase">Resolved</p>
+              <p className="text-3xl font-bold text-white mt-2">{userOverview?.statusCounts?.resolved ?? 0}</p>
+              <p className="text-xs text-white/80 mt-2">Completed</p>
+            </div>
           </div>
         ) : null}
 
-        {/* Allocation Snapshot */}
-        {user?.role === 'admin' ? (
-          <div className="card rounded-lg shadow p-6 mb-8">
-          <h2 className="text-xl font-semibold text-white mb-2">Allocation Snapshot</h2>
-          <p className="text-white/90 mb-6">
-            {workloadStats.totalAgents} active agent{workloadStats.totalAgents === 1 ? "" : "s"}
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white/5 rounded-lg p-4">
-              <p className="text-sm text-white/80">Avg load</p>
-              <p className="text-2xl font-bold text-white mt-1">
-                {workloadStats.averageLoad}
-              </p>
-              <p className="text-sm text-white/80 mt-1">tickets / agent</p>
-            </div>
-            <div className="bg-white/5 rounded-lg p-4">
-              <p className="text-sm text-white/80">Total assigned</p>
-              <p className="text-2xl font-bold text-white mt-1">
-                {workloadStats.totalAssignments}
-              </p>
-              <p className="text-sm text-white/80 mt-1">tickets</p>
-            </div>
-            <div className="bg-white/5 rounded-lg p-4">
-              <p className="text-sm text-white/80">Busiest agent</p>
-              <p className="text-2xl font-bold text-white mt-1 truncate">
-                {workloadStats.busiestAgent?.agent?.name ?? "—"}
-              </p>
-              <p className="text-sm text-white/80 mt-1">
-                {workloadStats.busiestAgent
-                  ? `${workloadStats.busiestAgent.count} tickets`
-                  : "No load"}
-              </p>
-            </div>
-          </div>
-          </div>
-        ) : user?.role === 'agent' && agentOverview ? (
-          <div className="card rounded-lg shadow p-6 mb-8">
-            <h2 className="text-xl font-semibold text-white mb-2">My Snapshot</h2>
-            <p className="text-white/90 mb-6">Assignment summary for you</p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="card p-4">
-                <p className="text-sm text-white/80">Assigned</p>
-                <p className="text-2xl font-bold text-white mt-1">{agentOverview?.assigned?.length ?? 0}</p>
-              </div>
-              <div className="card p-4">
-                <p className="text-sm text-white/80">Open</p>
-                <p className="text-2xl font-bold text-white mt-1">{agentOverview?.statusCounts?.open ?? 0}</p>
-              </div>
-              <div className="card p-4">
-                <p className="text-sm text-white/80">In progress</p>
-                <p className="text-2xl font-bold text-white mt-1">{agentOverview?.statusCounts?.in_progress ?? 0}</p>
-              </div>
-            </div>
-          </div>
-        ) : user?.role === 'user' && userOverview ? (
-          <div className="card rounded-lg shadow p-6 mb-8">
-            <h2 className="text-xl font-semibold text-white mb-2">My Tickets Snapshot</h2>
-            <p className="text-white/90 mb-6">Summary of your tickets</p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="card p-4">
-                <p className="text-sm text-white/80">My tickets</p>
-                <p className="text-2xl font-bold text-white mt-1">{Object.values(userOverview?.statusCounts ?? {}).reduce((s, n) => s + n, 0)}</p>
-              </div>
-              <div className="card p-4">
-                <p className="text-sm text-white/80">Open</p>
-                <p className="text-2xl font-bold text-white mt-1">{userOverview?.statusCounts?.open ?? 0}</p>
-              </div>
-              <div className="card p-4">
-                <p className="text-sm text-white/80">In progress</p>
-                <p className="text-2xl font-bold text-white mt-1">{userOverview?.statusCounts?.in_progress ?? 0}</p>
-              </div>
-            </div>
-          </div>
-        ) : null}
+
 
         {/* Live Backlog */}
         <div className="card rounded-lg shadow p-6 mb-8">

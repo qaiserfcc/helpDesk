@@ -18,9 +18,9 @@ const navItems: Array<{
   { label: "User Management", href: "/user-management", permission: "admin:manage_users" },
   { label: "Attributes", href: "/attributes", permission: "admin:manage_users" },
   { label: "Categories", href: "/categories", permission: "admin:manage_users" },
-  { label: "Subcategories", href: "/subcategories", permission: "admin:manage_users" },
   { label: "SLAs", href: "/slas", permission: "admin:manage_users" },
   { label: "Agent Assignment", href: "/agent-assignment", permission: "admin:manage_users" },
+  { label: "Workflows", href: "/workflows", permission: "admin:manage_users" },
 ];
 
 export function Sidebar() {

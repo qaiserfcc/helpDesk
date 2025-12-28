@@ -252,7 +252,7 @@ model AgentAutoAssign {
 // Workflow for ticket lifecycle management
 model Workflow {
   id              String   @id @default(uuid())
-  name            String
+  name            String   @unique
   description     String?
   // Workflow can be filtered by role, category, and subcategory
   roleFilter      Role?
@@ -279,8 +279,10 @@ model WorkflowStep {
   name            String
   description     String?
   order           Int      @default(0)
-  // Role required to complete this step (null means any assigned user)
-  requiredRole    Role?
+  // Roles required to confirm completion of this step (empty array means any user can complete)
+  requiredRoles   Role[]   @default([])
+  // If true, all specified roles must confirm; if false, any one role can confirm
+  requireAllRoles Boolean  @default(false)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   completions     WorkflowStepCompletion[]

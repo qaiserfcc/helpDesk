@@ -31,6 +31,7 @@ import {
 import { Modal, ModalActions } from "@/components/Modal";
 import { FormTextArea, FormField } from "@/components/FormField";
 import { Button } from "@/components/Button";
+import SLATimer from "@/components/SLATimer";
 
 const formatStatus = formatTicketStatus;
 
@@ -507,20 +508,17 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
             {ticket.sla && (
               <div className="card shadow rounded-lg p-6">
                 <h2 className="text-xl font-semibold text-white mb-4">Service Level Agreement (SLA)</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-white/5 p-4 rounded-lg">
-                    <p className="text-sm text-white/80">SLA Name</p>
-                    <p className="text-lg font-medium text-white">{ticket.sla.name}</p>
-                  </div>
-                  <div className="bg-white/5 p-4 rounded-lg">
-                    <p className="text-sm text-white/80">Response Time</p>
-                    <p className="text-lg font-medium text-white">{ticket.sla.responseTimeHours} hours</p>
-                  </div>
-                  <div className="bg-white/5 p-4 rounded-lg">
-                    <p className="text-sm text-white/80">Resolution Time</p>
-                    <p className="text-lg font-medium text-white">{ticket.sla.resolutionTimeHours} hours</p>
-                  </div>
+                <div className="mb-4">
+                  <p className="text-lg font-medium text-white mb-1">{ticket.sla.name}</p>
+                  <p className="text-sm text-white/70">{ticket.sla.description}</p>
                 </div>
+                <SLATimer
+                  createdAt={ticket.createdAt}
+                  responseTimeHours={ticket.sla.responseTimeHours}
+                  resolutionTimeHours={ticket.sla.resolutionTimeHours}
+                  resolvedAt={ticket.resolvedAt}
+                  ticketStatus={ticket.status}
+                />
               </div>
             )}
 

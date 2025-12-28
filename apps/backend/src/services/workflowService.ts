@@ -379,7 +379,44 @@ export async function completeWorkflowStep(
     },
   });
 
-  // Log activity
+  // Auto-update ticket status based on workflow progress
+  const totalSteps = ticket.workflow.steps.length;
+  const completedStepsCount = previousSteps.length + 1; // Including current step
+  
+  let newStatus = ticket.status;
+  
+  if (completedStepsCount === totalSteps) {
+    // All steps completed - mark ticket as resolved
+    newStatus = "resolved" as const;
+  } else if (completedStepsCount === 1) {
+    // First step completed - move from open to in_progress
+    newStatus = "in_progress" as const;
+  } else if (completedStepsCount > 1 && completedStepsCount < totalSteps) {
+    // Middle steps - ensure status is in_progress
+    newStatus = "in_progress" as const;
+  }
+
+  // Update ticket status if needed
+  if (newStatus !== ticket.status) {
+    await prisma.ticket.update({
+      where: { id: ticketId },
+      data: { status: newStatus, resolvedAt: newStatus === "resolved" ? new Date() : null },
+    });
+
+    // Log the status change activity
+    await prisma.ticketActivity.create({
+      data: {
+        ticketId,
+        actorId: userId,
+        type: "status_change",
+        fromStatus: ticket.status,
+        toStatus: newStatus,
+        comment: `Status auto-updated to ${newStatus} upon workflow step completion`,
+      },
+    });
+  }
+
+  // Log activity for step completion
   await prisma.ticketActivity.create({
     data: {
       ticketId,

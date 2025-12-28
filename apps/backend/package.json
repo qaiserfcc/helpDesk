@@ -17,6 +17,7 @@
     "prisma:deploy": "prisma migrate deploy",
     "prisma:reset": "prisma migrate reset"
     ,"test:reports":"node ./tools/reports-test.js"
+    ,"prisma:seed":"prisma db seed"
   },
   "engines": {
     "node": ">=20.19.0"
@@ -69,5 +70,8 @@
     "typescript": "^5.4.2",
     "typescript-eslint": "^8.47.0",
     "vitest": "^4.0.13"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   }
 }
