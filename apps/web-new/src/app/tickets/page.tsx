@@ -1,18 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { TableRowMenu } from "@/components/TableRowMenu";
+// row actions inlined to match user listing
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/useAuthStore";
-import { fetchTickets, createTicket, type Ticket, type TicketStatus, type CreateTicketPayload, type IssueType, type TicketPriority } from "@/services/tickets";
+import { fetchTickets, deleteTicket, type Ticket, type TicketStatus } from "@/services/tickets";
 import { formatTicketStatus } from "@/utils/ticketActivity";
-import { DataTable, Column } from "@/components/DataTable";
+import { DataList } from "@/components/DataTable";
 import { Button } from "@/components/Button";
-import { Modal, ModalActions } from "@/components/Modal";
-import { FormField, FormTextArea } from "@/components/FormField";
 import { useNotificationStore } from "@/store/useNotificationStore";
+import { useTicketModalStore } from "@/store/useTicketModalStore";
 
 const statusFilters: Array<{ label: string; value?: TicketStatus }> = [
   { label: "All" },
@@ -21,26 +19,7 @@ const statusFilters: Array<{ label: string; value?: TicketStatus }> = [
   { label: "Resolved", value: "resolved" },
 ];
 
-const priorityOptions: TicketPriority[] = ["low", "medium", "high"];
-const issueOptions: IssueType[] = [
-  "hardware",
-  "software",
-  "network",
-  "access",
-  "other",
-];
-
-type TicketFormValues = {
-  description: string;
-  priority: TicketPriority;
-  issueType: IssueType;
-};
-
-const makeEmptyTicketForm = (): TicketFormValues => ({
-  description: "",
-  priority: "medium",
-  issueType: "other",
-});
+// Ticket creation handled by global TicketFormModal via store
 
 export default function TicketsPage() {
   const router = useRouter();
@@ -48,10 +27,9 @@ export default function TicketsPage() {
   const { session } = useAuthStore();
   const [statusFilter, setStatusFilter] = useState<TicketStatus | undefined>();
   const [assignedOnly, setAssignedOnly] = useState(false);
-  const [createModalVisible, setCreateModalVisible] = useState(false);
-  const [formValues, setFormValues] = useState<TicketFormValues>(makeEmptyTicketForm());
-  const [formError, setFormError] = useState("");
   const addNotification = useNotificationStore((s) => s.addNotification);
+  const openCreate = useTicketModalStore((s) => s.openCreate);
+  const openEdit = useTicketModalStore((s) => s.openEdit);
 
   const { data: tickets = [], isLoading } = useQuery({
     queryKey: ["tickets", { statusFilter, assignedOnly }],
@@ -62,121 +40,46 @@ export default function TicketsPage() {
       }),
   });
 
-  const resetFormState = () => {
-    setFormValues(makeEmptyTicketForm());
-    setFormError("");
-  };
-
-  const closeCreateModal = () => {
-    resetFormState();
-    setCreateModalVisible(false);
-  };
-
   const openCreateModal = () => {
-    resetFormState();
-    setCreateModalVisible(true);
+    openCreate(() => {
+      queryClient.invalidateQueries({ queryKey: ["tickets"] });
+    });
   };
 
-  const createTicketMutation = useMutation({
-    mutationFn: createTicket,
-    onSuccess: (created) => {
+  // Creation handled by global modal; no local mutation here
+
+  const deleteTicketMutation = useMutation({
+    mutationFn: (ticketId: string) => deleteTicket(ticketId),
+    onSuccess: (removed) => {
       queryClient.invalidateQueries({ queryKey: ["tickets"] });
-      closeCreateModal();
-      if (created?.id) {
-        addNotification({
-          id: created.id,
-          ticketId: created.id,
-          actor: session?.user?.name ?? "",
-          summary: `Created ticket: ${created.description?.slice(0, 50)}`,
-          createdAt: created.createdAt,
-          type: "ticket",
-        });
-        router.push(`/ticket/${created.id}`);
-      }
+      addNotification({
+        id: removed.id,
+        ticketId: removed.id,
+        actor: session?.user?.name ?? "",
+        summary: `Deleted ticket #${removed.id.slice(0,8)}`,
+        createdAt: removed.updatedAt,
+        type: "ticket",
+      });
     },
     onError: (error: unknown) => {
-      const message = error instanceof Error ? error.message : "Failed to create ticket.";
-      setFormError(message);
+      const message = error instanceof Error ? error.message : "Failed to delete ticket.";
+      alert(`Delete failed: ${message}`);
     },
   });
 
-  const handleSubmitCreateForm = () => {
-    if (!formValues.description.trim()) {
-      setFormError("Description is required");
-      return;
+  const confirmRemove = (entry: Ticket) => {
+    if (confirm(`Delete ticket #${entry.id.slice(0,8)}? This cannot be undone.`)) {
+      deleteTicketMutation.mutate(entry.id);
     }
-
-    setFormError("");
-
-    const payload: CreateTicketPayload = {
-      description: formValues.description.trim(),
-      priority: formValues.priority,
-      issueType: formValues.issueType,
-    };
-
-    createTicketMutation.mutate(payload);
   };
 
-  const saving = createTicketMutation.isPending;
+  // No inline form submit; TicketFormModal manages submit & errors
 
   if (!session) {
     return null;
   }
 
   const canCreate = session.user.role === "user" || session.user.role === "admin";
-
-  const columns: Column<Ticket>[] = [
-    {
-      key: "id",
-      label: "ID",
-      render: (ticket) => (
-        <span className="font-medium">#{ticket.id.slice(0, 8)}</span>
-      ),
-    },
-    {
-      key: "description",
-      label: "Description",
-      render: (ticket) => (
-        <span className="max-w-xs truncate block">{ticket.description}</span>
-      ),
-    },
-    {
-      key: "status",
-      label: "Status",
-      render: (ticket) => (
-        <span
-          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-            ticket.status === "open"
-              ? "bg-green-500/20 text-green-300 border border-green-500/30"
-              : ticket.status === "in_progress"
-              ? "bg-yellow-500/20 text-yellow-300 border border-yellow-500/30"
-              : "bg-primary-alpha-15 text-white border border-primary-alpha-20"
-          }`}
-        >
-          {formatTicketStatus(ticket.status)}
-        </span>
-      ),
-    },
-    {
-      key: "priority",
-      label: "Priority",
-      render: (ticket) => <span className="capitalize">{ticket.priority}</span>,
-    },
-    {
-      key: "issueType",
-      label: "Type",
-      render: (ticket) => <span className="capitalize">{ticket.issueType}</span>,
-    },
-    {
-      key: "assignee",
-      label: "Assignee",
-      render: (ticket) => (
-        <span className="text-white/90">
-          {ticket.assignee ? ticket.assignee.name : "Unassigned"}
-        </span>
-      ),
-    },
-  ];
 
   return (
     <div className="min-h-screen">
@@ -241,11 +144,10 @@ export default function TicketsPage() {
           </div>
         </div>
 
-        {/* Tickets List */}
-        <DataTable
-          columns={columns}
+        {/* Tickets List - card-based, matching user listing */}
+        <DataList
           data={tickets}
-          getRowKey={(ticket) => ticket.id}
+          getRowKey={(t) => t.id}
           isLoading={isLoading}
           emptyMessage="No tickets found."
           emptyAction={
@@ -255,124 +157,55 @@ export default function TicketsPage() {
               </Button>
             ) : undefined
           }
-          actions={(ticket) => (
-            <TableRowMenu
-              ticketId={ticket.id}
-              canEdit={
-                session.user.id === ticket.creator?.id &&
-                ticket.status !== "resolved"
-              }
-              canAssign={session.user.role === "admin"}
-              canRequestAssignment={session.user.role === "agent"}
-            />
+          renderItem={(ticket) => (
+            <div className="card rounded-lg p-4 flex justify-between items-center hover:bg-white/5 transition-colors">
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-white truncate">{ticket.description}</p>
+                <p className="text-sm text-white/70 mt-1 truncate">
+                  #{ticket.id.slice(0,8)} · <span className="capitalize">{ticket.issueType}</span> ·
+                  <span className="capitalize"> {ticket.priority}</span> · Assignee: {ticket.assignee?.name ?? "Unassigned"}
+                </p>
+              </div>
+              <div className="flex items-center space-x-4">
+                <span className={`px-3 py-1 rounded-full text-xs font-medium border ${
+                  ticket.status === "open"
+                    ? "bg-green-500/20 text-green-300 border-green-500/30"
+                    : ticket.status === "in_progress"
+                    ? "bg-yellow-500/20 text-yellow-300 border-yellow-500/30"
+                    : "bg-sky-500/15 text-white border-sky-400/25"
+                }`}>
+                  {formatTicketStatus(ticket.status)}
+                </span>
+                <div className="flex space-x-2">
+                  <Button variant="ghost" size="sm" onClick={() => router.push(`/ticket/${ticket.id}`)}>
+                    View
+                  </Button>
+                  {(session.user.id === ticket.creator?.id && ticket.status !== "resolved") && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => openEdit(ticket)}
+                    >
+                      Edit
+                    </Button>
+                  )}
+                  {session.user.role === "admin" && (
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      onClick={() => confirmRemove(ticket)}
+                      isLoading={false}
+                    >
+                      Delete
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
           )}
         />
       </div>
-
-      {/* Create Ticket Modal */}
-      <Modal
-        isOpen={createModalVisible}
-        onClose={closeCreateModal}
-        title="Create New Ticket"
-        size="md"
-      >
-        <p className="text-white/80 mb-6">
-          Describe your issue in detail. An agent will be assigned to help resolve it.
-        </p>
-
-        <FormTextArea
-          label="Description"
-          placeholder="Describe the issue in detail..."
-          value={formValues.description}
-          onChange={(e) =>
-            setFormValues((prev) => ({ ...prev, description: e.target.value }))
-          }
-          error={formError && !formValues.description.trim() ? "Description is required" : undefined}
-          required
-          rows={6}
-        />
-
-        {/* Priority Selection */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-white/90 mb-3">
-            Priority <span className="text-red-400 ml-1">*</span>
-          </label>
-          <div className="flex space-x-3">
-            {priorityOptions.map((option) => {
-              const selected = formValues.priority === option;
-              return (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() =>
-                    setFormValues((prev) => ({
-                      ...prev,
-                      priority: option,
-                    }))
-                  }
-                  className={`px-4 py-2 rounded-lg capitalize cursor-pointer transition-colors ${
-                    selected
-                      ? "bg-primary-blue text-white"
-                      : "bg-white/5 text-white/70 hover:bg-white/10"
-                  }`}
-                >
-                  {option}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Issue Type Selection */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-white/90 mb-3">
-            Issue Type <span className="text-red-400 ml-1">*</span>
-          </label>
-          <div className="flex flex-wrap gap-3">
-            {issueOptions.map((option) => {
-              const selected = formValues.issueType === option;
-              return (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() =>
-                    setFormValues((prev) => ({
-                      ...prev,
-                      issueType: option,
-                    }))
-                  }
-                  className={`px-4 py-2 rounded-lg capitalize cursor-pointer transition-colors ${
-                    selected
-                      ? "bg-primary-blue text-white"
-                      : "bg-white/5 text-white/70 hover:bg-white/10"
-                  }`}
-                >
-                  {option}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {formError && (
-          <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-md">
-            <p className="text-red-400 text-sm">{formError}</p>
-          </div>
-        )}
-
-        <ModalActions>
-          <Button variant="ghost" onClick={closeCreateModal}>
-            Cancel
-          </Button>
-          <Button
-            variant="primary"
-            onClick={handleSubmitCreateForm}
-            isLoading={saving}
-          >
-            Create Ticket
-          </Button>
-        </ModalActions>
-      </Modal>
+      {/* Ticket creation handled by GlobalModals */}
     </div>
   );
 }

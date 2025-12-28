@@ -30,13 +30,13 @@ export function Button({
 
   const variantClasses = {
     primary:
-      "bg-primary-blue text-white hover:bg-primary-blue-dark focus:ring-primary-blue shadow-sm",
+      "bg-sky-500 text-white hover:bg-sky-600 focus:ring-sky-400 shadow-sm",
     secondary:
-      "bg-white/10 text-white hover:bg-white/20 focus:ring-white/30 border border-white/10",
+      "bg-sky-500/15 text-sky-100 hover:bg-sky-500/25 focus:ring-sky-300/40 border border-sky-400/25",
     danger:
       "bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 shadow-sm",
     ghost:
-      "bg-transparent text-white/70 hover:bg-white/5 hover:text-white focus:ring-white/20",
+      "bg-transparent text-sky-200 hover:bg-sky-500/10 hover:text-white focus:ring-sky-300/30",
   };
 
   const sizeClasses = {

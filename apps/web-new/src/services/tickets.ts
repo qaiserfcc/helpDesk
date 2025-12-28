@@ -153,6 +153,13 @@ export async function createTicket(payload: CreateTicketPayload) {
   return response.data.ticket;
 }
 
+export async function deleteTicket(ticketId: string) {
+  const response = await apiClient.delete<{ ticket: Ticket }>(
+    `/tickets/${ticketId}`,
+  );
+  return response.data.ticket;
+}
+
 export async function updateTicket(
   ticketId: string,
   payload: UpdateTicketPayload,

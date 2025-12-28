@@ -18,6 +18,7 @@ import {
   requestAssignment,
   resolveTicket,
   updateTicket,
+  deleteTicket,
 } from "../services/ticketService.js";
 import { attachmentsDir } from "../config/attachments.js";
 
@@ -357,5 +358,19 @@ router.post(
     }
   },
 );
+
+router.delete("/:ticketId", async (req, res, next) => {
+  if (!req.user) {
+    next(createError(401, "Authentication required"));
+    return;
+  }
+
+  try {
+    const ticket = await deleteTicket(req.params.ticketId, req.user);
+    res.status(200).json({ ticket });
+  } catch (error) {
+    next(error);
+  }
+});
 
 export default router;

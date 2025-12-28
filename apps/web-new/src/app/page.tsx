@@ -16,9 +16,12 @@ import {
 } from "@/services/tickets";
 import HeroHeader from "@/components/HeroHeader";
 import StatusSnapshot from "@/components/StatusSnapshot";
+import { Button } from "@/components/Button";
+import { useTicketModalStore } from "@/store/useTicketModalStore";
 
 export default function Dashboard() {
   const { session } = useAuthStore();
+  const openCreate = useTicketModalStore((s) => s.openCreate);
 
   const { data: userReport } = useQuery({
     queryKey: ["user-ticket-report"],
@@ -258,9 +261,9 @@ export default function Dashboard() {
             <h2 className="text-lg font-medium text-white mb-4">Quick Actions</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {canCreate && (
-                <Link href="/ticket/new" className="primary-btn px-4 py-2 rounded-md text-sm font-medium text-center">
+                <Button variant="primary" onClick={() => openCreate()}>
                   Create Ticket
-                </Link>
+                </Button>
               )}
               <RoleRestrictedView permission="reports:view">
                 <Link href="/status-summary" className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-md text-sm font-medium text-center">

@@ -3,6 +3,7 @@ import "./globals.css";
 import { AppProviders } from "@/components/AppProviders";
 import ClientWrapper from "@/components/ClientWrapper";
 import { Header } from "@/components/Header";
+import { GlobalModals } from "@/components/GlobalModals";
 
 export const metadata: Metadata = {
   title: "HelpDesk",
@@ -21,6 +22,7 @@ export default function RootLayout({
           <ClientWrapper>
             <Header />
             {children}
+            <GlobalModals />
           </ClientWrapper>
         </AppProviders>
       </body>

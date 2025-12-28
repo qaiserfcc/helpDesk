@@ -750,3 +750,29 @@ export async function getTicketStatusSummary(user: RequestUser) {
       })),
   };
 }
+
+export async function deleteTicket(ticketId: string, user: RequestUser) {
+  // Only admins can delete tickets
+  if (user.role !== Role.admin) {
+    throw createError(403, "Only admins can delete tickets");
+  }
+
+  const ticket = await prisma.ticket.findUnique({
+    where: { id: ticketId },
+    include: ticketInclude,
+  });
+  if (!ticket) {
+    throw createError(404, "Ticket not found");
+  }
+
+  // Delete dependent records first to satisfy FK constraints
+  await prisma.ticketActivity.deleteMany({ where: { ticketId } });
+  await prisma.aiSuggestion.deleteMany({ where: { ticketId } });
+
+  await prisma.ticket.delete({ where: { id: ticketId } });
+
+  // Optionally notify realtime subscribers if needed
+  // publishTicketEvent({ type: "tickets:updated", ticket }); // no specific delete event type
+
+  return ticket;
+}

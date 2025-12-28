@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useAuthStore } from "@/store/useAuthStore";
 import { assignTicket, requestAssignment } from "@/services/tickets";
 
-export function TableRowMenu({ ticketId, canEdit, canAssign, canRequestAssignment }: { ticketId: string; canEdit: boolean; canAssign: boolean; canRequestAssignment: boolean; }) {
+export function TableRowMenu({ ticketId, canEdit, canAssign, canRequestAssignment, canDelete, onDelete, }: { ticketId: string; canEdit: boolean; canAssign: boolean; canRequestAssignment: boolean; canDelete?: boolean; onDelete?: (ticketId: string) => void; }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const session = useAuthStore((s) => s.session);
@@ -41,6 +41,14 @@ export function TableRowMenu({ ticketId, canEdit, canAssign, canRequestAssignmen
             </button>
           )}
           {canAssign && <button className="block px-3 py-2 text-white rounded hover:bg-white/6">Assign</button>}
+          {canDelete && (
+            <button
+              onClick={() => onDelete?.(ticketId)}
+              className="block w-full text-left px-3 py-2 text-red-300 rounded hover:bg-red-500/10"
+            >
+              Delete
+            </button>
+          )}
         </div>
       )}
     </div>
