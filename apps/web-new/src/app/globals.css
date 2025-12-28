@@ -1,17 +1,31 @@
 @import "tailwindcss";
 
 :root {
-  /* Gradient theme colors */
+  /* Light theme colors */
+  --gradient-start: #f0f9ff; /* light blue */
+  --gradient-end: #e0e7ff; /* light purple */
+  --background: linear-gradient(180deg, var(--gradient-start), var(--gradient-end));
+  --foreground: #1f2937;
+  --card-bg: rgba(255, 255, 255, 0.9);
+  --card-border: rgba(0, 0, 0, 0.1);
+  --muted: rgba(0, 0, 0, 0.6);
+  --accent: #0ea5e9;
+  --focus-ring: rgba(14, 165, 233, 0.24);
+  --focus-border: rgba(14, 165, 233, 0.95);
+}
+
+.dark {
+  /* Dark theme colors */
   --gradient-start: #7c3aed; /* purple */
   --gradient-end: #06b6d4; /* cyan */
   --background: linear-gradient(180deg, var(--gradient-start), var(--gradient-end));
   --foreground: #ffffff;
-  --card-bg: rgba(255,255,255,0.06);
-  --card-border: rgba(255,255,255,0.08);
-  --muted: rgba(255,255,255,0.85);
+  --card-bg: rgba(255, 255, 255, 0.06);
+  --card-border: rgba(255, 255, 255, 0.08);
+  --muted: rgba(255, 255, 255, 0.85);
   --accent: #07b6dc;
-  --focus-ring: rgba(7,182,220,0.24);
-  --focus-border: rgba(6,182,212,0.95);
+  --focus-ring: rgba(7, 182, 220, 0.24);
+  --focus-border: rgba(6, 182, 212, 0.95);
 }
 
 @theme inline {
@@ -19,13 +33,6 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {

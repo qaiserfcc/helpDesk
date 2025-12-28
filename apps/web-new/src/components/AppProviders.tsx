@@ -8,6 +8,7 @@ import { useOfflineStore } from "@/store/useOfflineStore";
 import { ticketSocket } from "@/realtime/ticketSocket";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { NotificationContainer } from "@/components/NotificationContainer";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 
 interface AppProvidersProps {
   children: ReactNode;
@@ -75,10 +76,12 @@ export function AppProviders({ children }: AppProvidersProps) {
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <OfflineBanner />
-      <NotificationContainer />
-      {children}
-    </QueryClientProvider>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <OfflineBanner />
+        <NotificationContainer />
+        {children}
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }
