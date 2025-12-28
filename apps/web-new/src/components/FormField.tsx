@@ -89,12 +89,16 @@ export function FormSelect({
   );
 }
 
-export interface FormTextAreaProps
-  extends InputHTMLAttributes<HTMLTextAreaElement> {
+export interface FormTextAreaProps {
   label: string;
   error?: string;
   helperText?: string;
   rows?: number;
+  className?: string;
+  required?: boolean;
+  placeholder?: string;
+  value?: string;
+  onChange?: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
 }
 
 /**
@@ -106,17 +110,23 @@ export function FormTextArea({
   helperText,
   rows = 4,
   className = "",
-  ...props
+  required,
+  placeholder,
+  value,
+  onChange,
 }: FormTextAreaProps) {
   return (
     <div className="mb-4">
       <label className="block text-sm font-medium text-white/90 mb-1">
         {label}
-        {props.required && <span className="text-red-400 ml-1">*</span>}
+        {required && <span className="text-red-400 ml-1">*</span>}
       </label>
       <textarea
-        {...(props as any)}
         rows={rows}
+        required={required}
+        placeholder={placeholder}
+        value={value}
+        onChange={onChange}
         className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 bg-white/5 text-white placeholder-white/50 transition-all resize-none ${
           error
             ? "border-red-500 focus:ring-red-500"

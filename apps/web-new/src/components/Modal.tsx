@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
 
 export interface ModalProps {
   isOpen: boolean;
@@ -30,6 +30,18 @@ export function Modal({
   size = "md",
   showCloseButton = true,
 }: ModalProps) {
+  // Handle escape key globally
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isOpen) {
+        onClose();
+      }
+    };
+
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const sizeClasses = {
@@ -45,17 +57,10 @@ export function Modal({
     }
   };
 
-  const handleEscape = (e: React.KeyboardEvent) => {
-    if (e.key === "Escape") {
-      onClose();
-    }
-  };
-
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       onClick={handleBackdropClick}
-      onKeyDown={handleEscape}
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
