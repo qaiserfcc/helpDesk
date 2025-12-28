@@ -4,12 +4,15 @@ import { useState } from "react";
 import Link from "next/link";
 import { TableRowMenu } from "@/components/TableRowMenu";
 import { useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/useAuthStore";
-import { fetchTickets, type Ticket, type TicketStatus } from "@/services/tickets";
+import { fetchTickets, createTicket, type Ticket, type TicketStatus, type CreateTicketPayload, type IssueType, type TicketPriority } from "@/services/tickets";
 import { formatTicketStatus } from "@/utils/ticketActivity";
 import { DataTable, Column } from "@/components/DataTable";
 import { Button } from "@/components/Button";
+import { Modal, ModalActions } from "@/components/Modal";
+import { FormField, FormTextArea } from "@/components/FormField";
+import { useNotificationStore } from "@/store/useNotificationStore";
 
 const statusFilters: Array<{ label: string; value?: TicketStatus }> = [
   { label: "All" },
@@ -18,13 +21,39 @@ const statusFilters: Array<{ label: string; value?: TicketStatus }> = [
   { label: "Resolved", value: "resolved" },
 ];
 
+const priorityOptions: TicketPriority[] = ["low", "medium", "high"];
+const issueOptions: IssueType[] = [
+  "hardware",
+  "software",
+  "network",
+  "access",
+  "other",
+];
+
+type TicketFormValues = {
+  description: string;
+  priority: TicketPriority;
+  issueType: IssueType;
+};
+
+const makeEmptyTicketForm = (): TicketFormValues => ({
+  description: "",
+  priority: "medium",
+  issueType: "other",
+});
+
 export default function TicketsPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { session } = useAuthStore();
   const [statusFilter, setStatusFilter] = useState<TicketStatus | undefined>();
   const [assignedOnly, setAssignedOnly] = useState(false);
+  const [createModalVisible, setCreateModalVisible] = useState(false);
+  const [formValues, setFormValues] = useState<TicketFormValues>(makeEmptyTicketForm());
+  const [formError, setFormError] = useState("");
+  const addNotification = useNotificationStore((s) => s.addNotification);
 
-  const { data: tickets = [], isLoading } = useQuery({
+  const { data: tickets = [], isLoading, refetch } = useQuery({
     queryKey: ["tickets", { statusFilter, assignedOnly }],
     queryFn: () =>
       fetchTickets({
@@ -32,6 +61,63 @@ export default function TicketsPage() {
         assignedToMe: assignedOnly || undefined,
       }),
   });
+
+  const resetFormState = () => {
+    setFormValues(makeEmptyTicketForm());
+    setFormError("");
+  };
+
+  const closeCreateModal = () => {
+    resetFormState();
+    setCreateModalVisible(false);
+  };
+
+  const openCreateModal = () => {
+    resetFormState();
+    setCreateModalVisible(true);
+  };
+
+  const createTicketMutation = useMutation({
+    mutationFn: createTicket,
+    onSuccess: (created) => {
+      queryClient.invalidateQueries({ queryKey: ["tickets"] });
+      closeCreateModal();
+      if (created?.id) {
+        addNotification({
+          id: created.id,
+          ticketId: created.id,
+          actor: session?.user?.name ?? "",
+          summary: `Created ticket: ${created.description?.slice(0, 50)}`,
+          createdAt: created.createdAt,
+          type: "ticket",
+        });
+        router.push(`/ticket/${created.id}`);
+      }
+    },
+    onError: (error: unknown) => {
+      const message = error instanceof Error ? error.message : "Failed to create ticket.";
+      setFormError(message);
+    },
+  });
+
+  const handleSubmitCreateForm = () => {
+    if (!formValues.description.trim()) {
+      setFormError("Description is required");
+      return;
+    }
+
+    setFormError("");
+
+    const payload: CreateTicketPayload = {
+      description: formValues.description.trim(),
+      priority: formValues.priority,
+      issueType: formValues.issueType,
+    };
+
+    createTicketMutation.mutate(payload);
+  };
+
+  const saving = createTicketMutation.isPending;
 
   if (!session) {
     return null;
@@ -107,9 +193,9 @@ export default function TicketsPage() {
           <div className="flex justify-between items-center">
             <h1 className="text-3xl font-bold text-white">Tickets</h1>
             {canCreate && (
-              <Link href="/ticket/new">
-                <Button variant="primary">Create Ticket</Button>
-              </Link>
+              <Button variant="primary" onClick={openCreateModal}>
+                Create Ticket
+              </Button>
             )}
           </div>
         </div>
@@ -164,11 +250,9 @@ export default function TicketsPage() {
           emptyMessage="No tickets found."
           emptyAction={
             canCreate ? (
-              <Link href="/ticket/new">
-                <Button variant="primary" className="mt-4">
-                  Create your first ticket
-                </Button>
-              </Link>
+              <Button variant="primary" className="mt-4" onClick={openCreateModal}>
+                Create your first ticket
+              </Button>
             ) : undefined
           }
           actions={(ticket) => (
@@ -184,6 +268,111 @@ export default function TicketsPage() {
           )}
         />
       </div>
+
+      {/* Create Ticket Modal */}
+      <Modal
+        isOpen={createModalVisible}
+        onClose={closeCreateModal}
+        title="Create New Ticket"
+        size="md"
+      >
+        <p className="text-white/80 mb-6">
+          Describe your issue in detail. An agent will be assigned to help resolve it.
+        </p>
+
+        <FormTextArea
+          label="Description"
+          placeholder="Describe the issue in detail..."
+          value={formValues.description}
+          onChange={(e) =>
+            setFormValues((prev) => ({ ...prev, description: e.target.value }))
+          }
+          error={formError && !formValues.description.trim() ? "Description is required" : undefined}
+          required
+          rows={6}
+        />
+
+        {/* Priority Selection */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-white/90 mb-3">
+            Priority <span className="text-red-400 ml-1">*</span>
+          </label>
+          <div className="flex space-x-3">
+            {priorityOptions.map((option) => {
+              const selected = formValues.priority === option;
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() =>
+                    setFormValues((prev) => ({
+                      ...prev,
+                      priority: option,
+                    }))
+                  }
+                  className={`px-4 py-2 rounded-lg capitalize cursor-pointer transition-colors ${
+                    selected
+                      ? "bg-primary-blue text-white"
+                      : "bg-white/5 text-white/70 hover:bg-white/10"
+                  }`}
+                >
+                  {option}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Issue Type Selection */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-white/90 mb-3">
+            Issue Type <span className="text-red-400 ml-1">*</span>
+          </label>
+          <div className="flex flex-wrap gap-3">
+            {issueOptions.map((option) => {
+              const selected = formValues.issueType === option;
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() =>
+                    setFormValues((prev) => ({
+                      ...prev,
+                      issueType: option,
+                    }))
+                  }
+                  className={`px-4 py-2 rounded-lg capitalize cursor-pointer transition-colors ${
+                    selected
+                      ? "bg-primary-blue text-white"
+                      : "bg-white/5 text-white/70 hover:bg-white/10"
+                  }`}
+                >
+                  {option}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {formError && (
+          <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-md">
+            <p className="text-red-400 text-sm">{formError}</p>
+          </div>
+        )}
+
+        <ModalActions>
+          <Button variant="ghost" onClick={closeCreateModal}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleSubmitCreateForm}
+            isLoading={saving}
+          >
+            Create Ticket
+          </Button>
+        </ModalActions>
+      </Modal>
     </div>
   );
 }

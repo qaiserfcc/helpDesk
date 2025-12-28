@@ -23,6 +23,7 @@ import {
   INSIGHT_TABS,
   DEFAULT_STATUS_COUNTS,
 } from "./helpers";
+import { Button } from "@/components/Button";
 
 const formatStatus = formatTicketStatus;
 
@@ -125,12 +126,14 @@ export default function AllocationDashboardPage() {
     <div className="min-h-screen">
       <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => router.back()}
-            className="text-blue-600 hover:text-blue-500 mb-4"
+            className="mb-4"
           >
             ← Back
-          </button>
+          </Button>
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-3xl font-bold text-white">{user?.role === 'admin' ? 'Allocation Dashboard' : user?.role === 'agent' ? 'My Allocation' : 'Allocation Overview'}</h1>

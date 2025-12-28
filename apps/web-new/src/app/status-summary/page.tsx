@@ -18,6 +18,7 @@ import {
   describeTicketActivity,
   formatTicketStatus,
 } from "@/utils/ticketActivity";
+import { Button } from "@/components/Button";
 
 const formatStatus = formatTicketStatus;
 
@@ -164,24 +165,26 @@ export default function StatusSummaryPage() {
     <div className="min-h-screen">
       <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => router.back()}
-            className="text-blue-600 hover:text-blue-500 mb-4"
+            className="mb-4"
           >
             ← Back
-          </button>
+          </Button>
           <div className="flex justify-between items-center">
             <div>
                 <h1 className="text-3xl font-bold text-white">{user?.role === "admin" ? "Organization Report" : user?.role === "agent" ? "Agent Report" : "My Report"}</h1>
                   <p className="text-white/90 mt-2">Live ticket overview</p>
             </div>
-            <button
+            <Button
+              variant="primary"
               onClick={onRefresh}
-              disabled={refreshing}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              isLoading={refreshing}
             >
-              {refreshing ? "Refreshing..." : "Refresh"}
-            </button>
+              Refresh
+            </Button>
           </div>
         </div>
 
