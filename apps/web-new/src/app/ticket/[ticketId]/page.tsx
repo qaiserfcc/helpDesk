@@ -463,19 +463,19 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
                 )}
 
                 {canRequestAssignment && (
-                  <button
+                  <Button
+                    variant="secondary"
                     onClick={handleRequestAssignment}
-                    disabled={isRequesting || agentHasPendingRequest || otherAgentRequested}
-                    className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={agentHasPendingRequest || otherAgentRequested}
+                    isLoading={isRequesting}
+                    className="w-full"
                   >
                     {agentHasPendingRequest
                       ? "Request Pending"
                       : otherAgentRequested
                         ? "Another Agent Requested"
-                        : isRequesting
-                          ? "Requesting..."
-                          : "Request Assignment"}
-                  </button>
+                        : "Request Assignment"}
+                  </Button>
                 )}
 
                 {canResolve && (

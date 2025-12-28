@@ -53,7 +53,7 @@ export default function TicketsPage() {
   const [formError, setFormError] = useState("");
   const addNotification = useNotificationStore((s) => s.addNotification);
 
-  const { data: tickets = [], isLoading, refetch } = useQuery({
+  const { data: tickets = [], isLoading } = useQuery({
     queryKey: ["tickets", { statusFilter, assignedOnly }],
     queryFn: () =>
       fetchTickets({
