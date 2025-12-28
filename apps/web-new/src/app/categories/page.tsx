@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useToastStore } from "@/store/useToastStore";
 import {
   categoriesService,
   type Category,
@@ -49,6 +50,7 @@ export default function CategoriesPage() {
   const router = useRouter();
   const user = useAuthStore((state) => state.session?.user);
   const queryClient = useQueryClient();
+  const toastAdd = useToastStore((s) => s.addNotification);
   const [formMode, setFormMode] = useState<"create" | "edit">("create");
   const [formValues, setFormValues] = useState<CategoryFormValues>(makeEmptyCategoryForm());
   const [formErrors, setFormErrors] = useState<FormErrors>({});
@@ -63,6 +65,12 @@ export default function CategoriesPage() {
   const [subcategoryFormValues, setSubcategoryFormValues] = useState<SubcategoryFormValues>(makeEmptySubcategoryForm());
   const [subcategoryFormErrors, setSubcategoryFormErrors] = useState<FormErrors>({});
   const [activeSubcategoryId, setActiveSubcategoryId] = useState<string | null>(null);
+  
+  // Confirmation modal state
+  const [confirmDeleteCategoryVisible, setConfirmDeleteCategoryVisible] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
+  const [confirmDeleteSubcategoryVisible, setConfirmDeleteSubcategoryVisible] = useState(false);
+  const [subcategoryToDelete, setSubcategoryToDelete] = useState<Subcategory | null>(null);
 
   const {
     data: categories,
@@ -171,7 +179,12 @@ export default function CategoriesPage() {
     onSuccess: (created) => {
       invalidateCategories();
       closeForm();
-      alert(`Category "${created.name}" created successfully.`);
+      toastAdd({
+        type: "success",
+        title: "Category created",
+        message: `Category "${created.name}" created successfully`,
+        timestamp: new Date().toISOString(),
+      });
     },
     onError: handleMutationError,
   });
@@ -187,7 +200,12 @@ export default function CategoriesPage() {
     onSuccess: (updated) => {
       invalidateCategories();
       closeForm();
-      alert(`Category "${updated.name}" updated successfully.`);
+      toastAdd({
+        type: "success",
+        title: "Category updated",
+        message: `Category "${updated.name}" updated successfully`,
+        timestamp: new Date().toISOString(),
+      });
     },
     onError: handleMutationError,
   });
@@ -199,12 +217,22 @@ export default function CategoriesPage() {
     },
     onSuccess: (removed) => {
       invalidateCategories();
-      alert(`Category "${removed.name}" deleted.`);
+      toastAdd({
+        type: "success",
+        title: "Category deleted",
+        message: `Category "${removed.name}" deleted`,
+        timestamp: new Date().toISOString(),
+      });
     },
     onError: (error: unknown) => {
       const message =
         error instanceof Error ? error.message : "Unable to delete category.";
-      alert(`Delete failed: ${message}`);
+      toastAdd({
+        type: "error",
+        title: "Delete failed",
+        message,
+        timestamp: new Date().toISOString(),
+      });
     },
     onSettled: () => {
       setPendingDeleteId(null);
@@ -217,7 +245,12 @@ export default function CategoriesPage() {
     onSuccess: (created) => {
       invalidateCategories();
       closeSubcategoryForm();
-      alert(`Subcategory "${created.name}" created successfully.`);
+      toastAdd({
+        type: "success",
+        title: "Subcategory created",
+        message: `Subcategory "${created.name}" created successfully`,
+        timestamp: new Date().toISOString(),
+      });
     },
     onError: (error: unknown) => {
       const message =
@@ -237,7 +270,12 @@ export default function CategoriesPage() {
     onSuccess: (updated) => {
       invalidateCategories();
       closeSubcategoryForm();
-      alert(`Subcategory "${updated.name}" updated successfully.`);
+      toastAdd({
+        type: "success",
+        title: "Subcategory updated",
+        message: `Subcategory "${updated.name}" updated successfully`,
+        timestamp: new Date().toISOString(),
+      });
     },
     onError: (error: unknown) => {
       const message =
@@ -250,12 +288,22 @@ export default function CategoriesPage() {
     mutationFn: subcategoriesService.deleteSubcategory,
     onSuccess: (removed) => {
       invalidateCategories();
-      alert(`Subcategory "${removed.name}" deleted.`);
+      toastAdd({
+        type: "success",
+        title: "Subcategory deleted",
+        message: `Subcategory "${removed.name}" deleted`,
+        timestamp: new Date().toISOString(),
+      });
     },
     onError: (error: unknown) => {
       const message =
         error instanceof Error ? error.message : "Unable to delete subcategory.";
-      alert(`Delete failed: ${message}`);
+      toastAdd({
+        type: "error",
+        title: "Delete failed",
+        message,
+        timestamp: new Date().toISOString(),
+      });
     },
   });
 
@@ -294,15 +342,39 @@ export default function CategoriesPage() {
   };
 
   const confirmRemove = (entry: Category) => {
-    if (confirm(`Delete category "${entry.name}"? This cannot be undone.`)) {
-      deleteCategoryMutation.mutate(entry.id);
+    setCategoryToDelete(entry);
+    setConfirmDeleteCategoryVisible(true);
+  };
+
+  const handleConfirmDeleteCategory = () => {
+    if (categoryToDelete) {
+      deleteCategoryMutation.mutate(categoryToDelete.id);
+      setConfirmDeleteCategoryVisible(false);
+      setCategoryToDelete(null);
     }
   };
 
+  const handleCancelDeleteCategory = () => {
+    setConfirmDeleteCategoryVisible(false);
+    setCategoryToDelete(null);
+  };
+
   const confirmRemoveSubcategory = (subcategory: Subcategory) => {
-    if (confirm(`Delete subcategory "${subcategory.name}"? This cannot be undone.`)) {
-      deleteSubcategoryMutation.mutate(subcategory.id);
+    setSubcategoryToDelete(subcategory);
+    setConfirmDeleteSubcategoryVisible(true);
+  };
+
+  const handleConfirmDeleteSubcategory = () => {
+    if (subcategoryToDelete) {
+      deleteSubcategoryMutation.mutate(subcategoryToDelete.id);
+      setConfirmDeleteSubcategoryVisible(false);
+      setSubcategoryToDelete(null);
     }
+  };
+
+  const handleCancelDeleteSubcategory = () => {
+    setConfirmDeleteSubcategoryVisible(false);
+    setSubcategoryToDelete(null);
   };
 
   const validateSubcategoryForm = (): boolean => {
@@ -709,6 +781,56 @@ export default function CategoriesPage() {
             isLoading={subcategorySaving}
           >
             {subcategoryFormMode === "create" ? "Create Subcategory" : "Save Changes"}
+          </Button>
+        </ModalActions>
+      </Modal>
+
+      {/* Delete Category Confirmation Modal */}
+      <Modal
+        isOpen={confirmDeleteCategoryVisible}
+        onClose={handleCancelDeleteCategory}
+        title="Confirm Delete"
+        size="sm"
+      >
+        <p className="text-white/80 mb-6">
+          Are you sure you want to delete the category &quot;{categoryToDelete?.name}&quot;? This action cannot be undone.
+        </p>
+
+        <ModalActions>
+          <Button variant="ghost" onClick={handleCancelDeleteCategory}>
+            Cancel
+          </Button>
+          <Button
+            variant="danger"
+            onClick={handleConfirmDeleteCategory}
+            isLoading={deleteCategoryMutation.isPending}
+          >
+            Delete Category
+          </Button>
+        </ModalActions>
+      </Modal>
+
+      {/* Delete Subcategory Confirmation Modal */}
+      <Modal
+        isOpen={confirmDeleteSubcategoryVisible}
+        onClose={handleCancelDeleteSubcategory}
+        title="Confirm Delete"
+        size="sm"
+      >
+        <p className="text-white/80 mb-6">
+          Are you sure you want to delete the subcategory &quot;{subcategoryToDelete?.name}&quot;? This action cannot be undone.
+        </p>
+
+        <ModalActions>
+          <Button variant="ghost" onClick={handleCancelDeleteSubcategory}>
+            Cancel
+          </Button>
+          <Button
+            variant="danger"
+            onClick={handleConfirmDeleteSubcategory}
+            isLoading={deleteSubcategoryMutation.isPending}
+          >
+            Delete Subcategory
           </Button>
         </ModalActions>
       </Modal>

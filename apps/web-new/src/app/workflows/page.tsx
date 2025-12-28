@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useToastStore } from "@/store/useToastStore";
 import { workflowsService, type Workflow, type WorkflowStep, type Role } from "@/services/workflows";
 import { categoriesService } from "@/services/categories";
 import { subcategoriesService } from "@/services/subcategories";
@@ -50,12 +51,15 @@ export default function WorkflowsPage() {
   const router = useRouter();
   const user = useAuthStore((state) => state.session?.user);
   const queryClient = useQueryClient();
+  const toastAdd = useToastStore((s) => s.addNotification);
   const [formMode, setFormMode] = useState<"create" | "edit">("create");
   const [formValues, setFormValues] = useState<WorkflowFormValues>(makeEmptyForm());
   const [formErrors, setFormErrors] = useState<FormErrors>({});
   const [formVisible, setFormVisible] = useState(false);
   const [activeWorkflowId, setActiveWorkflowId] = useState<string | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [confirmDeleteVisible, setConfirmDeleteVisible] = useState(false);
+  const [workflowToDelete, setWorkflowToDelete] = useState<Workflow | null>(null);
 
   const {
     data: workflows,
@@ -146,7 +150,12 @@ export default function WorkflowsPage() {
     onSuccess: (created) => {
       invalidateWorkflows();
       closeForm();
-      alert(`Workflow "${created.name}" created successfully.`);
+      toastAdd({
+        type: "success",
+        title: "Workflow created",
+        message: `Workflow "${created.name}" created successfully`,
+        timestamp: new Date().toISOString(),
+      });
     },
     onError: handleMutationError,
   });
@@ -162,7 +171,12 @@ export default function WorkflowsPage() {
     onSuccess: (updated) => {
       invalidateWorkflows();
       closeForm();
-      alert(`Workflow "${updated.name}" updated successfully.`);
+      toastAdd({
+        type: "success",
+        title: "Workflow updated",
+        message: `Workflow "${updated.name}" updated successfully`,
+        timestamp: new Date().toISOString(),
+      });
     },
     onError: handleMutationError,
   });
@@ -174,12 +188,22 @@ export default function WorkflowsPage() {
     },
     onSuccess: (removed) => {
       invalidateWorkflows();
-      alert(`Workflow "${removed.name}" deleted.`);
+      toastAdd({
+        type: "success",
+        title: "Workflow deleted",
+        message: `Workflow "${removed.name}" deleted`,
+        timestamp: new Date().toISOString(),
+      });
     },
     onError: (error: unknown) => {
       const message =
         error instanceof Error ? error.message : "Unable to delete workflow.";
-      alert(`Delete failed: ${message}`);
+      toastAdd({
+        type: "error",
+        title: "Delete failed",
+        message,
+        timestamp: new Date().toISOString(),
+      });
     },
     onSettled: () => {
       setPendingDeleteId(null);
@@ -302,9 +326,21 @@ export default function WorkflowsPage() {
   };
 
   const confirmRemove = (workflow: Workflow) => {
-    if (confirm(`Delete workflow "${workflow.name}"? This cannot be undone.`)) {
-      deleteWorkflowMutation.mutate(workflow.id);
+    setWorkflowToDelete(workflow);
+    setConfirmDeleteVisible(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (workflowToDelete) {
+      deleteWorkflowMutation.mutate(workflowToDelete.id);
+      setConfirmDeleteVisible(false);
+      setWorkflowToDelete(null);
     }
+  };
+
+  const handleCancelDelete = () => {
+    setConfirmDeleteVisible(false);
+    setWorkflowToDelete(null);
   };
 
   const saving =
@@ -671,6 +707,31 @@ export default function WorkflowsPage() {
             isLoading={saving}
           >
             {formMode === "create" ? "Create Workflow" : "Save Changes"}
+          </Button>
+        </ModalActions>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={confirmDeleteVisible}
+        onClose={handleCancelDelete}
+        title="Confirm Delete"
+        size="sm"
+      >
+        <p className="text-white/80 mb-6">
+          Are you sure you want to delete the workflow &quot;{workflowToDelete?.name}&quot;? This action cannot be undone.
+        </p>
+
+        <ModalActions>
+          <Button variant="ghost" onClick={handleCancelDelete}>
+            Cancel
+          </Button>
+          <Button
+            variant="danger"
+            onClick={handleConfirmDelete}
+            isLoading={deleteWorkflowMutation.isPending}
+          >
+            Delete Workflow
           </Button>
         </ModalActions>
       </Modal>
