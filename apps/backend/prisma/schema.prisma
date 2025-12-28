@@ -39,6 +39,14 @@ enum IssueType {
   other
 }
 
+enum AttributeType {
+  text
+  number
+  select
+  multiselect
+  date
+}
+
 model User {
   id           String         @id @default(uuid())
   name         String
@@ -75,6 +83,7 @@ model Ticket {
   resolvedAt  DateTime?
   activities  TicketActivity[]
   aiSuggestions AiSuggestion[]
+  attributeValues TicketAttributeValue[]
 }
 
 model AiSuggestion {
@@ -120,4 +129,36 @@ model DeviceToken {
   updatedAt   DateTime  @updatedAt
 
   @@unique([userId, deviceToken])
+}
+
+model TicketAttribute {
+  id          String        @id @default(uuid())
+  name        String        @unique
+  label       String
+  type        AttributeType
+  options     String[]      // For select/multiselect types
+  defaultValue String?
+  isMandatory Boolean       @default(false)
+  isVisible   Boolean       @default(true)
+  order       Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  values      TicketAttributeValue[]
+
+  @@index([isVisible, order])
+}
+
+model TicketAttributeValue {
+  id          String          @id @default(uuid())
+  ticketId    String
+  ticket      Ticket          @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  attributeId String
+  attribute   TicketAttribute @relation(fields: [attributeId], references: [id], onDelete: Cascade)
+  value       String
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@unique([ticketId, attributeId])
+  @@index([ticketId])
+  @@index([attributeId])
 }

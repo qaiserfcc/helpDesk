@@ -28,6 +28,7 @@ const createTicketSchema = z.object({
   priority: z.nativeEnum(TicketPriority).default(TicketPriority.medium),
   issueType: z.nativeEnum(IssueType).default(IssueType.other),
   attachments: z.array(z.string().min(1)).optional(),
+  attributes: z.record(z.string()).optional(),
 });
 
 const updateTicketSchema = z.object({
@@ -35,6 +36,7 @@ const updateTicketSchema = z.object({
   priority: z.nativeEnum(TicketPriority).optional(),
   issueType: z.nativeEnum(IssueType).optional(),
   status: z.nativeEnum(TicketStatus).optional(),
+  attributes: z.record(z.string()).optional(),
 });
 
 const listTicketSchema = z.object({

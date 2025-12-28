@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { createTicket, type CreateTicketPayload, type IssueType, type TicketPriority } from "@/services/tickets";
+import { listAttributes, type TicketAttribute } from "@/services/attributes";
 import { useNotificationStore } from "@/store/useNotificationStore";
 import { useAuthStore } from "@/store/useAuthStore";
+import { serializeMultiselectValue, deserializeMultiselectValue } from "@/utils/attributeValues";
 
 const priorityOptions: TicketPriority[] = ["low", "medium", "high"];
 const issueOptions: IssueType[] = [
@@ -22,10 +24,33 @@ export default function NewTicketPage() {
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<TicketPriority>("medium");
   const [issueType, setIssueType] = useState<IssueType>("other");
+  const [attributes, setAttributes] = useState<TicketAttribute[]>([]);
+  const [attributeValues, setAttributeValues] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const addNotification = useNotificationStore((s) => s.addNotification);
   const session = useAuthStore((s) => s.session);
+
+  useEffect(() => {
+    // Load custom attributes
+    const loadAttributes = async () => {
+      try {
+        const attrs = await listAttributes();
+        setAttributes(attrs);
+        // Initialize attribute values with defaults
+        const defaults: Record<string, string> = {};
+        attrs.forEach(attr => {
+          if (attr.defaultValue) {
+            defaults[attr.id] = attr.defaultValue;
+          }
+        });
+        setAttributeValues(defaults);
+      } catch (err) {
+        console.error("Failed to load attributes", err);
+      }
+    };
+    loadAttributes();
+  }, []);
 
   if (!session) return null;
   const canCreate = session.user.role === "user" || session.user.role === "admin";
@@ -53,6 +78,14 @@ export default function NewTicketPage() {
       return;
     }
 
+    // Validate mandatory custom attributes
+    for (const attr of attributes) {
+      if (attr.isMandatory && !attributeValues[attr.id]) {
+        setError(`${attr.label} is required`);
+        return;
+      }
+    }
+
     setSubmitting(true);
     setError("");
 
@@ -60,6 +93,7 @@ export default function NewTicketPage() {
       description: description.trim(),
       priority,
       issueType,
+      attributes: attributeValues,
     };
 
     try {
@@ -161,6 +195,84 @@ export default function NewTicketPage() {
                 ))}
               </div>
             </div>
+
+            {/* Custom Attributes */}
+            {attributes.map((attr) => (
+              <div key={attr.id}>
+                <label className="block text-sm font-medium text-white/90 mb-2">
+                  {attr.label}
+                  {attr.isMandatory && <span className="text-red-400 ml-1">*</span>}
+                </label>
+                {attr.type === "select" && (
+                  <select
+                    value={attributeValues[attr.id] || ""}
+                    onChange={(e) =>
+                      setAttributeValues({ ...attributeValues, [attr.id]: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-transparent rounded-lg focus:ring-2 focus:ring-white text-white card"
+                    required={attr.isMandatory}
+                  >
+                    <option value="">Select...</option>
+                    {attr.options.map((opt) => (
+                      <option key={opt} value={opt}>
+                        {opt}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                {attr.type === "multiselect" && (
+                  <select
+                    multiple
+                    value={deserializeMultiselectValue(attributeValues[attr.id] || "")}
+                    onChange={(e) => {
+                      const selected = Array.from(e.target.selectedOptions, opt => opt.value);
+                      setAttributeValues({ ...attributeValues, [attr.id]: serializeMultiselectValue(selected) });
+                    }}
+                    className="w-full px-3 py-2 border border-transparent rounded-lg focus:ring-2 focus:ring-white text-white card"
+                    required={attr.isMandatory}
+                  >
+                    {attr.options.map((opt) => (
+                      <option key={opt} value={opt}>
+                        {opt}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                {attr.type === "text" && (
+                  <input
+                    type="text"
+                    value={attributeValues[attr.id] || ""}
+                    onChange={(e) =>
+                      setAttributeValues({ ...attributeValues, [attr.id]: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-transparent rounded-lg focus:ring-2 focus:ring-white text-white card"
+                    required={attr.isMandatory}
+                  />
+                )}
+                {attr.type === "number" && (
+                  <input
+                    type="number"
+                    value={attributeValues[attr.id] || ""}
+                    onChange={(e) =>
+                      setAttributeValues({ ...attributeValues, [attr.id]: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-transparent rounded-lg focus:ring-2 focus:ring-white text-white card"
+                    required={attr.isMandatory}
+                  />
+                )}
+                {attr.type === "date" && (
+                  <input
+                    type="date"
+                    value={attributeValues[attr.id] || ""}
+                    onChange={(e) =>
+                      setAttributeValues({ ...attributeValues, [attr.id]: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-transparent rounded-lg focus:ring-2 focus:ring-white text-white card"
+                    required={attr.isMandatory}
+                  />
+                )}
+              </div>
+            ))}
 
             {error && (
               <div className="bg-red-50/30 border border-red-200 rounded-lg p-4">

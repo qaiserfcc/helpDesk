@@ -11,12 +11,21 @@ import { prisma } from "../lib/prisma.js";
 import { publishTicketEvent } from "../realtime/ticketPublisher.js";
 import { suggestReplyForTicket, summarizeTicket } from "./aiService.js";
 import { dispatchTicketEmail } from "../notifications/ticketMailer.js";
+import {
+  validateTicketAttributes,
+  setTicketAttributeValue,
+} from "./attributeService.js";
 
 const ticketInclude = {
   creator: { select: { id: true, name: true, email: true } },
   assignee: { select: { id: true, name: true, email: true } },
   assignmentRequest: {
     select: { id: true, name: true, email: true },
+  },
+  attributeValues: {
+    include: {
+      attribute: true,
+    },
   },
 } as const;
 
@@ -168,6 +177,7 @@ type CreateTicketInput = {
   priority: TicketPriority;
   issueType: IssueType;
   attachments?: string[];
+  attributes?: Record<string, string>;
 };
 
 export async function createTicket(
@@ -176,6 +186,11 @@ export async function createTicket(
 ) {
   if (user.role !== Role.user && user.role !== Role.admin) {
     throw createError(403, "Only end-users or admins can create tickets");
+  }
+
+  // Validate custom attributes
+  if (input.attributes) {
+    await validateTicketAttributes(input.attributes);
   }
 
   const ticket = await prisma.ticket.create({
@@ -188,6 +203,33 @@ export async function createTicket(
     },
     include: ticketInclude,
   });
+
+  // Save custom attribute values
+  if (input.attributes) {
+    for (const [attributeId, value] of Object.entries(input.attributes)) {
+      if (value) {
+        await setTicketAttributeValue(ticket.id, attributeId, value);
+      }
+    }
+    // Fetch ticket again with attribute values
+    const ticketWithAttributes = await prisma.ticket.findUnique({
+      where: { id: ticket.id },
+      include: ticketInclude,
+    });
+    if (ticketWithAttributes) {
+      notifyTicketChange(ticketWithAttributes, "tickets:created");
+      // Fire-and-forget generation of suggestions/summaries
+      void (async () => {
+        try {
+          await suggestReplyForTicket(ticketWithAttributes);
+          await summarizeTicket(ticketWithAttributes);
+        } catch (err) {
+          console.warn("AI suggestions generation failed", err);
+        }
+      })();
+      return ticketWithAttributes;
+    }
+  }
 
   notifyTicketChange(ticket, "tickets:created");
   // Fire-and-forget generation of suggestions/summaries (do not block ticket creation)
@@ -206,6 +248,7 @@ type UpdateTicketInput = Partial<
   Pick<CreateTicketInput, "description" | "priority" | "issueType">
 > & {
   status?: TicketStatus;
+  attributes?: Record<string, string>;
 };
 
 export async function updateTicket(
@@ -279,6 +322,11 @@ export async function updateTicket(
     resolvedAt = null;
   }
 
+  // Validate custom attributes if provided
+  if (updates.attributes) {
+    await validateTicketAttributes(updates.attributes);
+  }
+
   const updatedTicket = await prisma.ticket.update({
     where: { id: ticketId },
     data: {
@@ -290,6 +338,13 @@ export async function updateTicket(
     },
     include: ticketInclude,
   });
+
+  // Update custom attribute values
+  if (updates.attributes) {
+    for (const [attributeId, value] of Object.entries(updates.attributes)) {
+      await setTicketAttributeValue(ticketId, attributeId, value);
+    }
+  }
 
   notifyTicketChange(updatedTicket);
 
