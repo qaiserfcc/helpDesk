@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { createTicket, type CreateTicketPayload, type IssueType, type TicketPriority } from "@/services/tickets";
 import { listAttributes, type TicketAttribute } from "@/services/attributes";
+import { fetchCategories, type Category } from "@/services/categories";
 import { useNotificationStore } from "@/store/useNotificationStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { serializeMultiselectValue, deserializeMultiselectValue } from "@/utils/attributeValues";
@@ -24,6 +25,9 @@ export default function NewTicketPage() {
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<TicketPriority>("medium");
   const [issueType, setIssueType] = useState<IssueType>("other");
+  const [categoryId, setCategoryId] = useState<string>("");
+  const [subcategoryId, setSubcategoryId] = useState<string>("");
+  const [categories, setCategories] = useState<Category[]>([]);
   const [attributes, setAttributes] = useState<TicketAttribute[]>([]);
   const [attributeValues, setAttributeValues] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -32,10 +36,14 @@ export default function NewTicketPage() {
   const session = useAuthStore((s) => s.session);
 
   useEffect(() => {
-    // Load custom attributes
-    const loadAttributes = async () => {
+    // Load categories and custom attributes
+    const loadData = async () => {
       try {
-        const attrs = await listAttributes();
+        const [cats, attrs] = await Promise.all([
+          fetchCategories(),
+          listAttributes(),
+        ]);
+        setCategories(cats);
         setAttributes(attrs);
         // Initialize attribute values with defaults
         const defaults: Record<string, string> = {};
@@ -46,10 +54,10 @@ export default function NewTicketPage() {
         });
         setAttributeValues(defaults);
       } catch (err) {
-        console.error("Failed to load attributes", err);
+        console.error("Failed to load data", err);
       }
     };
-    loadAttributes();
+    loadData();
   }, []);
 
   if (!session) return null;
@@ -94,6 +102,8 @@ export default function NewTicketPage() {
       priority,
       issueType,
       attributes: attributeValues,
+      ...(categoryId && { categoryId }),
+      ...(subcategoryId && { subcategoryId }),
     };
 
     try {
@@ -195,6 +205,51 @@ export default function NewTicketPage() {
                 ))}
               </div>
             </div>
+
+            <div>
+              <label htmlFor="category" className="block text-sm font-medium text-white/90 mb-2">
+                Category
+              </label>
+              <select
+                id="category"
+                value={categoryId}
+                onChange={(e) => {
+                  setCategoryId(e.target.value);
+                  setSubcategoryId(""); // Reset subcategory when category changes
+                }}
+                className="w-full px-3 py-2 border border-transparent rounded-lg focus:ring-2 focus:ring-white text-white card"
+              >
+                <option value="">Select a category (optional)</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {categoryId && (
+              <div>
+                <label htmlFor="subcategory" className="block text-sm font-medium text-white/90 mb-2">
+                  Subcategory
+                </label>
+                <select
+                  id="subcategory"
+                  value={subcategoryId}
+                  onChange={(e) => setSubcategoryId(e.target.value)}
+                  className="w-full px-3 py-2 border border-transparent rounded-lg focus:ring-2 focus:ring-white text-white card"
+                >
+                  <option value="">Select a subcategory (optional)</option>
+                  {categories
+                    .find((cat) => cat.id === categoryId)
+                    ?.subcategories?.map((sub) => (
+                      <option key={sub.id} value={sub.id}>
+                        {sub.name}
+                      </option>
+                    ))}
+                </select>
+              </div>
+            )}
 
             {/* Custom Attributes */}
             {attributes.map((attr) => (

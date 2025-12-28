@@ -78,12 +78,19 @@ model Ticket {
   attachments String[]
   assignmentRequestId String?
   assignmentRequest   User?    @relation("TicketAssignmentRequests", fields: [assignmentRequestId], references: [id])
+  categoryId  String?
+  category    Category?     @relation(fields: [categoryId], references: [id])
+  subcategoryId String?
+  subcategory Subcategory?  @relation(fields: [subcategoryId], references: [id])
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
   resolvedAt  DateTime?
   activities  TicketActivity[]
   aiSuggestions AiSuggestion[]
   attributeValues TicketAttributeValue[]
+
+  @@index([categoryId])
+  @@index([subcategoryId])
 }
 
 model AiSuggestion {
@@ -161,4 +168,34 @@ model TicketAttributeValue {
   @@unique([ticketId, attributeId])
   @@index([ticketId])
   @@index([attributeId])
+}
+
+model Category {
+  id            String        @id @default(uuid())
+  name          String        @unique
+  description   String?
+  isActive      Boolean       @default(true)
+  order         Int           @default(0)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  subcategories Subcategory[]
+  tickets       Ticket[]
+
+  @@index([isActive, order])
+}
+
+model Subcategory {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  categoryId  String
+  category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  isActive    Boolean   @default(true)
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  tickets     Ticket[]
+
+  @@unique([categoryId, name])
+  @@index([categoryId, isActive, order])
 }

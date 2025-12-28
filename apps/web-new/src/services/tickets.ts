@@ -45,6 +45,10 @@ export type Ticket = {
   assignee: TicketUser | null;
   assignmentRequest: TicketUser | null;
   attributeValues?: TicketAttributeValue[];
+  categoryId?: string | null;
+  subcategoryId?: string | null;
+  category?: { id: string; name: string } | null;
+  subcategory?: { id: string; name: string } | null;
 };
 
 export type ReportTicket = {
@@ -143,6 +147,8 @@ export type CreateTicketPayload = {
   issueType: IssueType;
   attachments?: string[];
   attributes?: Record<string, string>;
+  categoryId?: string;
+  subcategoryId?: string;
 };
 
 export type UpdateTicketPayload = Partial<CreateTicketPayload> & {

@@ -5,6 +5,7 @@ import ticketsRouter from "./tickets.js";
 import reportsRouter from "./reports.js";
 import aiRouter from "./ai.js";
 import attributesRouter from "./attributes.js";
+import categoriesRouter from "./categories.js";
 
 const router = Router();
 
@@ -14,6 +15,7 @@ router.use("/tickets", ticketsRouter);
 router.use("/reports", reportsRouter);
 router.use("/ai", aiRouter);
 router.use("/attributes", attributesRouter);
+router.use("/categories", categoriesRouter);
 
 router.get("/version", (_req, res) => {
   res.json({

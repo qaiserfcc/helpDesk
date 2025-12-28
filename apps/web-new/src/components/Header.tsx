@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useAuthStore } from "@/store/useAuthStore";
 import { NotificationBell } from "@/components/NotificationBell";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export function Header() {
   const { session } = useAuthStore();
@@ -15,6 +16,7 @@ export function Header() {
         <div className="flex justify-between items-center py-6">
           <h1 className="text-3xl font-bold text-white">Help Desk</h1>
           <div className="flex items-center space-x-4">
+            <ThemeToggle />
             <NotificationBell />
             <span className="text-sm text-white/80">Welcome, {session.user.name}</span>
             <button
