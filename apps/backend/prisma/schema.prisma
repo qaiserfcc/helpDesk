@@ -29,6 +29,10 @@ enum TicketActivityType {
   assignment_change
   assignment_request
   ticket_update
+  reply
+  comment
+  mark_for_info
+  workflow_step_change
 }
 
 enum IssueType {

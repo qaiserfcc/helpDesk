@@ -39,28 +39,28 @@ export type UpdateAttributePayload = {
 
 export async function listAttributes(): Promise<TicketAttribute[]> {
   const response = await apiClient.get<{ attributes: TicketAttribute[] }>(
-    "/api/attributes",
+    "/attributes",
   );
-  return response.attributes;
+  return response.data.attributes;
 }
 
 export async function getAttribute(
   attributeId: string,
 ): Promise<TicketAttribute> {
   const response = await apiClient.get<{ attribute: TicketAttribute }>(
-    `/api/attributes/${attributeId}`,
+    `/attributes/${attributeId}`,
   );
-  return response.attribute;
+  return response.data.attribute;
 }
 
 export async function createAttribute(
   payload: CreateAttributePayload,
 ): Promise<TicketAttribute> {
   const response = await apiClient.post<{ attribute: TicketAttribute }>(
-    "/api/attributes",
+    "/attributes",
     payload,
   );
-  return response.attribute;
+  return response.data.attribute;
 }
 
 export async function updateAttribute(
@@ -68,10 +68,10 @@ export async function updateAttribute(
   payload: UpdateAttributePayload,
 ): Promise<TicketAttribute> {
   const response = await apiClient.patch<{ attribute: TicketAttribute }>(
-    `/api/attributes/${attributeId}`,
+    `/attributes/${attributeId}`,
     payload,
   );
-  return response.attribute;
+  return response.data.attribute;
 }
 
 export async function deleteAttribute(attributeId: string): Promise<void> {
