@@ -7,12 +7,23 @@
   --primary-blue-light: #93c5fd; /* lighter blue for accents */
   --background: #000000; /* pure black background */
   --foreground: #ffffff; /* white text */
-  --card-bg: rgba(96, 165, 250, 0.08); /* light blue tint on black */
-  --card-border: rgba(96, 165, 250, 0.2); /* light blue border */
+  
+  /* Alpha variations of primary blue for consistent theming */
+  --primary-alpha-5: rgba(96, 165, 250, 0.05);
+  --primary-alpha-6: rgba(96, 165, 250, 0.06);
+  --primary-alpha-8: rgba(96, 165, 250, 0.08);
+  --primary-alpha-15: rgba(96, 165, 250, 0.15);
+  --primary-alpha-20: rgba(96, 165, 250, 0.2);
+  --primary-alpha-30: rgba(96, 165, 250, 0.3);
+  --primary-alpha-80: rgba(96, 165, 250, 0.8);
+  
+  --card-bg: var(--primary-alpha-8); /* light blue tint on black */
+  --card-border: var(--primary-alpha-20); /* light blue border */
   --muted: rgba(255, 255, 255, 0.7); /* muted white text */
   --accent: #60a5fa; /* light blue accent */
-  --focus-ring: rgba(96, 165, 250, 0.3); /* light blue focus ring */
-  --focus-border: rgba(96, 165, 250, 0.8); /* light blue focus border */
+  --focus-ring: var(--primary-alpha-30); /* light blue focus ring */
+  --focus-border: var(--primary-alpha-80); /* light blue focus border */
+  --notification-bg: rgba(0, 0, 0, 0.95); /* notification background */
 }
 
 @theme inline {
@@ -41,7 +52,7 @@ body {
 }
 
 .card-footer {
-  background: rgba(96, 165, 250, 0.05);
+  background: var(--primary-alpha-5);
   border-top: 1px solid var(--card-border);
 }
 
@@ -119,15 +130,15 @@ select, option, select:focus, option:focus {
   left: var(--notif-left, auto);
   top: var(--notif-top, 3.6rem);
   width: 20rem; /* default width for the popover */
-  background: rgba(0, 0, 0, 0.95) !important;
+  background: var(--notification-bg) !important;
   border: 1px solid var(--card-border) !important;
-  box-shadow: 0 8px 30px rgba(96, 165, 250, 0.3);
+  box-shadow: 0 8px 30px var(--primary-alpha-30);
   border-radius: 0.5rem;
 }
 
 /* Make dismiss/close button visible on dark backgrounds */
 .notification-popover button.dismiss {
-  background: rgba(96, 165, 250, 0.15);
+  background: var(--primary-alpha-15);
   color: var(--foreground);
   padding: 0.25rem 0.6rem;
   border-radius: 0.375rem;
@@ -141,13 +152,13 @@ select, option, select:focus, option:focus {
 
 /* Assignment card highlight and improved focus */
 .assignment-card {
-  background: rgba(96, 165, 250, 0.06);
+  background: var(--primary-alpha-6);
   border: 1px solid var(--card-border);
 }
 
 /* Improve visibility for gray & light blue action buttons on black background */
 button.bg-gray-600, .bg-gray-600 {
-  background-color: rgba(96, 165, 250, 0.2) !important;
+  background-color: var(--primary-alpha-20) !important;
   border: 1px solid var(--card-border);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
@@ -160,8 +171,8 @@ button.bg-purple-600, .bg-purple-600 {
 
 /* Add an accessible outline for link-like buttons using light blue on hover */
 .bg-white\/5:hover, .bg-white\/6:hover, .hover\:bg-white\/8:hover {
-  background-color: rgba(96, 165, 250, 0.15) !important;
-  box-shadow: 0 2px 6px rgba(96, 165, 250, 0.2);
+  background-color: var(--primary-alpha-15) !important;
+  box-shadow: 0 2px 6px var(--primary-alpha-20);
 }
 
 /* Additional utility classes for consistent theming */
@@ -179,7 +190,7 @@ button.bg-purple-600, .bg-purple-600 {
 }
 
 .theme-btn-secondary {
-  background: rgba(96, 165, 250, 0.2);
+  background: var(--primary-alpha-20);
   color: white;
   border: 1px solid var(--card-border);
   border-radius: 0.5rem;
@@ -189,7 +200,7 @@ button.bg-purple-600, .bg-purple-600 {
 }
 
 .theme-btn-secondary:hover:not(:disabled) {
-  background: rgba(96, 165, 250, 0.3);
+  background: var(--primary-alpha-30);
   border-color: var(--primary-blue);
 }
 
