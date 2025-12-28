@@ -27,6 +27,8 @@ const ticketInclude = {
       attribute: true,
     },
   },
+  category: { select: { id: true, name: true } },
+  subcategory: { select: { id: true, name: true } },
 } as const;
 
 const ticketActivityInclude = {
@@ -52,6 +54,8 @@ const ticketCoreSelect = {
   resolvedAt: true,
   createdAt: true,
   updatedAt: true,
+  categoryId: true,
+  subcategoryId: true,
 } as const;
 
 export type TicketWithRelations = Prisma.TicketGetPayload<{
@@ -178,6 +182,8 @@ type CreateTicketInput = {
   issueType: IssueType;
   attachments?: string[];
   attributes?: Record<string, string>;
+  categoryId?: string;
+  subcategoryId?: string;
 };
 
 export async function createTicket(
@@ -200,6 +206,8 @@ export async function createTicket(
       issueType: input.issueType,
       attachments: input.attachments ?? [],
       createdBy: user.id,
+      ...(input.categoryId && { categoryId: input.categoryId }),
+      ...(input.subcategoryId && { subcategoryId: input.subcategoryId }),
     },
     include: ticketInclude,
   });
@@ -245,7 +253,7 @@ export async function createTicket(
 }
 
 type UpdateTicketInput = Partial<
-  Pick<CreateTicketInput, "description" | "priority" | "issueType">
+  Pick<CreateTicketInput, "description" | "priority" | "issueType" | "categoryId" | "subcategoryId">
 > & {
   status?: TicketStatus;
   attributes?: Record<string, string>;
@@ -335,6 +343,8 @@ export async function updateTicket(
       issueType: updates.issueType ?? ticket.issueType,
       status: nextStatus,
       resolvedAt,
+      ...(updates.categoryId !== undefined && { categoryId: updates.categoryId }),
+      ...(updates.subcategoryId !== undefined && { subcategoryId: updates.subcategoryId }),
     },
     include: ticketInclude,
   });
