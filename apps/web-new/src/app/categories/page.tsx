@@ -8,6 +8,10 @@ import {
   categoriesService,
   type Category,
 } from "@/services/categories";
+import {
+  subcategoriesService,
+  type Subcategory,
+} from "@/services/subcategories";
 import { Modal, ModalActions } from "@/components/Modal";
 import { DataList } from "@/components/DataTable";
 import { FormField } from "@/components/FormField";
@@ -19,9 +23,23 @@ type CategoryFormValues = {
   active: boolean;
 };
 
+type SubcategoryFormValues = {
+  categoryId: string;
+  name: string;
+  description: string;
+  active: boolean;
+};
+
 type FormErrors = Record<string, string>;
 
-const makeEmptyForm = (): CategoryFormValues => ({
+const makeEmptyCategoryForm = (): CategoryFormValues => ({
+  name: "",
+  description: "",
+  active: true,
+});
+
+const makeEmptySubcategoryForm = (): SubcategoryFormValues => ({
+  categoryId: "",
   name: "",
   description: "",
   active: true,
@@ -32,11 +50,19 @@ export default function CategoriesPage() {
   const user = useAuthStore((state) => state.session?.user);
   const queryClient = useQueryClient();
   const [formMode, setFormMode] = useState<"create" | "edit">("create");
-  const [formValues, setFormValues] = useState<CategoryFormValues>(makeEmptyForm());
+  const [formValues, setFormValues] = useState<CategoryFormValues>(makeEmptyCategoryForm());
   const [formErrors, setFormErrors] = useState<FormErrors>({});
   const [formVisible, setFormVisible] = useState(false);
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  
+  // Subcategory form state
+  const [subcategoryFormVisible, setSubcategoryFormVisible] = useState(false);
+  const [subcategoryFormMode, setSubcategoryFormMode] = useState<"create" | "edit">("create");
+  const [subcategoryFormValues, setSubcategoryFormValues] = useState<SubcategoryFormValues>(makeEmptySubcategoryForm());
+  const [subcategoryFormErrors, setSubcategoryFormErrors] = useState<FormErrors>({});
+  const [activeSubcategoryId, setActiveSubcategoryId] = useState<string | null>(null);
 
   const {
     data: categories,
@@ -57,8 +83,20 @@ export default function CategoriesPage() {
     refetchCategories();
   };
 
+  const toggleCategoryExpanded = (categoryId: string) => {
+    setExpandedCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(categoryId)) {
+        next.delete(categoryId);
+      } else {
+        next.add(categoryId);
+      }
+      return next;
+    });
+  };
+
   const resetFormState = () => {
-    setFormValues(makeEmptyForm());
+    setFormValues(makeEmptyCategoryForm());
     setFormErrors({});
     setActiveCategoryId(null);
   };
@@ -84,6 +122,38 @@ export default function CategoriesPage() {
       active: entry.active,
     });
     setFormVisible(true);
+  };
+
+  // Subcategory form functions
+  const resetSubcategoryFormState = () => {
+    setSubcategoryFormValues(makeEmptySubcategoryForm());
+    setSubcategoryFormErrors({});
+    setActiveSubcategoryId(null);
+  };
+
+  const closeSubcategoryForm = () => {
+    resetSubcategoryFormState();
+    setSubcategoryFormVisible(false);
+  };
+
+  const openCreateSubcategoryForm = (categoryId: string) => {
+    resetSubcategoryFormState();
+    setSubcategoryFormMode("create");
+    setSubcategoryFormValues((prev) => ({ ...prev, categoryId }));
+    setSubcategoryFormVisible(true);
+  };
+
+  const openEditSubcategoryForm = (subcategory: Subcategory) => {
+    setSubcategoryFormMode("edit");
+    setActiveSubcategoryId(subcategory.id);
+    setSubcategoryFormErrors({});
+    setSubcategoryFormValues({
+      categoryId: subcategory.categoryId,
+      name: subcategory.name,
+      description: subcategory.description ?? "",
+      active: subcategory.active,
+    });
+    setSubcategoryFormVisible(true);
   };
 
   const handleMutationError = (error: unknown) => {
@@ -141,6 +211,54 @@ export default function CategoriesPage() {
     },
   });
 
+  // Subcategory mutations
+  const createSubcategoryMutation = useMutation({
+    mutationFn: subcategoriesService.createSubcategory,
+    onSuccess: (created) => {
+      invalidateCategories();
+      closeSubcategoryForm();
+      alert(`Subcategory "${created.name}" created successfully.`);
+    },
+    onError: (error: unknown) => {
+      const message =
+        error instanceof Error ? error.message : "Unable to save subcategory.";
+      setSubcategoryFormErrors((prev) => ({ ...prev, general: message }));
+    },
+  });
+
+  const updateSubcategoryMutation = useMutation({
+    mutationFn: ({
+      subcategoryId,
+      data,
+    }: {
+      subcategoryId: string;
+      data: Partial<SubcategoryFormValues>;
+    }) => subcategoriesService.updateSubcategory(subcategoryId, data),
+    onSuccess: (updated) => {
+      invalidateCategories();
+      closeSubcategoryForm();
+      alert(`Subcategory "${updated.name}" updated successfully.`);
+    },
+    onError: (error: unknown) => {
+      const message =
+        error instanceof Error ? error.message : "Unable to update subcategory.";
+      setSubcategoryFormErrors((prev) => ({ ...prev, general: message }));
+    },
+  });
+
+  const deleteSubcategoryMutation = useMutation({
+    mutationFn: subcategoriesService.deleteSubcategory,
+    onSuccess: (removed) => {
+      invalidateCategories();
+      alert(`Subcategory "${removed.name}" deleted.`);
+    },
+    onError: (error: unknown) => {
+      const message =
+        error instanceof Error ? error.message : "Unable to delete subcategory.";
+      alert(`Delete failed: ${message}`);
+    },
+  });
+
   const validateForm = (): boolean => {
     const errors: FormErrors = {};
 
@@ -181,8 +299,61 @@ export default function CategoriesPage() {
     }
   };
 
+  const confirmRemoveSubcategory = (subcategory: Subcategory) => {
+    if (confirm(`Delete subcategory "${subcategory.name}"? This cannot be undone.`)) {
+      deleteSubcategoryMutation.mutate(subcategory.id);
+    }
+  };
+
+  const validateSubcategoryForm = (): boolean => {
+    const errors: FormErrors = {};
+
+    if (!subcategoryFormValues.categoryId.trim()) {
+      errors.categoryId = "Category is required";
+    }
+
+    if (!subcategoryFormValues.name.trim()) {
+      errors.name = "Name is required";
+    }
+
+    setSubcategoryFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleSubmitSubcategoryForm = () => {
+    if (!validateSubcategoryForm()) {
+      return;
+    }
+
+    const payload = {
+      categoryId: subcategoryFormValues.categoryId,
+      name: subcategoryFormValues.name.trim(),
+      description: subcategoryFormValues.description.trim() || undefined,
+    };
+
+    if (subcategoryFormMode === "create") {
+      createSubcategoryMutation.mutate(payload);
+      return;
+    }
+
+    if (!activeSubcategoryId) {
+      return;
+    }
+
+    updateSubcategoryMutation.mutate({
+      subcategoryId: activeSubcategoryId,
+      data: {
+        name: payload.name,
+        description: payload.description,
+        active: subcategoryFormValues.active,
+      },
+    });
+  };
+
   const saving =
     createCategoryMutation.isPending || updateCategoryMutation.isPending;
+  const subcategorySaving =
+    createSubcategoryMutation.isPending || updateSubcategoryMutation.isPending;
   const categoriesInitialLoading = categoriesLoading && !categories;
   const categoriesErrorMessage =
     categoriesError instanceof Error
@@ -261,50 +432,120 @@ export default function CategoriesPage() {
               getRowKey={(entry) => entry.id}
               isLoading={categoriesInitialLoading}
               emptyMessage="No categories yet. Create one to get started."
-              renderItem={(entry) => (
-                <div className="card rounded-lg p-4 flex justify-between items-center hover:bg-white/5 transition-colors">
-                  <div className="flex-1">
-                    <p className="font-medium text-white">{entry.name}</p>
-                    <p className="text-sm text-white/70">
-                      {entry.description || "No description"}
-                    </p>
-                    {entry.subcategories && entry.subcategories.length > 0 && (
-                      <p className="text-xs text-white/60 mt-1">
-                        {entry.subcategories.length} subcategor
-                        {entry.subcategories.length === 1 ? "y" : "ies"}
-                      </p>
+              renderItem={(entry) => {
+                const isExpanded = expandedCategories.has(entry.id);
+                const hasSubcategories = entry.subcategories && entry.subcategories.length > 0;
+                
+                return (
+                  <div className="card rounded-lg p-4">
+                    <div className="flex justify-between items-center">
+                      <div className="flex-1 flex items-center space-x-3">
+                        {hasSubcategories && (
+                          <button
+                            onClick={() => toggleCategoryExpanded(entry.id)}
+                            className="text-white/70 hover:text-white transition-colors"
+                          >
+                            {isExpanded ? "▼" : "▶"}
+                          </button>
+                        )}
+                        <div className="flex-1">
+                          <p className="font-medium text-white">{entry.name}</p>
+                          <p className="text-sm text-white/70">
+                            {entry.description || "No description"}
+                          </p>
+                          {entry.subcategories && entry.subcategories.length > 0 && (
+                            <p className="text-xs text-white/60 mt-1">
+                              {entry.subcategories.length} subcategor
+                              {entry.subcategories.length === 1 ? "y" : "ies"}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-4">
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            entry.active
+                              ? "bg-green-500/15 text-green-400 border border-green-500/20"
+                              : "bg-white/5 text-white/70 border border-white/10"
+                          }`}
+                        >
+                          {entry.active ? "Active" : "Inactive"}
+                        </span>
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => openCreateSubcategoryForm(entry.id)}
+                          >
+                            Add Subcategory
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => openEditForm(entry)}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            onClick={() => confirmRemove(entry)}
+                            isLoading={pendingDeleteId === entry.id}
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Subcategories section */}
+                    {isExpanded && hasSubcategories && (
+                      <div className="mt-4 ml-8 space-y-2">
+                        {entry.subcategories!.map((subcategory) => (
+                          <div
+                            key={subcategory.id}
+                            className="bg-white/5 rounded-lg p-3 flex justify-between items-center"
+                          >
+                            <div className="flex-1">
+                              <p className="text-sm font-medium text-white">
+                                {subcategory.name}
+                              </p>
+                              <p className="text-xs text-white/70">
+                                {subcategory.description || "No description"}
+                              </p>
+                            </div>
+                            <div className="flex items-center space-x-3">
+                              <span
+                                className={`px-2 py-1 rounded-full text-xs ${
+                                  subcategory.active
+                                    ? "bg-green-500/15 text-green-400"
+                                    : "bg-white/5 text-white/70"
+                                }`}
+                              >
+                                {subcategory.active ? "Active" : "Inactive"}
+                              </span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => openEditSubcategoryForm(subcategory)}
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                variant="danger"
+                                size="sm"
+                                onClick={() => confirmRemoveSubcategory(subcategory)}
+                              >
+                                Delete
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     )}
                   </div>
-                  <div className="flex items-center space-x-4">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        entry.active
-                          ? "bg-green-500/15 text-green-400 border border-green-500/20"
-                          : "bg-white/5 text-white/70 border border-white/10"
-                      }`}
-                    >
-                      {entry.active ? "Active" : "Inactive"}
-                    </span>
-                    <div className="flex space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => openEditForm(entry)}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        onClick={() => confirmRemove(entry)}
-                        isLoading={pendingDeleteId === entry.id}
-                      >
-                        Delete
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
+                );
+              }}
             />
           )}
         </div>
@@ -386,6 +627,88 @@ export default function CategoriesPage() {
             isLoading={saving}
           >
             {formMode === "create" ? "Create Category" : "Save Changes"}
+          </Button>
+        </ModalActions>
+      </Modal>
+
+      {/* Subcategory Form Modal */}
+      <Modal
+        isOpen={subcategoryFormVisible}
+        onClose={closeSubcategoryForm}
+        title={
+          subcategoryFormMode === "create"
+            ? "Create Subcategory"
+            : "Edit Subcategory"
+        }
+        size="md"
+      >
+        <p className="text-white/80 mb-6">
+          {subcategoryFormMode === "create"
+            ? "Create a new subcategory under this category."
+            : "Update subcategory details."}
+        </p>
+
+        <FormField
+          label="Subcategory Name"
+          type="text"
+          placeholder="e.g., Hardware Issues"
+          value={subcategoryFormValues.name}
+          onChange={(e) =>
+            setSubcategoryFormValues((prev) => ({ ...prev, name: e.target.value }))
+          }
+          error={subcategoryFormErrors.name}
+          required
+        />
+
+        <FormField
+          label="Description"
+          type="textarea"
+          placeholder="Optional description for this subcategory"
+          value={subcategoryFormValues.description}
+          onChange={(e) =>
+            setSubcategoryFormValues((prev) => ({
+              ...prev,
+              description: e.target.value,
+            }))
+          }
+        />
+
+        {/* Active Status (only for edit mode) */}
+        {subcategoryFormMode === "edit" && (
+          <div className="mb-6">
+            <label className="flex items-center space-x-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={subcategoryFormValues.active}
+                onChange={(e) =>
+                  setSubcategoryFormValues((prev) => ({
+                    ...prev,
+                    active: e.target.checked,
+                  }))
+                }
+                className="w-4 h-4 rounded border-white/30"
+              />
+              <span className="text-white/90">Active</span>
+            </label>
+          </div>
+        )}
+
+        {subcategoryFormErrors.general && (
+          <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-md">
+            <p className="text-red-400 text-sm">{subcategoryFormErrors.general}</p>
+          </div>
+        )}
+
+        <ModalActions>
+          <Button variant="ghost" onClick={closeSubcategoryForm}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleSubmitSubcategoryForm}
+            isLoading={subcategorySaving}
+          >
+            {subcategoryFormMode === "create" ? "Create Subcategory" : "Save Changes"}
           </Button>
         </ModalActions>
       </Modal>
