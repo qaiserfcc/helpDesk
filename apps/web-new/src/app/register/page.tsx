@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import { register } from "@/services/auth";
 import { demoAccounts } from "@/constants/demoAccounts";
+import { Button } from "@/components/Button";
 
 export default function Register() {
   const [name, setName] = useState("");
@@ -118,10 +119,11 @@ export default function Register() {
             <div className="text-sm text-white/80 mb-2">Quick fill demo accounts</div>
             <div className="flex gap-2">
               {demoAccounts.map((account) => (
-                <button
+                <Button
+                  variant="primary"
                   type="button"
                   key={`demo-${account.label}`}
-                  className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-blue-700 hover:bg-blue-600 text-white"
+                  className="inline-flex items-center gap-2"
                   onClick={() => {
                     setName(account.name ?? "");
                     setEmail(account.email);
@@ -131,7 +133,7 @@ export default function Register() {
                   }}
                 >
                   {account.label}
-                </button>
+                </Button>
               ))}
             </div>
           </div>

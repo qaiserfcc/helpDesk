@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/useAuthStore";
 import { fetchTicketExportDataset, type ReportTicket, type TicketExportScope } from "@/services/tickets";
+import { Button } from "@/components/Button";
 
 const statusFilters: Array<{ label: string; value: string }> = [
   { label: "All", value: "all" },
@@ -85,8 +86,12 @@ export default function ReportsPage() {
             <p className="text-white/80">Status snapshots for {role === "admin" ? "the organization" : role === "agent" ? "your queue" : "your tickets"}</p>
           </div>
           <div className="flex items-center space-x-2">
-            <button onClick={() => refetch()} className="bg-blue-600 text-white px-3 py-2 rounded-lg">Refresh</button>
-            <button onClick={() => exportMutation.mutate()} className="bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-lg">Export</button>
+            <Button variant="primary" onClick={() => refetch()}>
+              Refresh
+            </Button>
+            <Button variant="secondary" onClick={() => exportMutation.mutate()}>
+              Export
+            </Button>
           </div>
         </div>
 

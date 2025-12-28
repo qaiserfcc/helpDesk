@@ -15,6 +15,9 @@ import {
   requestAssignment,
   resolveTicket,
   updateTicket,
+  type UpdateTicketPayload,
+  type IssueType,
+  type TicketPriority,
 } from "@/services/tickets";
 import { suggestReply, fetchSuggestions } from "@/services/ai";
 import { fetchUsers, type UserSummary } from "@/services/users";
@@ -23,6 +26,9 @@ import {
   describeTicketActivity,
   formatTicketStatus,
 } from "@/utils/ticketActivity";
+import { Modal, ModalActions } from "@/components/Modal";
+import { FormTextArea } from "@/components/FormField";
+import { Button } from "@/components/Button";
 
 const formatStatus = formatTicketStatus;
 
@@ -34,6 +40,21 @@ const buildAttachmentUrl = (path: string) => {
   }
   const sanitized = path.replace(/^\/+/, "");
   return `${env.apiBaseUrl}/${sanitized}`;
+};
+
+const priorityOptions: TicketPriority[] = ["low", "medium", "high"];
+const issueOptions: IssueType[] = [
+  "hardware",
+  "software",
+  "network",
+  "access",
+  "other",
+];
+
+type EditTicketFormValues = {
+  description: string;
+  priority: TicketPriority;
+  issueType: IssueType;
 };
 
 interface TicketDetailPageProps {
@@ -51,6 +72,14 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
   const [isAssigning, setIsAssigning] = useState(false);
   const [isResolving, setIsResolving] = useState(false);
   const [isRequesting, setIsRequesting] = useState(false);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editFormValues, setEditFormValues] = useState<EditTicketFormValues>({
+    description: "",
+    priority: "medium",
+    issueType: "other",
+  });
+  const [editFormError, setEditFormError] = useState("");
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const { data: ticket, isLoading } = useQuery({
     queryKey: ["ticket", ticketId],
@@ -181,7 +210,53 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
   };
 
   const handleEdit = () => {
-    router.push(`/ticket/${ticketId}/edit`);
+    if (ticket) {
+      setEditFormValues({
+        description: ticket.description,
+        priority: ticket.priority,
+        issueType: ticket.issueType,
+      });
+      setEditFormError("");
+      setEditModalVisible(true);
+    }
+  };
+
+  const closeEditModal = () => {
+    setEditModalVisible(false);
+    setEditFormError("");
+  };
+
+  const handleSubmitEditForm = async () => {
+    if (!editFormValues.description.trim()) {
+      setEditFormError("Description is required");
+      return;
+    }
+
+    setIsUpdating(true);
+    setEditFormError("");
+
+    const payload: UpdateTicketPayload = {
+      description: editFormValues.description.trim(),
+      priority: editFormValues.priority,
+      issueType: editFormValues.issueType,
+    };
+
+    try {
+      await updateTicket(ticketId, payload);
+      await invalidateTickets();
+      closeEditModal();
+      toastAdd({ 
+        type: "success", 
+        title: "Ticket updated", 
+        message: "Your changes have been saved", 
+        timestamp: new Date().toISOString() 
+      });
+    } catch (err) {
+      console.error("Update ticket failed", err);
+      setEditFormError("Failed to update ticket. Please try again.");
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   const handleRequestAssignment = async () => {
@@ -240,12 +315,14 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
     <div className="min-h-screen">
       <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => router.back()}
-            className="text-blue-600 hover:text-blue-500 mb-4"
+            className="mb-4"
           >
             ← Back
-          </button>
+          </Button>
           <h1 className="text-3xl font-bold text-white">Ticket #{ticket.id.slice(0, 8)}</h1>
           <p className="text-lg text-white/90 mt-2">{ticket.description}</p>
         </div>
@@ -357,13 +434,15 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
                         </option>
                       ))}
                     </select>
-                    <button
+                    <Button
+                      variant="primary"
                       onClick={handleAssign}
                       disabled={isAssigning || !selectedAssigneeId}
-                      className="w-full primary-btn py-2 px-4 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                      isLoading={isAssigning}
+                      className="w-full"
                     >
-                      {isAssigning ? "Assigning..." : "Assign"}
-                    </button>
+                      Assign
+                    </Button>
                   </div>
                 )}
               </div>
@@ -374,56 +453,60 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
               <h2 className="text-xl font-semibold text-white mb-4">Actions</h2>
               <div className="space-y-3">
                 {canEdit && (
-                  <button
+                  <Button
+                    variant="secondary"
                     onClick={handleEdit}
-                    className="w-full bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700"
+                    className="w-full"
                   >
                     Edit Ticket
-                  </button>
+                  </Button>
                 )}
 
                 {canRequestAssignment && (
-                  <button
+                  <Button
+                    variant="secondary"
                     onClick={handleRequestAssignment}
-                    disabled={isRequesting || agentHasPendingRequest || otherAgentRequested}
-                    className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={agentHasPendingRequest || otherAgentRequested}
+                    isLoading={isRequesting}
+                    className="w-full"
                   >
                     {agentHasPendingRequest
                       ? "Request Pending"
                       : otherAgentRequested
                         ? "Another Agent Requested"
-                        : isRequesting
-                          ? "Requesting..."
-                          : "Request Assignment"}
-                  </button>
+                        : "Request Assignment"}
+                  </Button>
                 )}
 
                 {canResolve && (
-                  <button
+                  <Button
+                    variant="primary"
                     onClick={handleResolve}
-                    disabled={isResolving}
-                    className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    isLoading={isResolving}
+                    className="w-full"
                   >
-                    {isResolving ? "Resolving..." : "Resolve"}
-                  </button>
+                    Resolve
+                  </Button>
                 )}
 
                 {canDeclineRequest && (
-                  <button
+                  <Button
+                    variant="danger"
                     onClick={handleDeclineRequest}
-                    className="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700"
+                    className="w-full"
                   >
                     Decline Request
-                  </button>
+                  </Button>
                 )}
 
                 {canReopen && (
-                  <button
+                  <Button
+                    variant="secondary"
                     onClick={handleReopen}
-                    className="w-full bg-yellow-600 text-white py-2 px-4 rounded-lg hover:bg-yellow-700"
+                    className="w-full"
                   >
                     Reopen Ticket
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>
@@ -434,7 +517,13 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
               {aiSuggestions.length === 0 ? (
                 <div className="space-y-3">
                   <p className="text-white/80">No AI suggestions yet.</p>
-                  <button onClick={handleGenerateSuggestion} className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700">Generate suggestion</button>
+                  <Button 
+                    variant="primary" 
+                    onClick={handleGenerateSuggestion} 
+                    className="w-full"
+                  >
+                    Generate suggestion
+                  </Button>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -442,17 +531,142 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
                     <div key={s.id} className="bg-white/5 p-4 rounded-lg">
                       <p className="text-white/90 mb-2">{s.result?.text ?? JSON.stringify(s.result)}</p>
                       <div className="flex gap-2">
-                        <button onClick={() => { navigator.clipboard.writeText(s.result?.text ?? ""); toastAdd({ type: "success", title: "Copied suggestion", message: "Suggestion copied to clipboard", timestamp: new Date().toISOString() }); }} className="bg-white/5 text-white px-3 py-1 rounded">Copy</button>
+                        <Button 
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => { 
+                            navigator.clipboard.writeText(s.result?.text ?? ""); 
+                            toastAdd({ 
+                              type: "success", 
+                              title: "Copied suggestion", 
+                              message: "Suggestion copied to clipboard", 
+                              timestamp: new Date().toISOString() 
+                            }); 
+                          }}
+                        >
+                          Copy
+                        </Button>
                       </div>
                     </div>
                   ))}
-                  <button onClick={handleGenerateSuggestion} className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700">Regenerate</button>
+                  <Button 
+                    variant="primary" 
+                    onClick={handleGenerateSuggestion} 
+                    className="w-full"
+                  >
+                    Regenerate
+                  </Button>
                 </div>
               )}
             </div>
           </div>
         </div>
       </div>
+
+      {/* Edit Ticket Modal */}
+      <Modal
+        isOpen={editModalVisible}
+        onClose={closeEditModal}
+        title="Edit Ticket"
+        size="md"
+      >
+        <p className="text-white/80 mb-6">
+          Update your ticket details. Changes will be saved immediately.
+        </p>
+
+        <FormTextArea
+          label="Description"
+          placeholder="Describe the issue in detail..."
+          value={editFormValues.description}
+          onChange={(e) =>
+            setEditFormValues((prev) => ({ ...prev, description: e.target.value }))
+          }
+          error={editFormError && !editFormValues.description.trim() ? "Description is required" : undefined}
+          required
+          rows={6}
+        />
+
+        {/* Priority Selection */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-white/90 mb-3">
+            Priority <span className="text-red-400 ml-1">*</span>
+          </label>
+          <div className="flex space-x-3">
+            {priorityOptions.map((option) => {
+              const selected = editFormValues.priority === option;
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() =>
+                    setEditFormValues((prev) => ({
+                      ...prev,
+                      priority: option,
+                    }))
+                  }
+                  className={`px-4 py-2 rounded-lg capitalize cursor-pointer transition-colors ${
+                    selected
+                      ? "bg-primary-blue text-white"
+                      : "bg-white/5 text-white/70 hover:bg-white/10"
+                  }`}
+                >
+                  {option}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Issue Type Selection */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-white/90 mb-3">
+            Issue Type <span className="text-red-400 ml-1">*</span>
+          </label>
+          <div className="flex flex-wrap gap-3">
+            {issueOptions.map((option) => {
+              const selected = editFormValues.issueType === option;
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() =>
+                    setEditFormValues((prev) => ({
+                      ...prev,
+                      issueType: option,
+                    }))
+                  }
+                  className={`px-4 py-2 rounded-lg capitalize cursor-pointer transition-colors ${
+                    selected
+                      ? "bg-primary-blue text-white"
+                      : "bg-white/5 text-white/70 hover:bg-white/10"
+                  }`}
+                >
+                  {option}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {editFormError && (
+          <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-md">
+            <p className="text-red-400 text-sm">{editFormError}</p>
+          </div>
+        )}
+
+        <ModalActions>
+          <Button variant="ghost" onClick={closeEditModal}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleSubmitEditForm}
+            isLoading={isUpdating}
+          >
+            Save Changes
+          </Button>
+        </ModalActions>
+      </Modal>
     </div>
   );
 }
