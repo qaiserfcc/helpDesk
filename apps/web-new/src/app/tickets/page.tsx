@@ -165,6 +165,13 @@ export default function TicketsPage() {
                   #{ticket.id.slice(0,8)} · <span className="capitalize">{ticket.issueType}</span> ·
                   <span className="capitalize"> {ticket.priority}</span> · Assignee: {ticket.assignee?.name ?? "Unassigned"}
                 </p>
+                {ticket.attributeValues?.length ? (
+                  <p className="text-xs text-white/60 mt-1 truncate">
+                    {ticket.attributeValues
+                      .map((entry) => `${entry.attribute.label}: ${Array.isArray(entry.value) ? entry.value.join(", ") : String(entry.value ?? "")}`)
+                      .join(" · ")}
+                  </p>
+                ) : null}
               </div>
               <div className="flex items-center space-x-4">
                 <span className={`px-3 py-1 rounded-full text-xs font-medium border ${

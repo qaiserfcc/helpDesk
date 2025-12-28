@@ -6,6 +6,7 @@ import {
   TicketStatus,
   Role,
   TicketActivityType,
+  AttributeType,
 } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 import { publishTicketEvent } from "../realtime/ticketPublisher.js";
@@ -17,6 +18,9 @@ const ticketInclude = {
   assignee: { select: { id: true, name: true, email: true } },
   assignmentRequest: {
     select: { id: true, name: true, email: true },
+  },
+  attributeValues: {
+    include: { attribute: true },
   },
 } as const;
 
@@ -168,6 +172,7 @@ type CreateTicketInput = {
   priority: TicketPriority;
   issueType: IssueType;
   attachments?: string[];
+  attributes?: Record<string, unknown>;
 };
 
 export async function createTicket(
@@ -178,6 +183,14 @@ export async function createTicket(
     throw createError(403, "Only end-users or admins can create tickets");
   }
 
+  // Validate dynamic attributes first
+  const { resolveAttributesForTicket, assertRequiredAttributesPresent } = await import(
+    "./attributeService.js"
+  );
+  const providedKeys = Object.keys(input.attributes ?? {});
+  await assertRequiredAttributesPresent(user, providedKeys);
+  const resolved = await resolveAttributesForTicket(input.attributes, user);
+
   const ticket = await prisma.ticket.create({
     data: {
       description: input.description,
@@ -185,6 +198,11 @@ export async function createTicket(
       issueType: input.issueType,
       attachments: input.attachments ?? [],
       createdBy: user.id,
+      attributeValues: resolved.length
+        ? {
+            create: resolved.map((r) => ({ attributeId: r.attributeId, value: r.value as Prisma.InputJsonValue })),
+          }
+        : undefined,
     },
     include: ticketInclude,
   });
@@ -206,6 +224,7 @@ type UpdateTicketInput = Partial<
   Pick<CreateTicketInput, "description" | "priority" | "issueType">
 > & {
   status?: TicketStatus;
+  attributes?: Record<string, unknown>;
 };
 
 export async function updateTicket(
@@ -290,6 +309,23 @@ export async function updateTicket(
     },
     include: ticketInclude,
   });
+
+  // Handle dynamic attribute updates (upsert per provided key)
+  if (updates.attributes && Object.keys(updates.attributes).length) {
+    const { resolveAttributesForTicket } = await import("./attributeService.js");
+    const resolved = await resolveAttributesForTicket(updates.attributes, user);
+    for (const r of resolved) {
+      await prisma.ticketAttributeValue.upsert({
+        where: { ticketId_attributeId: { ticketId, attributeId: r.attributeId } },
+        create: {
+          ticketId,
+          attributeId: r.attributeId,
+          value: r.value as Prisma.InputJsonValue,
+        },
+        update: { value: r.value as Prisma.InputJsonValue },
+      });
+    }
+  }
 
   notifyTicketChange(updatedTicket);
 

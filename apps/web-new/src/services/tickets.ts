@@ -1,5 +1,25 @@
 import { apiClient } from "@/services/apiClient";
 
+export type AttributeType = "text" | "number" | "date" | "select" | "multiselect";
+
+export type Attribute = {
+  id: string;
+  key: string;
+  label: string;
+  type: AttributeType;
+  options: string[];
+  required: boolean;
+  visibleTo: Array<"user" | "agent" | "admin">;
+  active: boolean;
+  order: number;
+};
+
+export type TicketAttributeValue = {
+  attributeId: string;
+  value: unknown;
+  attribute: Attribute;
+};
+
 export type TicketPriority = "low" | "medium" | "high";
 export type TicketStatus = "open" | "in_progress" | "resolved";
 export type IssueType =
@@ -28,6 +48,7 @@ export type Ticket = {
   creator: TicketUser;
   assignee: TicketUser | null;
   assignmentRequest: TicketUser | null;
+  attributeValues: TicketAttributeValue[];
 };
 
 export type ReportTicket = {
@@ -125,6 +146,7 @@ export type CreateTicketPayload = {
   priority: TicketPriority;
   issueType: IssueType;
   attachments?: string[];
+  attributes?: Record<string, unknown>;
 };
 
 export type UpdateTicketPayload = Partial<CreateTicketPayload> & {

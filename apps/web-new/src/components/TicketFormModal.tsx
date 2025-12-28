@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Modal, ModalActions } from "@/components/Modal";
 import { FormTextArea } from "@/components/FormField";
 import { Button } from "@/components/Button";
@@ -11,6 +12,8 @@ import {
   type IssueType,
   type CreateTicketPayload,
 } from "@/services/tickets";
+import { fetchVisibleAttributes } from "@/services/attributes";
+import type { Attribute, AttributeType } from "@/services/tickets";
 import { useTicketModalStore } from "@/store/useTicketModalStore";
 
 const priorityOptions: TicketPriority[] = ["low", "medium", "high"];
@@ -20,12 +23,14 @@ type FormValues = {
   description: string;
   priority: TicketPriority;
   issueType: IssueType;
+  attributes: Record<string, unknown>;
 };
 
 const makeEmpty = (): FormValues => ({
   description: "",
   priority: "medium",
   issueType: "other",
+  attributes: {},
 });
 
 export function TicketFormModal() {
@@ -41,6 +46,10 @@ export function TicketFormModal() {
           description: ticket.description,
           priority: ticket.priority,
           issueType: ticket.issueType,
+          attributes: ticket.attributeValues?.reduce<Record<string, unknown>>((acc, entry) => {
+            acc[entry.attribute.key] = entry.value as unknown;
+            return acc;
+          }, {}) ?? {},
         });
       } else {
         setValues(makeEmpty());
@@ -50,11 +59,34 @@ export function TicketFormModal() {
     }
   }, [isOpen, mode, ticket]);
 
+  const { data: attributes = [], isLoading: attributesLoading, isError: attributesError } = useQuery({
+    queryKey: ["ticket-attributes"],
+    queryFn: fetchVisibleAttributes,
+    enabled: isOpen,
+  });
+
+  const sortedAttributes = useMemo(() => {
+    return [...attributes].sort((a, b) => a.order - b.order);
+  }, [attributes]);
+
+  const handleAttributeChange = (key: string, value: unknown) => {
+    setValues((prev) => ({ ...prev, attributes: { ...prev.attributes, [key]: value } }));
+  };
+
   const handleSubmit = async () => {
     if (!values.description.trim()) {
       setError("Description is required");
       return;
     }
+
+    if (attributesError) {
+      setError("Unable to load attributes. Please retry.");
+      return;
+    }
+
+    const payloadAttributes = Object.keys(values.attributes || {}).length
+      ? values.attributes
+      : undefined;
 
     setSaving(true);
     setError("");
@@ -65,6 +97,7 @@ export function TicketFormModal() {
           description: values.description.trim(),
           priority: values.priority,
           issueType: values.issueType,
+          attributes: payloadAttributes,
         };
         await createTicket(payload);
       } else if (mode === "edit" && ticket) {
@@ -72,6 +105,7 @@ export function TicketFormModal() {
           description: values.description.trim(),
           priority: values.priority,
           issueType: values.issueType,
+          attributes: payloadAttributes,
         });
       }
       close();
@@ -144,6 +178,28 @@ export function TicketFormModal() {
         </div>
       </div>
 
+      {/* Dynamic Attributes */}
+      {attributesLoading && (
+        <p className="text-white/70 text-sm mb-4">Loading fields...</p>
+      )}
+
+      {attributesError && (
+        <p className="text-red-400 text-sm mb-4">Unable to load custom fields. You can still submit core details.</p>
+      )}
+
+      {!attributesLoading && sortedAttributes.length > 0 && (
+        <div className="space-y-4 mb-6">
+          {sortedAttributes.map((attr) => (
+            <AttributeField
+              key={attr.id}
+              attribute={attr}
+              value={values.attributes[attr.key]}
+              onChange={(val) => handleAttributeChange(attr.key, val)}
+            />
+          ))}
+        </div>
+      )}
+
       {error && (
         <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-md">
           <p className="text-red-400 text-sm">{error}</p>
@@ -158,4 +214,120 @@ export function TicketFormModal() {
       </ModalActions>
     </Modal>
   );
+}
+
+type AttributeFieldProps = {
+  attribute: Attribute;
+  value: unknown;
+  onChange: (value: unknown) => void;
+};
+
+function AttributeField({ attribute, value, onChange }: AttributeFieldProps) {
+  const label = (
+    <label className="block text-sm font-medium text-white/90 mb-2">
+      {attribute.label}
+      {attribute.required && <span className="text-red-400 ml-1">*</span>}
+    </label>
+  );
+
+  const baseInputClasses = "w-full rounded-md bg-white/5 border border-white/10 px-3 py-2 text-white placeholder-white/40 focus:border-sky-400 focus:outline-none";
+
+  switch (attribute.type as AttributeType) {
+    case "text":
+      return (
+        <div>
+          {label}
+          <input
+            type="text"
+            className={baseInputClasses}
+            value={(value as string) ?? ""}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={attribute.label}
+          />
+        </div>
+      );
+    case "number":
+      return (
+        <div>
+          {label}
+          <input
+            type="number"
+            className={baseInputClasses}
+            value={value === undefined || value === null ? "" : String(value)}
+            onChange={(e) => onChange(e.target.value ? Number(e.target.value) : "")}
+            placeholder={attribute.label}
+          />
+        </div>
+      );
+    case "date":
+      return (
+        <div>
+          {label}
+          <input
+            type="date"
+            className={baseInputClasses}
+            value={value ? String(value).slice(0, 10) : ""}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={attribute.label}
+          />
+        </div>
+      );
+    case "select":
+      return (
+        <div>
+          {label}
+          <div className="flex flex-wrap gap-2">
+            {attribute.options.map((option: string) => {
+              const selected = value === option;
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => onChange(option)}
+                  className={`px-4 py-2 rounded-lg capitalize cursor-pointer transition-colors ${
+                    selected ? "bg-sky-500 text-white" : "bg-white/5 text-white/70 hover:bg-white/10"
+                  }`}
+                >
+                  {option}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      );
+    case "multiselect": {
+      const current = Array.isArray(value) ? (value as string[]) : [];
+      const toggle = (option: string) => {
+        if (current.includes(option)) {
+          onChange(current.filter((v) => v !== option));
+        } else {
+          onChange([...current, option]);
+        }
+      };
+      return (
+        <div>
+          {label}
+          <div className="flex flex-wrap gap-2">
+            {attribute.options.map((option: string) => {
+              const selected = current.includes(option);
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => toggle(option)}
+                  className={`px-4 py-2 rounded-lg capitalize cursor-pointer transition-colors ${
+                    selected ? "bg-sky-500 text-white" : "bg-white/5 text-white/70 hover:bg-white/10"
+                  }`}
+                >
+                  {option}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+    default:
+      return null;
+  }
 }

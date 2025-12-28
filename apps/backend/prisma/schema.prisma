@@ -39,6 +39,15 @@ enum IssueType {
   other
 }
 
+// Dynamic attribute support
+enum AttributeType {
+  text
+  number
+  date
+  select
+  multiselect
+}
+
 model User {
   id           String         @id @default(uuid())
   name         String
@@ -75,6 +84,8 @@ model Ticket {
   resolvedAt  DateTime?
   activities  TicketActivity[]
   aiSuggestions AiSuggestion[]
+  // Dynamic attribute values associated with this ticket
+  attributeValues TicketAttributeValue[]
 }
 
 model AiSuggestion {
@@ -120,4 +131,37 @@ model DeviceToken {
   updatedAt   DateTime  @updatedAt
 
   @@unique([userId, deviceToken])
+}
+
+// Admin-defined attribute metadata
+model Attribute {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  label     String
+  type      AttributeType
+  options   String[]
+  required  Boolean  @default(false)
+  visibleTo Role[]   @default([])
+  active    Boolean  @default(true)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  values    TicketAttributeValue[]
+}
+
+// Per-ticket attribute values (stored as JSON to support all types)
+model TicketAttributeValue {
+  id          String    @id @default(uuid())
+  ticketId    String
+  attributeId String
+  value       Json
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  ticket      Ticket    @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  attribute   Attribute @relation(fields: [attributeId], references: [id], onDelete: Cascade)
+
+  @@unique([ticketId, attributeId])
+  @@index([ticketId])
+  @@index([attributeId])
 }
