@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useNotificationStore } from "@/store/useNotificationStore";
 import axios from "axios";
@@ -21,13 +21,15 @@ import {
 } from "@/services/tickets";
 import { suggestReply, fetchSuggestions } from "@/services/ai";
 import { fetchUsers, type UserSummary } from "@/services/users";
+import { workflowsService, type WorkflowProgress } from "@/services/workflows";
+import { ticketCommentsService, type TicketComment } from "@/services/ticketComments";
 import { env } from "@/config/env";
 import {
   describeTicketActivity,
   formatTicketStatus,
 } from "@/utils/ticketActivity";
 import { Modal, ModalActions } from "@/components/Modal";
-import { FormTextArea } from "@/components/FormField";
+import { FormTextArea, FormField } from "@/components/FormField";
 import { Button } from "@/components/Button";
 
 const formatStatus = formatTicketStatus;
@@ -80,6 +82,16 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
   });
   const [editFormError, setEditFormError] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
+  
+  // Comment state
+  const [commentText, setCommentText] = useState("");
+  const [replyToId, setReplyToId] = useState<string | null>(null);
+  const [replyToName, setReplyToName] = useState<string>("");
+  
+  // Workflow step completion state
+  const [stepCompleteModalVisible, setStepCompleteModalVisible] = useState(false);
+  const [stepCompleteComment, setStepCompleteComment] = useState("");
+  const [completingStepId, setCompletingStepId] = useState<string | null>(null);
 
   const { data: ticket, isLoading } = useQuery({
     queryKey: ["ticket", ticketId],
@@ -89,6 +101,17 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
   const { data: activities = [], isLoading: activityLoading } = useQuery({
     queryKey: ["ticket-activity", ticketId],
     queryFn: () => fetchTicketActivity(ticketId, 100),
+  });
+
+  const { data: workflowProgress, isLoading: workflowLoading } = useQuery({
+    queryKey: ["workflow-progress", ticketId],
+    queryFn: () => workflowsService.getWorkflowProgress(ticketId),
+    enabled: !!ticket,
+  });
+
+  const { data: comments = [], isLoading: commentsLoading } = useQuery({
+    queryKey: ["ticket-comments", ticketId],
+    queryFn: () => ticketCommentsService.listComments(ticketId),
   });
 
   const isAdmin = authUser?.role === "admin";
@@ -293,6 +316,105 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
     window.open(url, "_blank");
   };
 
+  // Comment mutations
+  const createCommentMutation = useMutation({
+    mutationFn: ({ content, parentId }: { content: string; parentId?: string }) =>
+      ticketCommentsService.createComment(ticketId, content, parentId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ticket-comments", ticketId] });
+      queryClient.invalidateQueries({ queryKey: ["ticket-activity", ticketId] });
+      setCommentText("");
+      setReplyToId(null);
+      setReplyToName("");
+      toastAdd({
+        type: "success",
+        title: "Comment added",
+        message: "Your comment has been posted",
+        timestamp: new Date().toISOString(),
+      });
+    },
+    onError: (error: unknown) => {
+      const message = error instanceof Error ? error.message : "Failed to post comment";
+      toastAdd({
+        type: "error",
+        title: "Comment failed",
+        message,
+        timestamp: new Date().toISOString(),
+      });
+    },
+  });
+
+  const handleSubmitComment = () => {
+    if (!commentText.trim()) return;
+    createCommentMutation.mutate({
+      content: commentText.trim(),
+      parentId: replyToId ?? undefined,
+    });
+  };
+
+  const handleReply = (comment: TicketComment) => {
+    setReplyToId(comment.id);
+    setReplyToName(comment.author.name);
+  };
+
+  const cancelReply = () => {
+    setReplyToId(null);
+    setReplyToName("");
+  };
+
+  // Workflow step completion
+  const completeStepMutation = useMutation({
+    mutationFn: ({ stepId, comment }: { stepId: string; comment?: string }) =>
+      workflowsService.completeStep(ticketId, stepId, comment),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["workflow-progress", ticketId] });
+      queryClient.invalidateQueries({ queryKey: ["ticket-activity", ticketId] });
+      setStepCompleteModalVisible(false);
+      setStepCompleteComment("");
+      setCompletingStepId(null);
+      toastAdd({
+        type: "success",
+        title: "Step completed",
+        message: "Workflow step has been marked as complete",
+        timestamp: new Date().toISOString(),
+      });
+    },
+    onError: (error: unknown) => {
+      const message = error instanceof Error ? error.message : "Failed to complete step";
+      toastAdd({
+        type: "error",
+        title: "Step completion failed",
+        message,
+        timestamp: new Date().toISOString(),
+      });
+    },
+  });
+
+  const openStepCompleteModal = (stepId: string) => {
+    setCompletingStepId(stepId);
+    setStepCompleteComment("");
+    setStepCompleteModalVisible(true);
+  };
+
+  const closeStepCompleteModal = () => {
+    setStepCompleteModalVisible(false);
+    setStepCompleteComment("");
+    setCompletingStepId(null);
+  };
+
+  const handleCompleteStep = () => {
+    if (!completingStepId) return;
+    completeStepMutation.mutate({
+      stepId: completingStepId,
+      comment: stepCompleteComment.trim() || undefined,
+    });
+  };
+
+  // Get current step for assigned user
+  const currentStep = workflowProgress?.progress.find((p) => !p.isCompleted);
+  const isAssignedToMe = ticket?.assignee?.id === authUser?.id;
+  const canCompleteStep = Boolean(currentStep && isAssignedToMe && !isTicketResolved);
+
   // selected agent derived from agents list if needed in UI (unused currently)
 
   if (isLoading || !ticket) {
@@ -402,6 +524,72 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
               </div>
             )}
 
+            {/* Workflow Progress */}
+            {workflowProgress && (
+              <div className="card shadow rounded-lg p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-semibold text-white">Workflow Progress</h2>
+                  <span className="text-sm text-white/70">
+                    {workflowProgress.completedSteps} / {workflowProgress.totalSteps} steps
+                  </span>
+                </div>
+                <div className="space-y-3">
+                  {workflowProgress.progress.map((item, idx) => (
+                    <div
+                      key={item.step.id}
+                      className={`p-4 rounded-lg border ${
+                        item.isCompleted
+                          ? "bg-green-500/10 border-green-500/30"
+                          : idx === workflowProgress.completedSteps
+                          ? "bg-blue-500/10 border-blue-500/30"
+                          : "bg-white/5 border-white/10"
+                      }`}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2">
+                            <span className="text-white/70 font-medium">Step {item.step.order + 1}</span>
+                            {item.isCompleted && (
+                              <span className="text-green-400 text-sm">✓ Completed</span>
+                            )}
+                            {!item.isCompleted && idx === workflowProgress.completedSteps && (
+                              <span className="text-blue-400 text-sm">Current Step</span>
+                            )}
+                          </div>
+                          <p className="font-medium text-white mt-1">{item.step.name}</p>
+                          {item.step.description && (
+                            <p className="text-sm text-white/70 mt-1">{item.step.description}</p>
+                          )}
+                          {item.step.requiredRole && (
+                            <p className="text-xs text-white/60 mt-1">
+                              Required role: {item.step.requiredRole}
+                            </p>
+                          )}
+                          {item.completion && (
+                            <p className="text-xs text-white/60 mt-2">
+                              Completed by {item.completion.completedByUser?.name} on{" "}
+                              {new Date(item.completion.completedAt).toLocaleString()}
+                              {item.completion.comment && ` - ${item.completion.comment}`}
+                            </p>
+                          )}
+                        </div>
+                        {canCompleteStep && item.step.id === currentStep?.step.id && (
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={() => openStepCompleteModal(item.step.id)}
+                            isLoading={completeStepMutation.isPending}
+                          >
+                            Complete Step
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Attachments */}
             {ticket.attachments.length > 0 && (
               <div className="card shadow rounded-lg p-6">
@@ -438,6 +626,99 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
                       <p className="text-sm text-white/80 mt-1">
                         {formatActivityTime(entry.createdAt)}
                       </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Comments & Replies */}
+            <div className="card shadow rounded-lg p-6">
+              <h2 className="text-xl font-semibold text-white mb-4">Comments</h2>
+              
+              {/* Comment input */}
+              <div className="mb-6">
+                {replyToId && (
+                  <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 mb-3 flex justify-between items-center">
+                    <span className="text-sm text-blue-400">
+                      Replying to {replyToName}
+                    </span>
+                    <button
+                      onClick={cancelReply}
+                      className="text-white/70 hover:text-white text-sm"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+                <FormField
+                  label=""
+                  type="textarea"
+                  placeholder={replyToId ? "Write your reply..." : "Add a comment..."}
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  rows={3}
+                />
+                <div className="mt-2 flex justify-end">
+                  <Button
+                    variant="primary"
+                    onClick={handleSubmitComment}
+                    disabled={!commentText.trim()}
+                    isLoading={createCommentMutation.isPending}
+                  >
+                    {replyToId ? "Post Reply" : "Post Comment"}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Comments list */}
+              {commentsLoading ? (
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              ) : comments.length === 0 ? (
+                <p className="text-white/80">No comments yet. Be the first to comment!</p>
+              ) : (
+                <div className="space-y-4">
+                  {comments.map((comment) => (
+                    <div key={comment.id} className="bg-white/5 rounded-lg p-4">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <p className="font-medium text-white">{comment.author.name}</p>
+                          <p className="text-xs text-white/60">
+                            {new Date(comment.createdAt).toLocaleString()}
+                          </p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleReply(comment)}
+                        >
+                          Reply
+                        </Button>
+                      </div>
+                      <p className="text-white/90 whitespace-pre-wrap">{comment.content}</p>
+                      
+                      {/* Replies */}
+                      {comment.replies && comment.replies.length > 0 && (
+                        <div className="mt-3 ml-4 space-y-3 border-l-2 border-white/20 pl-4">
+                          {comment.replies.map((reply) => (
+                            <div key={reply.id} className="bg-white/5 rounded-lg p-3">
+                              <div className="flex justify-between items-start mb-1">
+                                <div>
+                                  <p className="font-medium text-white text-sm">
+                                    {reply.author.name}
+                                  </p>
+                                  <p className="text-xs text-white/60">
+                                    {new Date(reply.createdAt).toLocaleString()}
+                                  </p>
+                                </div>
+                              </div>
+                              <p className="text-sm text-white/90 whitespace-pre-wrap">
+                                {reply.content}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -699,6 +980,40 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
             isLoading={isUpdating}
           >
             Save Changes
+          </Button>
+        </ModalActions>
+      </Modal>
+
+      {/* Complete Step Modal */}
+      <Modal
+        isOpen={stepCompleteModalVisible}
+        onClose={closeStepCompleteModal}
+        title="Complete Workflow Step"
+        size="md"
+      >
+        <p className="text-white/80 mb-6">
+          Mark this workflow step as complete. Optionally add a comment about the work done.
+        </p>
+
+        <FormField
+          label="Comment (Optional)"
+          type="textarea"
+          placeholder="Describe the work completed for this step..."
+          value={stepCompleteComment}
+          onChange={(e) => setStepCompleteComment(e.target.value)}
+          rows={4}
+        />
+
+        <ModalActions>
+          <Button variant="ghost" onClick={closeStepCompleteModal}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleCompleteStep}
+            isLoading={completeStepMutation.isPending}
+          >
+            Complete Step
           </Button>
         </ModalActions>
       </Modal>
