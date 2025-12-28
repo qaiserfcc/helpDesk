@@ -114,8 +114,8 @@ export async function createWorkflow(
 export async function updateWorkflow(
   workflowId: string,
   updates: Partial<WorkflowInput>,
-  steps?: WorkflowStepInput[],
   user: RequestUser,
+  steps?: WorkflowStepInput[],
 ) {
   if (user.role !== "admin") {
     throw createError(403, "Only admins can update workflows");

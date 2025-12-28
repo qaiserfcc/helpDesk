@@ -651,9 +651,8 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
                     </button>
                   </div>
                 )}
-                <FormField
+                <FormTextArea
                   label=""
-                  type="textarea"
                   placeholder={replyToId ? "Write your reply..." : "Add a comment..."}
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
@@ -995,9 +994,8 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
           Mark this workflow step as complete. Optionally add a comment about the work done.
         </p>
 
-        <FormField
+        <FormTextArea
           label="Comment (Optional)"
-          type="textarea"
           placeholder="Describe the work completed for this step..."
           value={stepCompleteComment}
           onChange={(e) => setStepCompleteComment(e.target.value)}

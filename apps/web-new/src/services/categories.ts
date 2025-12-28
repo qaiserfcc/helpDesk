@@ -16,6 +16,8 @@ export interface Subcategory {
   name: string;
   description?: string | null;
   active: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export const categoriesService = {
