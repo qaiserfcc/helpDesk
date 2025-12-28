@@ -364,8 +364,43 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
                     </p>
                   )}
                 </div>
+
+                {ticket.category && (
+                  <div>
+                    <p className="text-sm text-white/80">Category</p>
+                    <p className="text-lg text-white">{ticket.category.name}</p>
+                  </div>
+                )}
+
+                {ticket.subcategory && (
+                  <div>
+                    <p className="text-sm text-white/80">Subcategory</p>
+                    <p className="text-lg text-white">{ticket.subcategory.name}</p>
+                  </div>
+                )}
               </div>
             </div>
+
+            {/* SLA Information */}
+            {ticket.sla && (
+              <div className="card shadow rounded-lg p-6">
+                <h2 className="text-xl font-semibold text-white mb-4">Service Level Agreement (SLA)</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-white/5 p-4 rounded-lg">
+                    <p className="text-sm text-white/80">SLA Name</p>
+                    <p className="text-lg font-medium text-white">{ticket.sla.name}</p>
+                  </div>
+                  <div className="bg-white/5 p-4 rounded-lg">
+                    <p className="text-sm text-white/80">Response Time</p>
+                    <p className="text-lg font-medium text-white">{ticket.sla.responseTimeHours} hours</p>
+                  </div>
+                  <div className="bg-white/5 p-4 rounded-lg">
+                    <p className="text-sm text-white/80">Resolution Time</p>
+                    <p className="text-lg font-medium text-white">{ticket.sla.resolutionTimeHours} hours</p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Attachments */}
             {ticket.attachments.length > 0 && (

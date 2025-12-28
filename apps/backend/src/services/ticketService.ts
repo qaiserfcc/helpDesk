@@ -19,6 +19,9 @@ const ticketInclude = {
   assignmentRequest: {
     select: { id: true, name: true, email: true },
   },
+  category: { select: { id: true, name: true } },
+  subcategory: { select: { id: true, name: true, categoryId: true } },
+  sla: { select: { id: true, name: true, responseTimeHours: true, resolutionTimeHours: true } },
   attributeValues: {
     include: { attribute: true },
   },
@@ -40,6 +43,9 @@ const ticketCoreSelect = {
   description: true,
   priority: true,
   issueType: true,
+  categoryId: true,
+  subcategoryId: true,
+  slaId: true,
   attachments: true,
   createdBy: true,
   assignedTo: true,
@@ -171,6 +177,8 @@ type CreateTicketInput = {
   description: string;
   priority: TicketPriority;
   issueType: IssueType;
+  categoryId?: string;
+  subcategoryId?: string;
   attachments?: string[];
   attributes?: Record<string, unknown>;
 };
@@ -191,13 +199,51 @@ export async function createTicket(
   await assertRequiredAttributesPresent(user, providedKeys);
   const resolved = await resolveAttributesForTicket(input.attributes, user);
 
+  // Auto-detect SLA based on subcategory
+  let slaId: string | undefined;
+  if (input.subcategoryId) {
+    const sla = await prisma.sla.findFirst({
+      where: {
+        subcategoryId: input.subcategoryId,
+        active: true,
+      },
+      select: { id: true },
+    });
+    if (sla) {
+      slaId = sla.id;
+    }
+  }
+
+  // Auto-assign agent based on subcategory if configured
+  let assignedTo: string | undefined;
+  if (input.subcategoryId) {
+    const autoAssignment = await prisma.agentAutoAssign.findFirst({
+      where: {
+        subcategoryId: input.subcategoryId,
+        active: true,
+      },
+      orderBy: {
+        priority: 'asc', // Lower priority number = higher priority
+      },
+      select: { agentId: true },
+    });
+    if (autoAssignment) {
+      assignedTo = autoAssignment.agentId;
+    }
+  }
+
   const ticket = await prisma.ticket.create({
     data: {
       description: input.description,
       priority: input.priority,
       issueType: input.issueType,
+      categoryId: input.categoryId,
+      subcategoryId: input.subcategoryId,
+      slaId,
+      assignedTo,
       attachments: input.attachments ?? [],
       createdBy: user.id,
+      status: assignedTo ? TicketStatus.in_progress : TicketStatus.open,
       attributeValues: resolved.length
         ? {
             create: resolved.map((r) => ({ attributeId: r.attributeId, value: r.value as Prisma.InputJsonValue })),
@@ -206,6 +252,17 @@ export async function createTicket(
     },
     include: ticketInclude,
   });
+
+  // Log auto-assignment activity if agent was assigned
+  if (assignedTo) {
+    await logTicketActivity({
+      ticketId: ticket.id,
+      actorId: user.id,
+      type: TicketActivityType.assignment_change,
+      fromAssigneeId: null,
+      toAssigneeId: assignedTo,
+    });
+  }
 
   notifyTicketChange(ticket, "tickets:created");
   // Fire-and-forget generation of suggestions/summaries (do not block ticket creation)
@@ -221,7 +278,7 @@ export async function createTicket(
 }
 
 type UpdateTicketInput = Partial<
-  Pick<CreateTicketInput, "description" | "priority" | "issueType">
+  Pick<CreateTicketInput, "description" | "priority" | "issueType" | "categoryId" | "subcategoryId">
 > & {
   status?: TicketStatus;
   attributes?: Record<string, unknown>;
@@ -289,13 +346,30 @@ export async function updateTicket(
     updates.priority !== undefined && updates.priority !== ticket.priority;
   const issueTypeChanged =
     updates.issueType !== undefined && updates.issueType !== ticket.issueType;
+  const categoryChanged =
+    updates.categoryId !== undefined && updates.categoryId !== ticket.categoryId;
+  const subcategoryChanged =
+    updates.subcategoryId !== undefined && updates.subcategoryId !== ticket.subcategoryId;
   const detailFieldsChanged =
-    descriptionChanged || priorityChanged || issueTypeChanged;
+    descriptionChanged || priorityChanged || issueTypeChanged || categoryChanged || subcategoryChanged;
   let resolvedAt = ticket.resolvedAt;
   if (nextStatus === TicketStatus.resolved) {
     resolvedAt = ticket.resolvedAt ?? new Date();
   } else if (ticket.status === TicketStatus.resolved) {
     resolvedAt = null;
+  }
+
+  // Auto-update SLA if subcategory changed
+  let slaId = ticket.slaId;
+  if (subcategoryChanged && updates.subcategoryId) {
+    const sla = await prisma.sla.findFirst({
+      where: {
+        subcategoryId: updates.subcategoryId,
+        active: true,
+      },
+      select: { id: true },
+    });
+    slaId = sla?.id ?? null;
   }
 
   const updatedTicket = await prisma.ticket.update({
@@ -304,6 +378,9 @@ export async function updateTicket(
       description: updates.description ?? ticket.description,
       priority: updates.priority ?? ticket.priority,
       issueType: updates.issueType ?? ticket.issueType,
+      categoryId: updates.categoryId !== undefined ? updates.categoryId : ticket.categoryId,
+      subcategoryId: updates.subcategoryId !== undefined ? updates.subcategoryId : ticket.subcategoryId,
+      slaId,
       status: nextStatus,
       resolvedAt,
     },

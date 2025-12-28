@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createTicket, type CreateTicketPayload, type IssueType, type TicketPriority } from "@/services/tickets";
+import { categoriesService } from "@/services/categories";
+import { subcategoriesService } from "@/services/subcategories";
 import { useNotificationStore } from "@/store/useNotificationStore";
 import { useAuthStore } from "@/store/useAuthStore";
 
@@ -22,13 +24,27 @@ export default function NewTicketPage() {
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<TicketPriority>("medium");
   const [issueType, setIssueType] = useState<IssueType>("other");
+  const [categoryId, setCategoryId] = useState("");
+  const [subcategoryId, setSubcategoryId] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const addNotification = useNotificationStore((s) => s.addNotification);
   const session = useAuthStore((s) => s.session);
 
-  if (!session) return null;
-  const canCreate = session.user.role === "user" || session.user.role === "admin";
+  const { data: categories = [] } = useQuery({
+    queryKey: ["categories"],
+    queryFn: () => categoriesService.listAllCategories(),
+  });
+
+  const { data: subcategories = [] } = useQuery({
+    queryKey: ["subcategories", categoryId],
+    queryFn: () =>
+      categoryId
+        ? subcategoriesService.listByCategory(categoryId)
+        : Promise.resolve([]),
+    enabled: !!categoryId,
+  });
+  const canCreate = session && (session.user.role === "user" || session.user.role === "admin");
   if (!canCreate) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -60,6 +76,8 @@ export default function NewTicketPage() {
       description: description.trim(),
       priority,
       issueType,
+      categoryId: categoryId || undefined,
+      subcategoryId: subcategoryId || undefined,
     };
 
     try {
@@ -140,6 +158,49 @@ export default function NewTicketPage() {
                 ))}
               </div>
             </div>
+
+            <div>
+              <label htmlFor="category" className="block text-sm font-medium text-white/90 mb-2">
+                Category
+              </label>
+              <select
+                id="category"
+                value={categoryId}
+                onChange={(e) => {
+                  setCategoryId(e.target.value);
+                  setSubcategoryId(""); // Reset subcategory when category changes
+                }}
+                className="w-full px-3 py-2 border border-transparent rounded-lg focus:ring-2 focus:ring-white focus:border-white text-white card"
+              >
+                <option value="">-- Select Category --</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {categoryId && (
+              <div>
+                <label htmlFor="subcategory" className="block text-sm font-medium text-white/90 mb-2">
+                  Subcategory
+                </label>
+                <select
+                  id="subcategory"
+                  value={subcategoryId}
+                  onChange={(e) => setSubcategoryId(e.target.value)}
+                  className="w-full px-3 py-2 border border-transparent rounded-lg focus:ring-2 focus:ring-white focus:border-white text-white card"
+                >
+                  <option value="">-- Select Subcategory --</option>
+                  {subcategories.map((subcat) => (
+                    <option key={subcat.id} value={subcat.id}>
+                      {subcat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-white/90 mb-2">

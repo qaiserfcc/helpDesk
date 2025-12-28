@@ -35,6 +35,24 @@ export type TicketUser = {
   email: string;
 };
 
+export type Category = {
+  id: string;
+  name: string;
+};
+
+export type Subcategory = {
+  id: string;
+  name: string;
+  categoryId: string;
+};
+
+export type Sla = {
+  id: string;
+  name: string;
+  responseTimeHours: number;
+  resolutionTimeHours: number;
+};
+
 export type Ticket = {
   id: string;
   description: string;
@@ -48,6 +66,9 @@ export type Ticket = {
   creator: TicketUser;
   assignee: TicketUser | null;
   assignmentRequest: TicketUser | null;
+  category: Category | null;
+  subcategory: Subcategory | null;
+  sla: Sla | null;
   attributeValues: TicketAttributeValue[];
 };
 
@@ -145,6 +166,8 @@ export type CreateTicketPayload = {
   description: string;
   priority: TicketPriority;
   issueType: IssueType;
+  categoryId?: string;
+  subcategoryId?: string;
   attachments?: string[];
   attributes?: Record<string, unknown>;
 };

@@ -5,6 +5,8 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchTicket, updateTicket, type UpdateTicketPayload, type IssueType, type TicketPriority } from "@/services/tickets";
+import { categoriesService } from "@/services/categories";
+import { subcategoriesService } from "@/services/subcategories";
 
 const priorityOptions: TicketPriority[] = ["low", "medium", "high"];
 const issueOptions: IssueType[] = [
@@ -28,6 +30,8 @@ export default function EditTicketPage({ params }: EditTicketPageProps) {
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<TicketPriority>("medium");
   const [issueType, setIssueType] = useState<IssueType>("other");
+  const [categoryId, setCategoryId] = useState("");
+  const [subcategoryId, setSubcategoryId] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -38,11 +42,24 @@ export default function EditTicketPage({ params }: EditTicketPageProps) {
 
   const authUser = useAuthStore((s) => s.session?.user);
 
+  const { data: categories = [] } = useQuery({
+    queryKey: ["categories"],
+    queryFn: () => categoriesService.listAllCategories(),
+  });
+
+  const { data: subcategories = [] } = useQuery({
+    queryKey: ["subcategories", categoryId],
+    queryFn: () => categoryId ? subcategoriesService.listByCategory(categoryId) : Promise.resolve([]),
+    enabled: !!categoryId,
+  });
+
   useEffect(() => {
     if (ticket) {
       setDescription(ticket.description);
       setPriority(ticket.priority);
       setIssueType(ticket.issueType);
+      if (ticket.category?.id) setCategoryId(ticket.category.id);
+      if (ticket.subcategory?.id) setSubcategoryId(ticket.subcategory.id);
     }
   }, [ticket]);
 
@@ -60,6 +77,8 @@ export default function EditTicketPage({ params }: EditTicketPageProps) {
       description: description.trim(),
       priority,
       issueType,
+      categoryId: categoryId || undefined,
+      subcategoryId: subcategoryId || undefined,
     };
 
     try {
@@ -176,6 +195,50 @@ export default function EditTicketPage({ params }: EditTicketPageProps) {
                   </label>
                 ))}
               </div>
+            </div>
+
+            <div>
+              <label htmlFor="category" className="block text-sm font-medium text-white/80 mb-2">
+                Category
+              </label>
+              <select
+                id="category"
+                value={categoryId}
+                onChange={(e) => {
+                  setCategoryId(e.target.value);
+                  setSubcategoryId("");
+                }}
+                className="w-full px-3 py-2 border border-white/10 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/5 text-white"
+              >
+                <option value="">Select a category</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="subcategory" className="block text-sm font-medium text-white/80 mb-2">
+                Subcategory
+              </label>
+              <select
+                id="subcategory"
+                value={subcategoryId}
+                onChange={(e) => setSubcategoryId(e.target.value)}
+                disabled={!categoryId}
+                className="w-full px-3 py-2 border border-white/10 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/5 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <option value="">
+                  {categoryId ? "Select a subcategory" : "Select category first"}
+                </option>
+                {subcategories.map((subcat) => (
+                  <option key={subcat.id} value={subcat.id}>
+                    {subcat.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div>

@@ -61,6 +61,7 @@ model User {
   activityFromAssignments TicketActivity[] @relation("TicketActivityFromAssignee")
   activityToAssignments   TicketActivity[] @relation("TicketActivityToAssignee")
   devices      DeviceToken[]
+  autoAssigns  AgentAutoAssign[]
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   aiSuggestions AiSuggestion[]
@@ -79,6 +80,12 @@ model Ticket {
   attachments String[]
   assignmentRequestId String?
   assignmentRequest   User?    @relation("TicketAssignmentRequests", fields: [assignmentRequestId], references: [id])
+  categoryId String?
+  category   Category?   @relation(fields: [categoryId], references: [id])
+  subcategoryId String?
+  subcategory  Subcategory? @relation(fields: [subcategoryId], references: [id])
+  slaId      String?
+  sla        Sla?        @relation(fields: [slaId], references: [id])
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
   resolvedAt  DateTime?
@@ -165,3 +172,69 @@ model TicketAttributeValue {
   @@index([ticketId])
   @@index([attributeId])
 }
+
+// Category for ticket classification
+model Category {
+  id            String   @id @default(uuid())
+  name          String   @unique
+  description   String?
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  subcategories Subcategory[]
+  tickets       Ticket[]
+}
+
+// Subcategory under each category
+model Subcategory {
+  id          String   @id @default(uuid())
+  categoryId  String
+  name        String
+  description String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  slas        Sla[]
+  tickets     Ticket[]
+  autoAssigns AgentAutoAssign[]
+
+  @@unique([categoryId, name])
+  @@index([categoryId])
+}
+
+// SLA (Service Level Agreement) per category/subcategory
+model Sla {
+  id              String   @id @default(uuid())
+  name            String   @unique
+  subcategoryId   String
+  responseTimeHours Int
+  resolutionTimeHours Int
+  priority        TicketPriority
+  description     String?
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  subcategory     Subcategory @relation(fields: [subcategoryId], references: [id], onDelete: Cascade)
+  tickets         Ticket[]
+
+  @@index([subcategoryId])
+}
+
+// Agent auto-assignment rules based on category/subcategory
+model AgentAutoAssign {
+  id              String   @id @default(uuid())
+  subcategoryId   String
+  agentId         String
+  active          Boolean  @default(true)
+  priority        Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  subcategory     Subcategory @relation(fields: [subcategoryId], references: [id], onDelete: Cascade)
+  agent           User     @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@unique([subcategoryId, agentId])
+  @@index([subcategoryId])
+  @@index([agentId])
+}
+

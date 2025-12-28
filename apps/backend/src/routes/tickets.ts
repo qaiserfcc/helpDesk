@@ -28,6 +28,8 @@ const createTicketSchema = z.object({
   description: z.string().min(4),
   priority: z.nativeEnum(TicketPriority).default(TicketPriority.medium),
   issueType: z.nativeEnum(IssueType).default(IssueType.other),
+  categoryId: z.string().uuid().optional(),
+  subcategoryId: z.string().uuid().optional(),
   attachments: z.array(z.string().min(1)).optional(),
   // Dynamic attributes payload: key-value pairs, validated in service
   attributes: z.record(z.string(), z.any()).optional(),
@@ -37,6 +39,8 @@ const updateTicketSchema = z.object({
   description: z.string().min(4).optional(),
   priority: z.nativeEnum(TicketPriority).optional(),
   issueType: z.nativeEnum(IssueType).optional(),
+  categoryId: z.string().uuid().optional(),
+  subcategoryId: z.string().uuid().optional(),
   status: z.nativeEnum(TicketStatus).optional(),
   attributes: z.record(z.string(), z.any()).optional(),
 });

@@ -5,6 +5,10 @@ import ticketsRouter from "./tickets.js";
 import reportsRouter from "./reports.js";
 import aiRouter from "./ai.js";
 import attributesRouter from "./attributes.js";
+import categoriesRouter from "./categories.js";
+import subcategoriesRouter from "./subcategories.js";
+import slasRouter from "./slas.js";
+import autoAssignRouter from "./autoAssign.js";
 
 const router = Router();
 
@@ -14,6 +18,10 @@ router.use("/tickets", ticketsRouter);
 router.use("/reports", reportsRouter);
 router.use("/ai", aiRouter);
 router.use("/attributes", attributesRouter);
+router.use("/categories", categoriesRouter);
+router.use("/subcategories", subcategoriesRouter);
+router.use("/slas", slasRouter);
+router.use("/auto-assign", autoAssignRouter);
 
 router.get("/version", (_req, res) => {
   res.json({
