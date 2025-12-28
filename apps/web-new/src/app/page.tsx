@@ -16,12 +16,9 @@ import {
 } from "@/services/tickets";
 import HeroHeader from "@/components/HeroHeader";
 import StatusSnapshot from "@/components/StatusSnapshot";
-import { Button } from "@/components/Button";
-import { useTicketModalStore } from "@/store/useTicketModalStore";
 
 export default function Dashboard() {
   const { session } = useAuthStore();
-  const openCreate = useTicketModalStore((s) => s.openCreate);
 
   const { data: userReport } = useQuery({
     queryKey: ["user-ticket-report"],
@@ -73,8 +70,6 @@ export default function Dashboard() {
   if (!session) {
     return null;
   }
-
-  const canCreate = session.user.role === "user" || session.user.role === "admin";
 
   return (
     <div className="min-h-screen">
@@ -254,34 +249,6 @@ export default function Dashboard() {
                 </div>
               </div>
             </RoleRestrictedView>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="mt-8">
-            <h2 className="text-lg font-medium text-white mb-4">Quick Actions</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {canCreate && (
-                <Button variant="primary" onClick={() => openCreate()}>
-                  Create Ticket
-                </Button>
-              )}
-              <RoleRestrictedView permission="reports:view">
-                <Link href="/status-summary" className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-md text-sm font-medium text-center">
-                  View Reports
-                </Link>
-                <Link href="/reports" className="ml-2 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-md text-sm font-medium text-center">
-                  View Reports (Table)
-                </Link>
-              </RoleRestrictedView>
-              <RoleRestrictedView permission="admin:manage_users">
-                <button className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-md text-sm font-medium">
-                  Settings
-                </button>
-              </RoleRestrictedView>
-              <button className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-md text-sm font-medium">
-                Help
-              </button>
-            </div>
           </div>
 
           {/* Recent activity */}
