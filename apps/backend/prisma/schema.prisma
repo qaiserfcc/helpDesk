@@ -29,6 +29,9 @@ enum TicketActivityType {
   assignment_change
   assignment_request
   ticket_update
+  comment
+  reply
+  step_completed
 }
 
 enum IssueType {
@@ -62,6 +65,8 @@ model User {
   activityToAssignments   TicketActivity[] @relation("TicketActivityToAssignee")
   devices      DeviceToken[]
   autoAssigns  AgentAutoAssign[]
+  comments     TicketComment[]  @relation("TicketCommentAuthor")
+  stepCompletions WorkflowStepCompletion[]
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   aiSuggestions AiSuggestion[]
@@ -86,11 +91,14 @@ model Ticket {
   subcategory  Subcategory? @relation(fields: [subcategoryId], references: [id])
   slaId      String?
   sla        Sla?        @relation(fields: [slaId], references: [id])
+  workflowId String?
+  workflow   Workflow?   @relation("TicketWorkflow", fields: [workflowId], references: [id])
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
   resolvedAt  DateTime?
   activities  TicketActivity[]
   aiSuggestions AiSuggestion[]
+  comments    TicketComment[]
   // Dynamic attribute values associated with this ticket
   attributeValues TicketAttributeValue[]
 }
@@ -124,6 +132,9 @@ model TicketActivity {
   fromAssignee    User?               @relation("TicketActivityFromAssignee", fields: [fromAssigneeId], references: [id])
   toAssigneeId    String?
   toAssignee      User?               @relation("TicketActivityToAssignee", fields: [toAssigneeId], references: [id])
+  comment         String?
+  commentId       String?
+  stepId          String?
   createdAt       DateTime            @default(now())
 
   @@index([ticketId])
@@ -236,5 +247,80 @@ model AgentAutoAssign {
   @@unique([subcategoryId, agentId])
   @@index([subcategoryId])
   @@index([agentId])
+}
+
+// Workflow for ticket lifecycle management
+model Workflow {
+  id              String   @id @default(uuid())
+  name            String
+  description     String?
+  // Workflow can be filtered by role, category, and subcategory
+  roleFilter      Role?
+  categoryId      String?
+  subcategoryId   String?
+  isDefault       Boolean  @default(false)
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  steps           WorkflowStep[]
+  tickets         Ticket[] @relation("TicketWorkflow")
+  
+  @@index([categoryId])
+  @@index([subcategoryId])
+  @@index([roleFilter])
+  @@index([isDefault])
+}
+
+// Individual steps in a workflow
+model WorkflowStep {
+  id              String   @id @default(uuid())
+  workflowId      String
+  workflow        Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  name            String
+  description     String?
+  order           Int      @default(0)
+  // Role required to complete this step (null means any assigned user)
+  requiredRole    Role?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  completions     WorkflowStepCompletion[]
+  
+  @@index([workflowId])
+  @@index([order])
+}
+
+// Track completion of workflow steps for tickets
+model WorkflowStepCompletion {
+  id              String       @id @default(uuid())
+  ticketId        String
+  stepId          String
+  step            WorkflowStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
+  completedBy     String
+  completedByUser User         @relation(fields: [completedBy], references: [id])
+  comment         String?
+  completedAt     DateTime     @default(now())
+  
+  @@unique([ticketId, stepId])
+  @@index([ticketId])
+  @@index([stepId])
+}
+
+// Comments and replies on tickets
+model TicketComment {
+  id              String   @id @default(uuid())
+  ticketId        String
+  ticket          Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  authorId        String
+  author          User     @relation("TicketCommentAuthor", fields: [authorId], references: [id])
+  content         String
+  parentId        String?
+  parent          TicketComment? @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies         TicketComment[] @relation("CommentReplies")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([ticketId])
+  @@index([parentId])
+  @@index([authorId])
 }
 

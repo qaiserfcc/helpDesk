@@ -22,6 +22,17 @@ const ticketInclude = {
   category: { select: { id: true, name: true } },
   subcategory: { select: { id: true, name: true, categoryId: true } },
   sla: { select: { id: true, name: true, responseTimeHours: true, resolutionTimeHours: true } },
+  workflow: {
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      steps: {
+        orderBy: { order: "asc" as const },
+        select: { id: true, name: true, description: true, order: true, requiredRole: true },
+      },
+    },
+  },
   attributeValues: {
     include: { attribute: true },
   },
@@ -214,6 +225,14 @@ export async function createTicket(
     }
   }
 
+  // Find appropriate workflow for ticket
+  const { findWorkflowForTicket } = await import("./workflowService.js");
+  const workflowId = await findWorkflowForTicket(
+    input.categoryId ?? null,
+    input.subcategoryId ?? null,
+    user.role,
+  );
+
   // Auto-assign agent based on subcategory if configured
   let assignedTo: string | undefined;
   if (input.subcategoryId) {
@@ -240,6 +259,7 @@ export async function createTicket(
       categoryId: input.categoryId,
       subcategoryId: input.subcategoryId,
       slaId,
+      workflowId,
       assignedTo,
       attachments: input.attachments ?? [],
       createdBy: user.id,

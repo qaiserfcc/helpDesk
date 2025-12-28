@@ -9,6 +9,7 @@ import categoriesRouter from "./categories.js";
 import subcategoriesRouter from "./subcategories.js";
 import slasRouter from "./slas.js";
 import autoAssignRouter from "./autoAssign.js";
+import workflowsRouter from "./workflows.js";
 
 const router = Router();
 
@@ -22,6 +23,7 @@ router.use("/categories", categoriesRouter);
 router.use("/subcategories", subcategoriesRouter);
 router.use("/slas", slasRouter);
 router.use("/auto-assign", autoAssignRouter);
+router.use("/workflows", workflowsRouter);
 
 router.get("/version", (_req, res) => {
   res.json({
