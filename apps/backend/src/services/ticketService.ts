@@ -29,7 +29,7 @@ const ticketInclude = {
       description: true,
       steps: {
         orderBy: { order: "asc" as const },
-        select: { id: true, name: true, description: true, order: true, requiredRole: true },
+        select: { id: true, name: true, description: true, order: true, requiredRoles: true, requireAllRoles: true },
       },
     },
   },
