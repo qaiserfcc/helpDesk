@@ -49,6 +49,7 @@ enum AttributeType {
   date
   select
   multiselect
+  file
 }
 
 model User {

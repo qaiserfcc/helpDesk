@@ -21,7 +21,7 @@ import { Button } from "@/components/Button";
 type AttributeFormValues = {
   key: string;
   label: string;
-  type: "text" | "number" | "date" | "select" | "multiselect";
+  type: "text" | "number" | "date" | "select" | "multiselect" | "file";
   options: string;
   required: boolean;
   visibleTo: Array<"user" | "agent" | "admin">;
@@ -36,6 +36,7 @@ const typeLabels = {
   date: "Date",
   select: "Dropdown",
   multiselect: "Multi-Select",
+  file: "File Upload",
 } as const;
 
 const makeEmptyForm = (): AttributeFormValues => ({
@@ -102,7 +103,7 @@ export default function AttributesPage() {
     setFormValues({
       key: entry.key,
       label: entry.label,
-      type: entry.type as "text" | "number" | "date" | "select" | "multiselect",
+      type: entry.type as "text" | "number" | "date" | "select" | "multiselect" | "file",
       options: entry.options?.join("\n") ?? "",
       required: entry.required ?? false,
       visibleTo: entry.visibleTo ?? ["user", "agent", "admin"],
@@ -179,11 +180,17 @@ export default function AttributesPage() {
       errors.label = "Label is required";
     }
 
-    if (formValues.type === "select" && !formValues.options.trim()) {
+    if (
+      (formValues.type === "select" || formValues.type === "multiselect") &&
+      !formValues.options.trim()
+    ) {
       errors.options = "Options are required for dropdown fields";
     }
 
-    if (formValues.type === "select" && formValues.options.trim()) {
+    if (
+      (formValues.type === "select" || formValues.type === "multiselect") &&
+      formValues.options.trim()
+    ) {
       const optionList = formValues.options
         .split("\n")
         .map((opt) => opt.trim())
@@ -215,7 +222,10 @@ export default function AttributesPage() {
       active: formValues.active,
     };
 
-    if (formValues.type === "select" && formValues.options.trim()) {
+    if (
+      (formValues.type === "select" || formValues.type === "multiselect") &&
+      formValues.options.trim()
+    ) {
       payload.options = formValues.options
         .split("\n")
         .map((opt) => opt.trim())
@@ -420,7 +430,13 @@ export default function AttributesPage() {
                 onClick={() =>
                   setFormValues((prev) => ({
                     ...prev,
-                    type: value as "text" | "number" | "date" | "select" | "multiselect",
+                    type: value as
+                      | "text"
+                      | "number"
+                      | "date"
+                      | "select"
+                      | "multiselect"
+                      | "file",
                   }))
                 }
                 className={`p-3 border rounded-lg cursor-pointer transition-colors ${
@@ -441,8 +457,8 @@ export default function AttributesPage() {
           </div>
         </div>
 
-        {/* Options (for select type) */}
-        {formValues.type === "select" && (
+        {/* Options (for select/multiselect type) */}
+        {(formValues.type === "select" || formValues.type === "multiselect") && (
           <FormField
             label="Options"
             type="textarea"
@@ -505,6 +521,8 @@ export default function AttributesPage() {
               <div key={role} className="flex items-center space-x-3">
                 <input
                   type="checkbox"
+                  title={`Visible to ${role}`}
+                  aria-label={`Visible to ${role}`}
                   checked={formValues.visibleTo.includes(
                     role as "user" | "agent" | "admin"
                   )}

@@ -1,6 +1,12 @@
 import { apiClient } from "@/services/apiClient";
 
-export type AttributeType = "text" | "number" | "date" | "select" | "multiselect";
+export type AttributeType =
+  | "text"
+  | "number"
+  | "date"
+  | "select"
+  | "multiselect"
+  | "file";
 
 export type Attribute = {
   id: string;

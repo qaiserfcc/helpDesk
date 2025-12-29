@@ -197,6 +197,12 @@ function validateSingleValue(
       }
       return arr;
     }
+    case AttributeType.file: {
+      if (typeof raw !== "string" || !raw.trim()) {
+        throw createError(400, "File attribute requires an uploaded file path");
+      }
+      return raw.trim();
+    }
   }
 }
 

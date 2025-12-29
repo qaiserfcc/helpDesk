@@ -387,7 +387,14 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
   // Get current step for assigned user
   const currentStep = workflowProgress?.progress.find((p) => !p.isCompleted);
   const isAssignedToMe = ticket?.assignee?.id === authUser?.id;
-  const canCompleteStep = Boolean(currentStep && isAssignedToMe && !isTicketResolved);
+  const requiredRoleForCurrentStep = currentStep?.step.requiredRole ?? null;
+  const canCompleteStep = Boolean(
+    currentStep &&
+      !isTicketResolved &&
+      (requiredRoleForCurrentStep
+        ? authUser?.role === requiredRoleForCurrentStep
+        : isAssignedToMe),
+  );
 
   // selected agent derived from agents list if needed in UI (unused currently)
 

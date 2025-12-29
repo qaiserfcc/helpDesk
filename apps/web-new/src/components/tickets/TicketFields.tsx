@@ -1,11 +1,13 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { FormTextArea } from "@/components/FormField";
 import { categoriesService } from "@/services/categories";
 import { subcategoriesService } from "@/services/subcategories";
 import { fetchVisibleAttributes } from "@/services/attributes";
+import { uploadFile } from "@/services/uploads";
+import { env } from "@/config/env";
 import type {
   Attribute,
   AttributeType,
@@ -241,6 +243,8 @@ function AttributeField(props: {
   onChange: (value: unknown) => void;
 }) {
   const { attribute, value, onChange } = props;
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const label = (
     <label className="block text-sm font-medium text-white/90 mb-2">
@@ -251,6 +255,11 @@ function AttributeField(props: {
 
   const baseInputClasses =
     "w-full rounded-md bg-white/5 border border-white/10 px-3 py-2 text-white placeholder-white/40 focus:border-sky-400 focus:outline-none";
+
+  const buildAttachmentUrl = (path: string) => {
+    const sanitized = path.replace(/^\/+/, "");
+    return `${env.apiBaseUrl}/${sanitized}`;
+  };
 
   switch (attribute.type as AttributeType) {
     case "text":
@@ -286,6 +295,8 @@ function AttributeField(props: {
           <input
             type="date"
             className={baseInputClasses}
+            title={attribute.label}
+            aria-label={attribute.label}
             value={(value as string) ?? ""}
             onChange={(e) => onChange(e.target.value)}
           />
@@ -297,6 +308,8 @@ function AttributeField(props: {
           {label}
           <select
             className={baseInputClasses}
+            title={attribute.label}
+            aria-label={attribute.label}
             value={(value as string) ?? ""}
             onChange={(e) => onChange(e.target.value)}
           >
@@ -334,6 +347,51 @@ function AttributeField(props: {
               );
             })}
           </div>
+        </div>
+      );
+    }
+    case "file": {
+      const currentPath = typeof value === "string" ? value : "";
+      return (
+        <div>
+          {label}
+          <input
+            type="file"
+            className={baseInputClasses}
+            title={attribute.label}
+            aria-label={attribute.label}
+            disabled={uploading}
+            onChange={async (e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              setUploadError(null);
+              setUploading(true);
+              try {
+                const path = await uploadFile(file);
+                onChange(path);
+              } catch (_err) {
+                setUploadError("Upload failed. Please try again.");
+              } finally {
+                setUploading(false);
+              }
+            }}
+          />
+          {uploading && (
+            <p className="text-white/70 text-sm mt-2">Uploading...</p>
+          )}
+          {uploadError && (
+            <p className="text-red-400 text-sm mt-2">{uploadError}</p>
+          )}
+          {currentPath ? (
+            <a
+              className="inline-block text-sky-300 text-sm mt-2 hover:underline"
+              href={buildAttachmentUrl(currentPath)}
+              target="_blank"
+              rel="noreferrer"
+            >
+              View uploaded file
+            </a>
+          ) : null}
         </div>
       );
     }
