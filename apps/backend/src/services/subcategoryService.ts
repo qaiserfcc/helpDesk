@@ -14,9 +14,7 @@ export async function listSubcategoriesByCategory(
   categoryId: string,
   user: RequestUser,
 ) {
-  if (user.role !== "admin") {
-    throw createError(403, "Only admins can list subcategories");
-  }
+  // Allow all authenticated users to view subcategories for ticket creation
   return prisma.subcategory.findMany({
     where: { categoryId, active: true },
     orderBy: { name: "asc" },

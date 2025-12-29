@@ -21,12 +21,11 @@ export async function listCategories(user: RequestUser) {
 }
 
 export async function listAllCategories(user: RequestUser) {
-  if (user.role !== "admin") {
-    throw createError(403, "Only admins can list all categories");
-  }
+  // Allow all authenticated users to view categories for ticket creation
   return prisma.category.findMany({
+    where: { active: true },
     orderBy: { name: "asc" },
-    include: { subcategories: true },
+    include: { subcategories: { where: { active: true } } },
   });
 }
 

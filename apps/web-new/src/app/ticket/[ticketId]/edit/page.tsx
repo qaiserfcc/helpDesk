@@ -107,14 +107,19 @@ export default function EditTicketPage({ params }: EditTicketPageProps) {
 
   const isResolved = ticket.status === "resolved";
 
-  // Authorization: only the ticket owner can edit when not resolved
-  if (ticket && authUser && authUser.id !== ticket.creator.id) {
+  // Authorization: ticket owner, assigned agent, or admin can edit when not resolved
+  const isOwner = authUser && authUser.id === ticket.creator.id;
+  const isAssignedAgent = authUser && authUser.role === "agent" && ticket.assignee?.id === authUser.id;
+  const isAdmin = authUser && authUser.role === "admin";
+  const canEdit = isOwner || isAssignedAgent || isAdmin;
+
+  if (ticket && authUser && !canEdit) {
     return (
       <div className="min-h-screen">
         <div className="max-w-2xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
           <div className="card shadow rounded-lg p-6 text-center">
             <h1 className="text-2xl font-bold text-white mb-4">Not authorized</h1>
-            <p className="text-white/90 mb-6">Only the ticket owner can edit this ticket.</p>
+            <p className="text-white/90 mb-6">Only the ticket owner, assigned agent, or an admin can edit this ticket.</p>
             <button onClick={() => router.back()} className="bg-white/10 text-white px-4 py-2 rounded-lg hover:bg-white/20">Back</button>
           </div>
         </div>

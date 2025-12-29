@@ -79,7 +79,10 @@ export default function TicketsPage() {
     return null;
   }
 
-  const canCreate = session.user.role === "user" || session.user.role === "admin";
+  const canCreate =
+    session.user.role === "user" ||
+    session.user.role === "admin" ||
+    session.user.role === "agent";
 
   return (
     <div className="min-h-screen">

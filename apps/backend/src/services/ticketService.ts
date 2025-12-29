@@ -211,8 +211,8 @@ export async function createTicket(
   input: CreateTicketInput,
   user: RequestUser,
 ) {
-  if (user.role !== Role.user && user.role !== Role.admin) {
-    throw createError(403, "Only end-users or admins can create tickets");
+  if (user.role !== Role.user && user.role !== Role.admin && user.role !== Role.agent) {
+    throw createError(403, "Only end-users, agents, or admins can create tickets");
   }
 
   // Validate dynamic attributes first
@@ -412,17 +412,34 @@ export async function updateTicket(
     resolvedAt = null;
   }
 
-  // Auto-update SLA if subcategory changed
+  // Auto-update SLA and workflow if category or subcategory changed
   let slaId = ticket.slaId;
-  if (subcategoryChanged && updates.subcategoryId) {
-    const sla = await prisma.sla.findFirst({
-      where: {
-        subcategoryId: updates.subcategoryId,
-        active: true,
-      },
-      select: { id: true },
-    });
-    slaId = sla?.id ?? null;
+  let workflowId = ticket.workflowId;
+  
+  if (categoryChanged || subcategoryChanged) {
+    // Reset and find new SLA based on updated subcategory
+    if (updates.subcategoryId) {
+      const sla = await prisma.sla.findFirst({
+        where: {
+          subcategoryId: updates.subcategoryId,
+          active: true,
+        },
+        select: { id: true },
+      });
+      slaId = sla?.id ?? null;
+    } else {
+      slaId = null;
+    }
+    
+    // Reset and find new workflow based on updated category/subcategory
+    const { findWorkflowForTicket } = await import("./workflowService.js");
+    const newCategoryId = updates.categoryId !== undefined ? updates.categoryId : ticket.categoryId;
+    const newSubcategoryId = updates.subcategoryId !== undefined ? updates.subcategoryId : ticket.subcategoryId;
+    workflowId = await findWorkflowForTicket(
+      newCategoryId,
+      newSubcategoryId,
+      user.role,
+    );
   }
 
   const updatedTicket = await prisma.ticket.update({
@@ -440,6 +457,7 @@ export async function updateTicket(
           ? updates.subcategoryId
           : ticket.subcategoryId,
       slaId,
+      workflowId,
       status: nextStatus,
       resolvedAt,
     },
