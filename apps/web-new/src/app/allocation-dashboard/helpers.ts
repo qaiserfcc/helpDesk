@@ -84,6 +84,8 @@ export function deriveWorkloadStats(
 export type TrendSummary = {
   window: number;
   total: number;
+  avgResolutionHours?: number;
+  trend?: 'improving' | 'worsening' | 'stable';
 };
 
 export function deriveTrendSummary(

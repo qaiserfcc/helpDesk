@@ -159,11 +159,11 @@ export default function AllocationDashboardPage() {
                 <div className="text-2xl">📊</div>
               </div>
               <p className="text-3xl font-bold text-white mt-2">
-                {escData?.highPriority?.length === 0 ? "100" : escData ? `${Math.round((1 - (escData.highPriority?.length ?? 0) / Math.max(totalTickets, 1)) * 100)}` : "—"}%
+                {escalations?.highPriority?.length === 0 ? "100" : escalations ? `${Math.round((1 - (escalations.highPriority?.length ?? 0) / Math.max(totalTickets, 1)) * 100)}` : "—"}%
               </p>
               <p className="text-xs text-white/80 mt-2">Tickets on track</p>
-              {escData?.highPriority && escData.highPriority.length > 0 && (
-                <p className="text-xs text-red-300 mt-1">{escData.highPriority.length} at risk</p>
+              {escalations?.highPriority && escalations.highPriority.length > 0 && (
+                <p className="text-xs text-red-300 mt-1">{escalations.highPriority.length} at risk</p>
               )}
             </div>
 
@@ -202,11 +202,11 @@ export default function AllocationDashboardPage() {
                 <div className="text-2xl">⚡</div>
               </div>
               <p className="text-3xl font-bold text-white mt-2">
-                {escData?.highPriority?.length ?? 0}
+                {escalations?.highPriority?.length ?? 0}
               </p>
               <p className="text-xs text-white/80 mt-2">Escalations</p>
               <p className="text-xs text-white/70 mt-1">
-                {totalTickets > 0 ? `${Math.round(((escData?.highPriority?.length ?? 0) / totalTickets) * 100)}%` : "0%"} of total
+                {totalTickets > 0 ? `${Math.round(((escalations?.highPriority?.length ?? 0) / totalTickets) * 100)}%` : "0%"} of total
               </p>
             </div>
           </div>

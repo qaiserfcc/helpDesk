@@ -483,7 +483,6 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
                 <h2 className="text-xl font-semibold text-white mb-4">Service Level Agreement (SLA)</h2>
                 <div className="mb-4">
                   <p className="text-lg font-medium text-white mb-1">{ticket.sla.name}</p>
-                  <p className="text-sm text-white/70">{ticket.sla.description}</p>
                 </div>
                 <SLATimer
                   createdAt={ticket.createdAt}
