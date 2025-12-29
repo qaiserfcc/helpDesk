@@ -13,7 +13,6 @@ import {
   fetchTicket,
   fetchTicketActivity,
   requestAssignment,
-  resolveTicket,
   updateTicket,
   type UpdateTicketPayload,
   type IssueType,
@@ -73,7 +72,6 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
   const authUser = useAuthStore((state) => state.session?.user);
   const [selectedAssigneeId, setSelectedAssigneeId] = useState<string | null>(null);
   const [isAssigning, setIsAssigning] = useState(false);
-  const [isResolving, setIsResolving] = useState(false);
   const [isRequesting, setIsRequesting] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editFormValues, setEditFormValues] = useState<EditTicketFormValues>({
@@ -127,7 +125,6 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
   const otherAgentRequested =
     isAgent && !!pendingRequest && pendingRequest.id !== authUser?.id;
   const isAssignedAgent = isAgent && ticket?.assignee?.id === authUser?.id;
-  const canResolve = Boolean(isAssignedAgent && ticket?.status !== "resolved");
   const canDeclineRequest = Boolean(canAssign && pendingRequest);
   const canRequestAssignment = Boolean(
     isAgent &&
@@ -135,7 +132,6 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
       ticket?.status !== "resolved" &&
       !isAssignedAgent,
   );
-  const canReopen = Boolean(isAdmin && isTicketResolved);
 
   const { data: agents = [], isLoading: agentsLoading } = useQuery({
     queryKey: ["users", "agents"],
@@ -207,29 +203,6 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
     } catch (error) {
       console.error("decline request failed", error);
       alert("Decline failed");
-    }
-  };
-
-  const handleResolve = async () => {
-    setIsResolving(true);
-    try {
-      await resolveTicket(ticketId);
-      await invalidateTickets();
-    } catch (error) {
-      console.error("resolve ticket failed", error);
-      alert("Resolve failed");
-    } finally {
-      setIsResolving(false);
-    }
-  };
-
-  const handleReopen = async () => {
-    try {
-      await updateTicket(ticketId, { status: "open" });
-      await invalidateTickets();
-    } catch (error) {
-      console.error("reopen ticket failed", error);
-      alert("Reopen failed");
     }
   };
 
@@ -791,17 +764,6 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
                   </Button>
                 )}
 
-                {canResolve && (
-                  <Button
-                    variant="primary"
-                    onClick={handleResolve}
-                    isLoading={isResolving}
-                    className="w-full"
-                  >
-                    Resolve
-                  </Button>
-                )}
-
                 {canDeclineRequest && (
                   <Button
                     variant="danger"
@@ -809,16 +771,6 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
                     className="w-full"
                   >
                     Decline Request
-                  </Button>
-                )}
-
-                {canReopen && (
-                  <Button
-                    variant="secondary"
-                    onClick={handleReopen}
-                    className="w-full"
-                  >
-                    Reopen Ticket
                   </Button>
                 )}
               </div>

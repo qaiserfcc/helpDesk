@@ -324,6 +324,7 @@ export async function completeWorkflowStep(
         },
       },
       assignee: true,
+      creator: true,
     },
   });
 
@@ -349,9 +350,38 @@ export async function completeWorkflowStep(
     throw createError(400, "Step already completed");
   }
 
-  // Verify user is assigned to ticket
-  if (ticket.assignedTo !== userId) {
-    throw createError(403, "Only the assigned user can complete workflow steps");
+  // Get the current user to check their role
+  const currentUser = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true },
+  });
+
+  if (!currentUser) {
+    throw createError(404, "User not found");
+  }
+
+  // Verify user has permission to complete this step based on requiredRole
+  // If step has admin role: any admin can complete
+  // If step has agent role: only assigned agent can complete  
+  // If step has user role: only creator can complete
+  // If step has no required role: any user can complete
+  if (step.requiredRole) {
+    if (step.requiredRole === "admin") {
+      // Any admin can complete
+      if (currentUser.role !== "admin") {
+        throw createError(403, "Only admins can complete this step");
+      }
+    } else if (step.requiredRole === "agent") {
+      // Only assigned agent can complete
+      if (ticket.assignedTo !== userId) {
+        throw createError(403, "Only the assigned agent can complete this step");
+      }
+    } else if (step.requiredRole === "user") {
+      // Only creator can complete
+      if (ticket.createdBy !== userId) {
+        throw createError(403, "Only the ticket creator can complete this step");
+      }
+    }
   }
 
   // Check if previous steps are completed

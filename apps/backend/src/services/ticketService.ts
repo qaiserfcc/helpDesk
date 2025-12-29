@@ -29,7 +29,7 @@ const ticketInclude = {
       description: true,
       steps: {
         orderBy: { order: "asc" as const },
-        select: { id: true, name: true, description: true, order: true, requiredRoles: true, requireAllRoles: true },
+        select: { id: true, name: true, description: true, order: true, requiredRole: true },
       },
     },
   },
@@ -328,6 +328,14 @@ export async function updateTicket(
     user.role === Role.agent && ticket.assignedTo === user.id;
   const isAgent = user.role === Role.agent;
 
+  // Check if ticket has a workflow - prevent manual status changes
+  if (updates.status && ticket.workflowId) {
+    throw createError(
+      403,
+      "Ticket status is managed by workflow steps. Complete workflow steps to change status.",
+    );
+  }
+
   if (isAgent) {
     const { status, ...otherUpdates } = updates;
     const hasOtherChanges = Object.values(otherUpdates).some(
@@ -540,6 +548,14 @@ export async function resolveTicket(ticketId: string, user: RequestUser) {
   });
   if (!ticket) {
     throw createError(404, "Ticket not found");
+  }
+
+  // Check if ticket has a workflow - prevent manual resolution
+  if (ticket.workflowId) {
+    throw createError(
+      403,
+      "Ticket status is managed by workflow steps. Complete all workflow steps to resolve the ticket.",
+    );
   }
 
   if (ticket.assignedTo !== user.id) {

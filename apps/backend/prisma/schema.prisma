@@ -279,10 +279,8 @@ model WorkflowStep {
   name            String
   description     String?
   order           Int      @default(0)
-  // Roles required to confirm completion of this step (empty array means any user can complete)
-  requiredRoles   Role[]   @default([])
-  // If true, all specified roles must confirm; if false, any one role can confirm
-  requireAllRoles Boolean  @default(false)
+  // Role required to complete this step. If admin: any admin can complete. If agent: only assigned agent can complete. If user: only creator can complete.
+  requiredRole    Role?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   completions     WorkflowStepCompletion[]

@@ -674,15 +674,16 @@ export default function WorkflowsPage() {
                   />
 
                   <FormSelect
-                    label="Required Role (Optional)"
+                    label="Required Role"
                     value={step.requiredRole}
                     onChange={(e) =>
                       updateStep(step.tempId, "requiredRole", e.target.value)
                     }
                     options={[
-                      { value: "", label: "Any Role" },
-                      { value: "agent", label: "Agent" },
-                      { value: "admin", label: "Admin" },
+                      { value: "", label: "No Role Restriction" },
+                      { value: "user", label: "User (Creator Only)" },
+                      { value: "agent", label: "Agent (Assigned Agent Only)" },
+                      { value: "admin", label: "Admin (Any Admin)" },
                     ]}
                   />
                 </div>
