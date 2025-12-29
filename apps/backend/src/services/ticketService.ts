@@ -6,7 +6,6 @@ import {
   TicketStatus,
   Role,
   TicketActivityType,
-  AttributeType,
 } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 import { publishTicketEvent } from "../realtime/ticketPublisher.js";
@@ -21,7 +20,14 @@ const ticketInclude = {
   },
   category: { select: { id: true, name: true } },
   subcategory: { select: { id: true, name: true, categoryId: true } },
-  sla: { select: { id: true, name: true, responseTimeHours: true, resolutionTimeHours: true } },
+  sla: {
+    select: {
+      id: true,
+      name: true,
+      responseTimeHours: true,
+      resolutionTimeHours: true,
+    },
+  },
   workflow: {
     select: {
       id: true,
@@ -29,7 +35,13 @@ const ticketInclude = {
       description: true,
       steps: {
         orderBy: { order: "asc" as const },
-        select: { id: true, name: true, description: true, order: true, requiredRole: true },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          order: true,
+          requiredRole: true,
+        },
       },
     },
   },
@@ -57,6 +69,7 @@ const ticketCoreSelect = {
   categoryId: true,
   subcategoryId: true,
   slaId: true,
+  workflowId: true,
   attachments: true,
   createdBy: true,
   assignedTo: true,
@@ -203,9 +216,8 @@ export async function createTicket(
   }
 
   // Validate dynamic attributes first
-  const { resolveAttributesForTicket, assertRequiredAttributesPresent } = await import(
-    "./attributeService.js"
-  );
+  const { resolveAttributesForTicket, assertRequiredAttributesPresent } =
+    await import("./attributeService.js");
   const providedKeys = Object.keys(input.attributes ?? {});
   await assertRequiredAttributesPresent(user, providedKeys);
   const resolved = await resolveAttributesForTicket(input.attributes, user);
@@ -242,7 +254,7 @@ export async function createTicket(
         active: true,
       },
       orderBy: {
-        priority: 'asc', // Lower priority number = higher priority
+        priority: "asc", // Lower priority number = higher priority
       },
       select: { agentId: true },
     });
@@ -266,7 +278,10 @@ export async function createTicket(
       status: assignedTo ? TicketStatus.in_progress : TicketStatus.open,
       attributeValues: resolved.length
         ? {
-            create: resolved.map((r) => ({ attributeId: r.attributeId, value: r.value as Prisma.InputJsonValue })),
+            create: resolved.map((r) => ({
+              attributeId: r.attributeId,
+              value: r.value as Prisma.InputJsonValue,
+            })),
           }
         : undefined,
     },
@@ -298,7 +313,10 @@ export async function createTicket(
 }
 
 type UpdateTicketInput = Partial<
-  Pick<CreateTicketInput, "description" | "priority" | "issueType" | "categoryId" | "subcategoryId">
+  Pick<
+    CreateTicketInput,
+    "description" | "priority" | "issueType" | "categoryId" | "subcategoryId"
+  >
 > & {
   status?: TicketStatus;
   attributes?: Record<string, unknown>;
@@ -369,17 +387,24 @@ export async function updateTicket(
   const nextStatus = updates.status ?? ticket.status;
   const statusChanged = nextStatus !== ticket.status;
   const descriptionChanged =
-    updates.description !== undefined && updates.description !== ticket.description;
+    updates.description !== undefined &&
+    updates.description !== ticket.description;
   const priorityChanged =
     updates.priority !== undefined && updates.priority !== ticket.priority;
   const issueTypeChanged =
     updates.issueType !== undefined && updates.issueType !== ticket.issueType;
   const categoryChanged =
-    updates.categoryId !== undefined && updates.categoryId !== ticket.categoryId;
+    updates.categoryId !== undefined &&
+    updates.categoryId !== ticket.categoryId;
   const subcategoryChanged =
-    updates.subcategoryId !== undefined && updates.subcategoryId !== ticket.subcategoryId;
+    updates.subcategoryId !== undefined &&
+    updates.subcategoryId !== ticket.subcategoryId;
   const detailFieldsChanged =
-    descriptionChanged || priorityChanged || issueTypeChanged || categoryChanged || subcategoryChanged;
+    descriptionChanged ||
+    priorityChanged ||
+    issueTypeChanged ||
+    categoryChanged ||
+    subcategoryChanged;
   let resolvedAt = ticket.resolvedAt;
   if (nextStatus === TicketStatus.resolved) {
     resolvedAt = ticket.resolvedAt ?? new Date();
@@ -406,8 +431,14 @@ export async function updateTicket(
       description: updates.description ?? ticket.description,
       priority: updates.priority ?? ticket.priority,
       issueType: updates.issueType ?? ticket.issueType,
-      categoryId: updates.categoryId !== undefined ? updates.categoryId : ticket.categoryId,
-      subcategoryId: updates.subcategoryId !== undefined ? updates.subcategoryId : ticket.subcategoryId,
+      categoryId:
+        updates.categoryId !== undefined
+          ? updates.categoryId
+          : ticket.categoryId,
+      subcategoryId:
+        updates.subcategoryId !== undefined
+          ? updates.subcategoryId
+          : ticket.subcategoryId,
       slaId,
       status: nextStatus,
       resolvedAt,
@@ -417,11 +448,15 @@ export async function updateTicket(
 
   // Handle dynamic attribute updates (upsert per provided key)
   if (updates.attributes && Object.keys(updates.attributes).length) {
-    const { resolveAttributesForTicket } = await import("./attributeService.js");
+    const { resolveAttributesForTicket } = await import(
+      "./attributeService.js"
+    );
     const resolved = await resolveAttributesForTicket(updates.attributes, user);
     for (const r of resolved) {
       await prisma.ticketAttributeValue.upsert({
-        where: { ticketId_attributeId: { ticketId, attributeId: r.attributeId } },
+        where: {
+          ticketId_attributeId: { ticketId, attributeId: r.attributeId },
+        },
         create: {
           ticketId,
           attributeId: r.attributeId,

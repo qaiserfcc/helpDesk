@@ -58,7 +58,8 @@ router.post("/", async (req, res, next) => {
   if (req.user.role !== "admin")
     return next(createError(403, "Only admins can create categories"));
   const parsed = categorySchema.safeParse(req.body);
-  if (!parsed.success) return next(createError(400, "Invalid category payload"));
+  if (!parsed.success)
+    return next(createError(400, "Invalid category payload"));
   try {
     const category = await createCategory(parsed.data, req.user);
     res.status(201).json({ category });

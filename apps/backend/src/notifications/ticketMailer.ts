@@ -51,7 +51,10 @@ function buildSubject(ticket: TicketWithRelations, event: TicketEmailEvent) {
 }
 
 function buildHtmlBody(ticket: TicketWithRelations, event: TicketEmailEvent) {
-  const title = event === "tickets:created" ? "A new ticket was opened." : "A ticket you follow has changed.";
+  const title =
+    event === "tickets:created"
+      ? "A new ticket was opened."
+      : "A ticket you follow has changed.";
   return `<!doctype html>
 <html>
   <body style="font-family: Arial, Helvetica, sans-serif; background-color: #0f172a; color: #e2e8f0; padding: 16px;">

@@ -23,10 +23,7 @@ export async function listSubcategoriesByCategory(
   });
 }
 
-export async function getSubcategory(
-  subcategoryId: string,
-  user: RequestUser,
-) {
+export async function getSubcategory(subcategoryId: string, user: RequestUser) {
   if (user.role !== "admin") {
     throw createError(403, "Only admins can view subcategories");
   }

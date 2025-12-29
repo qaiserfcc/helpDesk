@@ -1,5 +1,5 @@
 import createError from "http-errors";
-import { Prisma, Role } from "@prisma/client";
+import { Role } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 
 type RequestUser = Express.AuthenticatedUser;
@@ -142,10 +142,18 @@ export async function updateWorkflow(
     data: {
       name: updates.name?.trim() ?? existing.name,
       description: updates.description?.trim() ?? existing.description,
-      roleFilter: updates.roleFilter !== undefined ? updates.roleFilter : existing.roleFilter,
-      categoryId: updates.categoryId !== undefined ? updates.categoryId : existing.categoryId,
+      roleFilter:
+        updates.roleFilter !== undefined
+          ? updates.roleFilter
+          : existing.roleFilter,
+      categoryId:
+        updates.categoryId !== undefined
+          ? updates.categoryId
+          : existing.categoryId,
       subcategoryId:
-        updates.subcategoryId !== undefined ? updates.subcategoryId : existing.subcategoryId,
+        updates.subcategoryId !== undefined
+          ? updates.subcategoryId
+          : existing.subcategoryId,
       isDefault: updates.isDefault ?? existing.isDefault,
       active: updates.active ?? existing.active,
       ...(steps && {
@@ -362,7 +370,7 @@ export async function completeWorkflowStep(
 
   // Verify user has permission to complete this step based on requiredRole
   // If step has admin role: any admin can complete
-  // If step has agent role: only assigned agent can complete  
+  // If step has agent role: only assigned agent can complete
   // If step has user role: only creator can complete
   // If step has no required role: any user can complete
   if (step.requiredRole) {
@@ -374,18 +382,26 @@ export async function completeWorkflowStep(
     } else if (step.requiredRole === "agent") {
       // Only assigned agent can complete
       if (ticket.assignedTo !== userId) {
-        throw createError(403, "Only the assigned agent can complete this step");
+        throw createError(
+          403,
+          "Only the assigned agent can complete this step",
+        );
       }
     } else if (step.requiredRole === "user") {
       // Only creator can complete
       if (ticket.createdBy !== userId) {
-        throw createError(403, "Only the ticket creator can complete this step");
+        throw createError(
+          403,
+          "Only the ticket creator can complete this step",
+        );
       }
     }
   }
 
   // Check if previous steps are completed
-  const previousSteps = ticket.workflow.steps.filter((s) => s.order < step.order);
+  const previousSteps = ticket.workflow.steps.filter(
+    (s) => s.order < step.order,
+  );
   if (previousSteps.length > 0) {
     const completedSteps = await prisma.workflowStepCompletion.findMany({
       where: {
@@ -412,9 +428,9 @@ export async function completeWorkflowStep(
   // Auto-update ticket status based on workflow progress
   const totalSteps = ticket.workflow.steps.length;
   const completedStepsCount = previousSteps.length + 1; // Including current step
-  
+
   let newStatus = ticket.status;
-  
+
   if (completedStepsCount === totalSteps) {
     // All steps completed - mark ticket as resolved
     newStatus = "resolved" as const;
@@ -430,7 +446,10 @@ export async function completeWorkflowStep(
   if (newStatus !== ticket.status) {
     await prisma.ticket.update({
       where: { id: ticketId },
-      data: { status: newStatus, resolvedAt: newStatus === "resolved" ? new Date() : null },
+      data: {
+        status: newStatus,
+        resolvedAt: newStatus === "resolved" ? new Date() : null,
+      },
     });
 
     // Log the status change activity

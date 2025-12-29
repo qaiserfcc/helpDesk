@@ -133,10 +133,7 @@ export function initRealtimeServer(server: HttpServer) {
     } catch (error) {
       const message =
         error instanceof Error ? error.message : String(error ?? "unknown");
-      console.error(
-        "[socket] authentication error",
-        message,
-      );
+      console.error("[socket] authentication error", message);
       void logSocketFailure("auth", message, {
         socketId: socket.id,
         address: socket.handshake.address,
@@ -155,9 +152,14 @@ export function initRealtimeServer(server: HttpServer) {
   });
 
   io.on("connection", (socket) => {
-      const addr = socket.handshake.address;
-      const origin = socket.handshake.headers.origin ?? socket.handshake.headers.host;
-      console.info(`[socket] connection established`, { socketId: socket.id, address: addr, origin });
+    const addr = socket.handshake.address;
+    const origin =
+      socket.handshake.headers.origin ?? socket.handshake.headers.host;
+    console.info(`[socket] connection established`, {
+      socketId: socket.id,
+      address: addr,
+      origin,
+    });
     socket.on("error", (error) => {
       const message =
         error instanceof Error ? error.message : String(error ?? "unknown");

@@ -1,9 +1,7 @@
 import { Router } from "express";
 import createError from "http-errors";
 import { requireAuth } from "../middleware/auth.js";
-import {
-  getTicket,
-} from "../services/ticketService.js";
+import { getTicket } from "../services/ticketService.js";
 import {
   suggestReplyForTicket,
   getSuggestionsForTicket,

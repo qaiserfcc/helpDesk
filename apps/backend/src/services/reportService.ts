@@ -44,7 +44,10 @@ function assertRole(user: RequestUser | undefined, allowed: Role[]) {
   }
   if (!allowed.includes(user.role)) {
     const rolesStr = allowed.join(", ");
-    throw createError(403, `Insufficient permissions for this report; requires role(s): ${rolesStr}`);
+    throw createError(
+      403,
+      `Insufficient permissions for this report; requires role(s): ${rolesStr}`,
+    );
   }
 }
 
@@ -71,9 +74,10 @@ export async function getUserTicketReport(user: RequestUser) {
     statusCounts: mapStatusBuckets(
       statusBuckets.map((bucket) => ({
         status: bucket.status,
-        count: typeof bucket._count === "object" && bucket._count?._all
-          ? bucket._count._all
-          : 0,
+        count:
+          typeof bucket._count === "object" && bucket._count?._all
+            ? bucket._count._all
+            : 0,
       })),
     ),
     tickets,
@@ -119,9 +123,10 @@ export async function getAgentWorkloadReport(user: RequestUser) {
     statusCounts: mapStatusBuckets(
       statusBuckets.map((bucket) => ({
         status: bucket.status,
-        count: typeof bucket._count === "object" && bucket._count?._all
-          ? bucket._count._all
-          : 0,
+        count:
+          typeof bucket._count === "object" && bucket._count?._all
+            ? bucket._count._all
+            : 0,
       })),
     ),
     assigned,
@@ -175,8 +180,7 @@ export async function getAdminOverviewReport(user: RequestUser) {
       .map((bucket) => ({
         agentId: bucket.assignedTo as string,
         count: bucket._count?._all ?? 0,
-        agent:
-          agents.find((agent) => agent.id === bucket.assignedTo) ?? null,
+        agent: agents.find((agent) => agent.id === bucket.assignedTo) ?? null,
       })),
     oldestOpen,
   };
@@ -209,10 +213,7 @@ export async function getAdminEscalationReport(user: RequestUser) {
   return { highPriority, staleTickets };
 }
 
-export async function getAdminProductivityReport(
-  user: RequestUser,
-  days = 7,
-) {
+export async function getAdminProductivityReport(user: RequestUser, days = 7) {
   assertRole(user, [Role.admin]);
   const safeDays = Math.min(Math.max(days, 1), 30);
   const since = new Date();
@@ -373,34 +374,38 @@ export async function getDashboardMetrics(user: RequestUser) {
   // Calculate SLA breaches
   const breachedTickets = tickets.filter((ticket) => {
     if (!ticket.sla || ticket.status === TicketStatus.resolved) return false;
-    
+
     const createdAt = new Date(ticket.createdAt);
-    const hoursElapsed = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
-    
+    const hoursElapsed =
+      (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+
     // Check if response time or resolution time is breached
     return hoursElapsed > ticket.sla.resolutionTimeHours;
   });
 
   // Get high priority tickets that are not resolved
   const highPriorityTickets = tickets.filter(
-    (t) => t.priority === TicketPriority.high && t.status !== TicketStatus.resolved
+    (t) =>
+      t.priority === TicketPriority.high && t.status !== TicketStatus.resolved,
   );
 
   // Get critical alerts (high priority + breached SLA)
   const criticalAlerts = tickets.filter((ticket) => {
     if (!ticket.sla || ticket.status === TicketStatus.resolved) return false;
     if (ticket.priority !== TicketPriority.high) return false;
-    
+
     const createdAt = new Date(ticket.createdAt);
-    const hoursElapsed = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
-    
+    const hoursElapsed =
+      (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+
     return hoursElapsed > ticket.sla.resolutionTimeHours;
   });
 
   // Status breakdown
   const statusCounts = {
     open: tickets.filter((t) => t.status === TicketStatus.open).length,
-    in_progress: tickets.filter((t) => t.status === TicketStatus.in_progress).length,
+    in_progress: tickets.filter((t) => t.status === TicketStatus.in_progress)
+      .length,
     resolved: tickets.filter((t) => t.status === TicketStatus.resolved).length,
   };
 
@@ -413,7 +418,9 @@ export async function getDashboardMetrics(user: RequestUser) {
 
   // Recent activity (last 7 days)
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const recentTickets = tickets.filter((t) => new Date(t.createdAt) > sevenDaysAgo);
+  const recentTickets = tickets.filter(
+    (t) => new Date(t.createdAt) > sevenDaysAgo,
+  );
 
   return {
     totalTickets: tickets.length,
@@ -426,7 +433,9 @@ export async function getDashboardMetrics(user: RequestUser) {
         status: t.status,
         createdAt: t.createdAt,
         slaName: t.sla?.name,
-        hoursElapsed: Math.round((now.getTime() - new Date(t.createdAt).getTime()) / (1000 * 60 * 60)),
+        hoursElapsed: Math.round(
+          (now.getTime() - new Date(t.createdAt).getTime()) / (1000 * 60 * 60),
+        ),
       })),
     },
     highPriority: {

@@ -389,7 +389,10 @@ router.get("/:ticketId/comments", requireAuth, async (req, res, next) => {
   }
 
   try {
-    const comments = await ticketCommentService.listComments(req.params.ticketId, req.user);
+    const comments = await ticketCommentService.listComments(
+      req.params.ticketId,
+      req.user,
+    );
     res.json(comments);
   } catch (error) {
     next(error);
@@ -441,7 +444,10 @@ router.delete("/comments/:commentId", requireAuth, async (req, res, next) => {
   }
 
   try {
-    const result = await ticketCommentService.deleteComment(req.params.commentId, req.user);
+    const result = await ticketCommentService.deleteComment(
+      req.params.commentId,
+      req.user,
+    );
     res.json(result);
   } catch (error) {
     next(error);

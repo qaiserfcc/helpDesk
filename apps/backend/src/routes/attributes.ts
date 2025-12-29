@@ -53,7 +53,8 @@ router.post("/", async (req, res, next) => {
   if (req.user.role !== Role.admin)
     return next(createError(403, "Only admins can create attributes"));
   const parsed = attributeSchema.safeParse(req.body);
-  if (!parsed.success) return next(createError(400, "Invalid attribute payload"));
+  if (!parsed.success)
+    return next(createError(400, "Invalid attribute payload"));
   try {
     const attr = await createAttribute(parsed.data, req.user);
     res.status(201).json({ attribute: attr });
@@ -67,9 +68,14 @@ router.patch("/:attributeId", async (req, res, next) => {
   if (req.user.role !== Role.admin)
     return next(createError(403, "Only admins can update attributes"));
   const parsed = updateSchema.safeParse(req.body);
-  if (!parsed.success) return next(createError(400, "Invalid attribute update"));
+  if (!parsed.success)
+    return next(createError(400, "Invalid attribute update"));
   try {
-    const attr = await updateAttribute(req.params.attributeId, parsed.data, req.user);
+    const attr = await updateAttribute(
+      req.params.attributeId,
+      parsed.data,
+      req.user,
+    );
     res.json({ attribute: attr });
   } catch (err) {
     next(err);

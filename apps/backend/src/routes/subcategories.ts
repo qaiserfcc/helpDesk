@@ -45,7 +45,10 @@ router.get("/category/:categoryId", async (req, res, next) => {
 router.get("/:subcategoryId", async (req, res, next) => {
   if (!req.user) return next(createError(401, "Authentication required"));
   try {
-    const subcategory = await getSubcategory(req.params.subcategoryId, req.user);
+    const subcategory = await getSubcategory(
+      req.params.subcategoryId,
+      req.user,
+    );
     res.json({ subcategory });
   } catch (err) {
     next(err);

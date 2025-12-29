@@ -13,9 +13,8 @@ const emailConfigured =
   Boolean(env.RESEND_API_KEY) &&
   Boolean(env.EMAIL_FROM);
 
-const resendClient = emailConfigured && env.RESEND_API_KEY
-  ? new Resend(env.RESEND_API_KEY)
-  : null;
+const resendClient =
+  emailConfigured && env.RESEND_API_KEY ? new Resend(env.RESEND_API_KEY) : null;
 
 export async function sendEmail(payload: SendEmailPayload) {
   if (!emailConfigured || !resendClient || !env.EMAIL_FROM) {

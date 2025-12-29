@@ -37,7 +37,10 @@ export async function listAllAttributes(user: RequestUser) {
   return prisma.attribute.findMany({ orderBy: { order: "asc" } });
 }
 
-export async function createAttribute(input: AttributeInput, user: RequestUser) {
+export async function createAttribute(
+  input: AttributeInput,
+  user: RequestUser,
+) {
   if (user.role !== Role.admin) {
     throw createError(403, "Only admins can create attributes");
   }
@@ -50,7 +53,10 @@ export async function createAttribute(input: AttributeInput, user: RequestUser) 
     throw createError(400, "Attribute label is required");
   }
 
-  if (input.type === AttributeType.select || input.type === AttributeType.multiselect) {
+  if (
+    input.type === AttributeType.select ||
+    input.type === AttributeType.multiselect
+  ) {
     if (!input.options || !input.options.length) {
       throw createError(400, "Select/multiselect requires non-empty options");
     }
@@ -87,12 +93,17 @@ export async function updateAttribute(
     throw createError(403, "Only admins can update attributes");
   }
 
-  const existing = await prisma.attribute.findUnique({ where: { id: attributeId } });
+  const existing = await prisma.attribute.findUnique({
+    where: { id: attributeId },
+  });
   if (!existing) {
     throw createError(404, "Attribute not found");
   }
 
-  if ((updates.type === AttributeType.select || updates.type === AttributeType.multiselect)) {
+  if (
+    updates.type === AttributeType.select ||
+    updates.type === AttributeType.multiselect
+  ) {
     if (updates.options && !updates.options.length) {
       throw createError(400, "Select/multiselect requires non-empty options");
     }
@@ -126,7 +137,9 @@ export async function deleteAttribute(attributeId: string, user: RequestUser) {
     throw createError(403, "Only admins can delete attributes");
   }
 
-  const existing = await prisma.attribute.findUnique({ where: { id: attributeId } });
+  const existing = await prisma.attribute.findUnique({
+    where: { id: attributeId },
+  });
   if (!existing) {
     throw createError(404, "Attribute not found");
   }
@@ -176,7 +189,9 @@ function validateSingleValue(
     }
     case AttributeType.multiselect: {
       const arr = Array.isArray(raw) ? raw : [];
-      const valid = arr.every((v) => typeof v === "string" && meta.options.includes(v));
+      const valid = arr.every(
+        (v) => typeof v === "string" && meta.options.includes(v),
+      );
       if (!valid) {
         throw createError(400, "Multiselect must be array of allowed options");
       }
@@ -189,7 +204,8 @@ export async function resolveAttributesForTicket(
   attributes: Record<string, unknown> | undefined,
   user: RequestUser,
 ) {
-  if (!attributes || !Object.keys(attributes).length) return [] as ResolvedAttributeValue[];
+  if (!attributes || !Object.keys(attributes).length)
+    return [] as ResolvedAttributeValue[];
 
   const keys = Object.keys(attributes);
   const metas = await prisma.attribute.findMany({
@@ -207,15 +223,23 @@ export async function resolveAttributesForTicket(
       throw createError(403, `You cannot set attribute: ${key}`);
     }
     const raw = attributes[key];
-    const value = validateSingleValue({ type: meta.type, options: meta.options }, raw);
+    const value = validateSingleValue(
+      { type: meta.type, options: meta.options },
+      raw,
+    );
     resolved.push({ attributeId: meta.id, key, value });
   }
   return resolved;
 }
 
-export async function assertRequiredAttributesPresent(user: RequestUser, providedKeys: string[]) {
+export async function assertRequiredAttributesPresent(
+  user: RequestUser,
+  providedKeys: string[],
+) {
   // Required attributes visible to role must be present during ticket creation.
-  const required = await prisma.attribute.findMany({ where: { required: true, active: true } });
+  const required = await prisma.attribute.findMany({
+    where: { required: true, active: true },
+  });
   const missing = required
     .filter((m) => canSeeAttribute(m, user.role))
     .filter((m) => !providedKeys.includes(m.key));

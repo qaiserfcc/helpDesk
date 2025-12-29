@@ -64,11 +64,17 @@ export async function createSla(input: SlaInput, user: RequestUser) {
     throw createError(400, "Subcategory ID is required");
   }
 
-  if (typeof input.responseTimeHours !== "number" || input.responseTimeHours <= 0) {
+  if (
+    typeof input.responseTimeHours !== "number" ||
+    input.responseTimeHours <= 0
+  ) {
     throw createError(400, "Response time must be a positive number");
   }
 
-  if (typeof input.resolutionTimeHours !== "number" || input.resolutionTimeHours <= 0) {
+  if (
+    typeof input.resolutionTimeHours !== "number" ||
+    input.resolutionTimeHours <= 0
+  ) {
     throw createError(400, "Resolution time must be a positive number");
   }
 
@@ -122,8 +128,10 @@ export async function updateSla(
       where: { id: slaId },
       data: {
         name: updates.name?.trim() ?? existing.name,
-        responseTimeHours: updates.responseTimeHours ?? existing.responseTimeHours,
-        resolutionTimeHours: updates.resolutionTimeHours ?? existing.resolutionTimeHours,
+        responseTimeHours:
+          updates.responseTimeHours ?? existing.responseTimeHours,
+        resolutionTimeHours:
+          updates.resolutionTimeHours ?? existing.resolutionTimeHours,
         priority: updates.priority ?? existing.priority,
         description: updates.description?.trim() ?? existing.description,
         active: updates.active ?? existing.active,

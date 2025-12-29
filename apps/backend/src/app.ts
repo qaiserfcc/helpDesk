@@ -11,7 +11,9 @@ import { env } from "./config/env.js";
 
 const app = express();
 
-const allowedOrigins = env.ALLOWED_ORIGINS?.split(",").map((origin) => origin.trim()).filter(Boolean);
+const allowedOrigins = env.ALLOWED_ORIGINS?.split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 const corsOptions: CorsOptions = {
   origin(origin, callback) {
     if (!origin || !allowedOrigins || allowedOrigins.includes(origin)) {
@@ -26,7 +28,7 @@ const corsOptions: CorsOptions = {
 app.use(helmet());
 app.use(cors(corsOptions));
 // Support OPTIONS pre-flight across all routes for CORS (useful for deployed frontends + reverse proxies)
-app.options('*', cors(corsOptions));
+app.options("*", cors(corsOptions));
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));

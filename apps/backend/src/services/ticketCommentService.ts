@@ -105,7 +105,10 @@ export async function listComments(ticketId: string, user: RequestUser) {
   const isAdmin = user.role === "admin";
 
   if (!isCreator && !isAssignee && !isAdmin) {
-    throw createError(403, "You don't have access to view comments on this ticket");
+    throw createError(
+      403,
+      "You don't have access to view comments on this ticket",
+    );
   }
 
   // Get top-level comments (no parent) with their replies
