@@ -15,6 +15,7 @@ import {
   getTicketExportDataset,
   getUserTicketReport,
   ticketsToCsv,
+  getDashboardMetrics,
 } from "../services/reportService.js";
 
 const router = Router();
@@ -185,6 +186,20 @@ router.get("/tickets/export", async (req, res, next) => {
     }
 
     res.json(dataset);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/dashboard/metrics", async (req, res, next) => {
+  if (!req.user) {
+    next(createError(401, "Authentication required"));
+    return;
+  }
+
+  try {
+    const metrics = await getDashboardMetrics(req.user);
+    res.json({ metrics });
   } catch (error) {
     next(error);
   }

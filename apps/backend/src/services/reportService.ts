@@ -353,3 +353,108 @@ export function ticketsToCsv(rows: ReportTicket[]) {
 
   return [headers.join(","), ...lines].join("\n");
 }
+
+// Get enhanced dashboard metrics
+export async function getDashboardMetrics(user: RequestUser) {
+  assertRole(user, [Role.admin, Role.agent, Role.user]);
+
+  const now = new Date();
+
+  // Get all active tickets with SLA info
+  const tickets = await prisma.ticket.findMany({
+    where: user.role === Role.user ? { createdBy: user.id } : {},
+    include: {
+      sla: true,
+      creator: { select: { id: true, name: true, email: true } },
+      assignee: { select: { id: true, name: true, email: true } },
+    },
+  });
+
+  // Calculate SLA breaches
+  const breachedTickets = tickets.filter((ticket) => {
+    if (!ticket.sla || ticket.status === TicketStatus.resolved) return false;
+    
+    const createdAt = new Date(ticket.createdAt);
+    const hoursElapsed = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+    
+    // Check if response time or resolution time is breached
+    return hoursElapsed > ticket.sla.resolutionTimeHours;
+  });
+
+  // Get high priority tickets that are not resolved
+  const highPriorityTickets = tickets.filter(
+    (t) => t.priority === TicketPriority.high && t.status !== TicketStatus.resolved
+  );
+
+  // Get critical alerts (high priority + breached SLA)
+  const criticalAlerts = tickets.filter((ticket) => {
+    if (!ticket.sla || ticket.status === TicketStatus.resolved) return false;
+    if (ticket.priority !== TicketPriority.high) return false;
+    
+    const createdAt = new Date(ticket.createdAt);
+    const hoursElapsed = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+    
+    return hoursElapsed > ticket.sla.resolutionTimeHours;
+  });
+
+  // Status breakdown
+  const statusCounts = {
+    open: tickets.filter((t) => t.status === TicketStatus.open).length,
+    in_progress: tickets.filter((t) => t.status === TicketStatus.in_progress).length,
+    resolved: tickets.filter((t) => t.status === TicketStatus.resolved).length,
+  };
+
+  // Priority breakdown
+  const priorityCounts = {
+    low: tickets.filter((t) => t.priority === TicketPriority.low).length,
+    medium: tickets.filter((t) => t.priority === TicketPriority.medium).length,
+    high: tickets.filter((t) => t.priority === TicketPriority.high).length,
+  };
+
+  // Recent activity (last 7 days)
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const recentTickets = tickets.filter((t) => new Date(t.createdAt) > sevenDaysAgo);
+
+  return {
+    totalTickets: tickets.length,
+    breachedSLA: {
+      count: breachedTickets.length,
+      tickets: breachedTickets.slice(0, 10).map((t) => ({
+        id: t.id,
+        description: t.description,
+        priority: t.priority,
+        status: t.status,
+        createdAt: t.createdAt,
+        slaName: t.sla?.name,
+        hoursElapsed: Math.round((now.getTime() - new Date(t.createdAt).getTime()) / (1000 * 60 * 60)),
+      })),
+    },
+    highPriority: {
+      count: highPriorityTickets.length,
+      tickets: highPriorityTickets.slice(0, 10).map((t) => ({
+        id: t.id,
+        description: t.description,
+        status: t.status,
+        assignee: t.assignee,
+        createdAt: t.createdAt,
+      })),
+    },
+    criticalAlerts: {
+      count: criticalAlerts.length,
+      tickets: criticalAlerts.slice(0, 10).map((t) => ({
+        id: t.id,
+        description: t.description,
+        priority: t.priority,
+        status: t.status,
+        createdAt: t.createdAt,
+        slaName: t.sla?.name,
+      })),
+    },
+    statusCounts,
+    priorityCounts,
+    recentActivity: {
+      count: recentTickets.length,
+      last7Days: recentTickets.length,
+    },
+  };
+}

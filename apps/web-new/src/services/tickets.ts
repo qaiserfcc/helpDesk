@@ -309,6 +309,64 @@ export async function fetchAdminProductivityReport(days?: number) {
   return response.data.report;
 }
 
+export type DashboardMetrics = {
+  totalTickets: number;
+  breachedSLA: {
+    count: number;
+    tickets: Array<{
+      id: string;
+      description: string;
+      priority: TicketPriority;
+      status: TicketStatus;
+      createdAt: string;
+      slaName?: string;
+      hoursElapsed: number;
+    }>;
+  };
+  highPriority: {
+    count: number;
+    tickets: Array<{
+      id: string;
+      description: string;
+      status: TicketStatus;
+      assignee?: TicketUser | null;
+      createdAt: string;
+    }>;
+  };
+  criticalAlerts: {
+    count: number;
+    tickets: Array<{
+      id: string;
+      description: string;
+      priority: TicketPriority;
+      status: TicketStatus;
+      createdAt: string;
+      slaName?: string;
+    }>;
+  };
+  statusCounts: {
+    open: number;
+    in_progress: number;
+    resolved: number;
+  };
+  priorityCounts: {
+    low: number;
+    medium: number;
+    high: number;
+  };
+  recentActivity: {
+    count: number;
+    last7Days: number;
+  };
+};
+
+export async function fetchDashboardMetrics() {
+  const response = await apiClient.get<{ metrics: DashboardMetrics }>(
+    "/reports/dashboard/metrics"
+  );
+  return response.data.metrics;
+}
+
 export async function fetchTicketExportDataset(
   filters: TicketExportFilters = {},
 ) {
