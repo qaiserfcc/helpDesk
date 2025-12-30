@@ -11,6 +11,32 @@ import { useOfflineStore } from "@/store/useOfflineStore";
 
 export type TicketPriority = "low" | "medium" | "high";
 export type TicketStatus = "open" | "in_progress" | "resolved";
+
+export type AttributeType =
+  | "text"
+  | "number"
+  | "date"
+  | "select"
+  | "multiselect"
+  | "file";
+
+export type Attribute = {
+  id: string;
+  key: string;
+  label: string;
+  type: AttributeType;
+  options: string[];
+  required: boolean;
+  visibleTo: Array<"user" | "agent" | "admin">;
+  active: boolean;
+  order: number;
+};
+
+export type TicketAttributeValue = {
+  attributeId: string;
+  value: unknown;
+  attribute: Attribute;
+};
 export type IssueType =
   | "hardware"
   | "software"
@@ -22,6 +48,24 @@ export type TicketUser = {
   id: string;
   name: string;
   email: string;
+};
+
+export type Category = {
+  id: string;
+  name: string;
+};
+
+export type Subcategory = {
+  id: string;
+  name: string;
+  categoryId: string;
+};
+
+export type Sla = {
+  id: string;
+  name: string;
+  responseTimeHours: number;
+  resolutionTimeHours: number;
 };
 
 export type Ticket = {
@@ -37,6 +81,10 @@ export type Ticket = {
   creator: TicketUser;
   assignee: TicketUser | null;
   assignmentRequest: TicketUser | null;
+  category: Category | null;
+  subcategory: Subcategory | null;
+  sla: Sla | null;
+  attributeValues: TicketAttributeValue[];
   pendingSync?: boolean;
   pendingAction?: string;
   isLocalOnly?: boolean;
@@ -59,7 +107,10 @@ export type TicketActivityType =
   | "status_change"
   | "assignment_change"
   | "assignment_request"
-  | "ticket_update";
+  | "ticket_update"
+  | "comment"
+  | "reply"
+  | "step_completed";
 
 export type TicketActivityEntry = {
   id: string;
@@ -71,6 +122,9 @@ export type TicketActivityEntry = {
   toStatus: TicketStatus | null;
   fromAssignee: TicketUser | null;
   toAssignee: TicketUser | null;
+  comment?: string | null;
+  commentId?: string | null;
+  stepId?: string | null;
 };
 
 export type TicketSummaryReport = {
@@ -136,7 +190,10 @@ export type CreateTicketPayload = {
   description: string;
   priority: TicketPriority;
   issueType: IssueType;
+  categoryId?: string;
+  subcategoryId?: string;
   attachments?: string[];
+  attributes?: Record<string, unknown>;
 };
 
 export type UpdateTicketPayload = Partial<CreateTicketPayload> & {

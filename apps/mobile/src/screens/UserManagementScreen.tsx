@@ -280,7 +280,7 @@ export function UserManagementScreen() {
       <ScrollView
         style={styles.container}
         refreshControl={
-            <RefreshControl
+          <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
             tintColor={colors.accentMuted}

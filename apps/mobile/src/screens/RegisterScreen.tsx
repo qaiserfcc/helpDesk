@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { isAxiosError } from "axios";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -112,14 +113,14 @@ export function RegisterScreen({ navigation }: Props) {
       });
       await applySession(session);
     } catch (err) {
-        console.error("Registration failed", err);
-        let message = "We couldn't create your account";
-        // Provide a more helpful message when the email is already registered.
-        if ((err as any)?.response?.status === 409) {
-          message = 'An account with that email already exists.';
-        }
-        setError(message);
-        Alert.alert("Sign up failed", message);
+      console.error("Registration failed", err);
+      let message = "We couldn't create your account";
+      // Provide a more helpful message when the email is already registered.
+      if (isAxiosError(err) && err.response?.status === 409) {
+        message = "An account with that email already exists.";
+      }
+      setError(message);
+      Alert.alert("Sign up failed", message);
     } finally {
       setSubmitting(false);
     }
@@ -154,7 +155,7 @@ export function RegisterScreen({ navigation }: Props) {
               )}
             </View>
           )}
-            <View style={styles.presetSection}>
+          <View style={styles.presetSection}>
             <Text style={styles.presetHeading}>Quick fill demo accounts</Text>
             <View style={styles.presetRow}>
               {demoAccounts.map((account) => (

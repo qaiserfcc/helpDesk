@@ -5,20 +5,24 @@ export type AISuggestion = {
   ticketId?: string;
   suggestionType: string;
   prompt: string;
-  result: any;
+  result: unknown;
   provider?: string;
-  providerMeta?: any;
+  providerMeta?: unknown;
   createdBy?: string;
   createdAt?: string;
 };
 
 export async function suggestReply(ticketId: string) {
-  const { data } = await apiClient.post<AISuggestion>(`/ai/tickets/${ticketId}/suggest`);
+  const { data } = await apiClient.post<AISuggestion>(
+    `/ai/tickets/${ticketId}/suggest`,
+  );
   return data;
 }
 
 export async function fetchSuggestions(ticketId: string) {
-  const { data } = await apiClient.get<AISuggestion[]>(`/ai/tickets/${ticketId}/suggestions`);
+  const { data } = await apiClient.get<AISuggestion[]>(
+    `/ai/tickets/${ticketId}/suggestions`,
+  );
   return data;
 }
 

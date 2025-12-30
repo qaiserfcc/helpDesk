@@ -17,6 +17,7 @@ import { isAxiosError } from "axios";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { RootStackParamList } from "@/navigation/AppNavigator";
+import { useAuthStore } from "@/store/useAuthStore";
 import {
   CreateTicketPayload,
   IssueType,
@@ -27,6 +28,10 @@ import {
   uploadTicketAttachments,
   updateTicket,
 } from "@/services/tickets";
+import { categoriesService } from "@/services/categories";
+import { subcategoriesService } from "@/services/subcategories";
+import { fetchVisibleAttributes } from "@/services/attributes";
+import { uploadFile } from "@/services/uploads";
 import { queueTicket } from "@/storage/offline-db";
 import { colors } from "@/theme/colors";
 import { commonStyles } from "@/theme/commonStyles";
@@ -66,6 +71,7 @@ export function TicketFormScreen({ route, navigation }: Props) {
   const ticketId = route.params?.ticketId;
   const isEdit = Boolean(ticketId);
   const queryClient = useQueryClient();
+  const authUser = useAuthStore((state) => state.session?.user);
   const { data: ticket } = useQuery({
     queryKey: ["ticket", ticketId],
     enabled: isEdit,
@@ -75,16 +81,66 @@ export function TicketFormScreen({ route, navigation }: Props) {
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<TicketPriority>("medium");
   const [issueType, setIssueType] = useState<IssueType>("other");
+  const [categoryId, setCategoryId] = useState<string>("");
+  const [subcategoryId, setSubcategoryId] = useState<string>("");
+  const [attributes, setAttributes] = useState<Record<string, unknown>>({});
+  const [uploadingAttributeKey, setUploadingAttributeKey] = useState<
+    string | null
+  >(null);
   const [submitting, setSubmitting] = useState(false);
   const [attachments, setAttachments] = useState<AttachmentDraft[]>([]);
   const isResolvedTicket = Boolean(ticket && ticket.status === "resolved");
   const lockedFromEditing = Boolean(isEdit && isResolvedTicket);
+
+  const role = authUser?.role ?? "user";
+
+  const { data: categories = [], isLoading: categoriesLoading } = useQuery({
+    queryKey: ["categories"],
+    queryFn: () => categoriesService.listAllCategories(),
+    enabled: !lockedFromEditing,
+    staleTime: 60_000,
+  });
+
+  const { data: subcategories = [], isLoading: subcategoriesLoading } =
+    useQuery({
+      queryKey: ["subcategories", categoryId],
+      queryFn: () =>
+        categoryId
+          ? subcategoriesService.listByCategory(categoryId)
+          : Promise.resolve([]),
+      enabled: !lockedFromEditing && Boolean(categoryId),
+      staleTime: 60_000,
+    });
+
+  const { data: attributeDefs = [], isLoading: attributesLoading } = useQuery({
+    queryKey: ["ticket-attributes"],
+    queryFn: fetchVisibleAttributes,
+    enabled: !lockedFromEditing,
+    staleTime: 60_000,
+  });
+
+  const visibleAttributes = useMemo(() => {
+    return [...(attributeDefs ?? [])]
+      .filter((a) => a.active)
+      .filter((a) => (a.visibleTo ?? []).includes(role))
+      .sort((a, b) => a.order - b.order);
+  }, [attributeDefs, role]);
 
   useEffect(() => {
     if (ticket) {
       setDescription(ticket.description);
       setPriority(ticket.priority);
       setIssueType(ticket.issueType);
+      setCategoryId(ticket.category?.id ?? "");
+      setSubcategoryId(ticket.subcategory?.id ?? "");
+
+      const nextAttributes: Record<string, unknown> = {};
+      for (const av of ticket.attributeValues ?? []) {
+        if (av?.attribute?.key) {
+          nextAttributes[av.attribute.key] = av.value;
+        }
+      }
+      setAttributes(nextAttributes);
     }
   }, [ticket]);
 
@@ -135,6 +191,9 @@ export function TicketFormScreen({ route, navigation }: Props) {
           description: payload.description,
           priority: payload.priority,
           issueType: payload.issueType,
+          categoryId: payload.categoryId,
+          subcategoryId: payload.subcategoryId,
+          attributes: payload.attributes,
           attachments: payload.attachments ?? [],
           createdAt: new Date().toISOString(),
         },
@@ -160,6 +219,9 @@ export function TicketFormScreen({ route, navigation }: Props) {
       description: description.trim(),
       priority,
       issueType,
+      categoryId: categoryId || undefined,
+      subcategoryId: subcategoryId || undefined,
+      attributes: Object.keys(attributes).length ? attributes : undefined,
     };
 
     let savedTicket: Ticket | undefined;
@@ -205,6 +267,48 @@ export function TicketFormScreen({ route, navigation }: Props) {
       Alert.alert("Save failed", "Please try again.");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleSetCategory = (nextId: string) => {
+    setCategoryId(nextId);
+    setSubcategoryId("");
+  };
+
+  const handleAttributeChange = (key: string, value: unknown) => {
+    setAttributes((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handlePickAndUploadAttributeFile = async (attributeKey: string) => {
+    try {
+      const network = await Network.getNetworkStateAsync();
+      if (!network.isConnected) {
+        Alert.alert("Offline", "File fields can't be uploaded while offline.");
+        return;
+      }
+
+      const result = await DocumentPicker.getDocumentAsync({
+        multiple: false,
+        copyToCacheDirectory: true,
+      });
+
+      if (result.canceled || !result.assets?.length) {
+        return;
+      }
+
+      const asset = result.assets[0];
+      const uri = asset.uri;
+      const name = asset.name ?? getAttachmentName(asset.uri);
+      const type = asset.mimeType ?? defaultMimeType;
+
+      setUploadingAttributeKey(attributeKey);
+      const path = await uploadFile({ uri, name, type });
+      handleAttributeChange(attributeKey, path);
+    } catch (error) {
+      console.error("attribute file upload failed", error);
+      Alert.alert("Upload failed", "Please try again.");
+    } finally {
+      setUploadingAttributeKey(null);
     }
   };
 
@@ -291,6 +395,231 @@ export function TicketFormScreen({ route, navigation }: Props) {
           })}
         </View>
 
+        <Text style={styles.label}>Category</Text>
+        {categoriesLoading ? (
+          <Text style={styles.hint}>Loading categories…</Text>
+        ) : categories.length === 0 ? (
+          <Text style={styles.hint}>No categories available.</Text>
+        ) : (
+          <View style={styles.optionRow}>
+            {categories.map((c) => {
+              const selected = c.id === categoryId;
+              return (
+                <Pressable
+                  key={c.id}
+                  style={[
+                    styles.optionChip,
+                    selected && styles.optionChipActive,
+                  ]}
+                  onPress={() => handleSetCategory(c.id)}
+                >
+                  <Text
+                    style={[
+                      styles.optionText,
+                      selected && styles.optionTextActive,
+                    ]}
+                  >
+                    {c.name}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        )}
+
+        <Text style={styles.label}>Subcategory</Text>
+        {!categoryId ? (
+          <Text style={styles.hint}>Select a category first.</Text>
+        ) : subcategoriesLoading ? (
+          <Text style={styles.hint}>Loading subcategories…</Text>
+        ) : subcategories.length === 0 ? (
+          <Text style={styles.hint}>No subcategories available.</Text>
+        ) : (
+          <View style={styles.optionRow}>
+            {subcategories.map((s) => {
+              const selected = s.id === subcategoryId;
+              return (
+                <Pressable
+                  key={s.id}
+                  style={[
+                    styles.optionChip,
+                    selected && styles.optionChipActive,
+                  ]}
+                  onPress={() => setSubcategoryId(s.id)}
+                >
+                  <Text
+                    style={[
+                      styles.optionText,
+                      selected && styles.optionTextActive,
+                    ]}
+                  >
+                    {s.name}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        )}
+
+        <Text style={styles.label}>Custom fields</Text>
+        {attributesLoading ? (
+          <Text style={styles.hint}>Loading fields…</Text>
+        ) : visibleAttributes.length === 0 ? (
+          <Text style={styles.hint}>No custom fields.</Text>
+        ) : (
+          <View style={{ marginBottom: 20 }}>
+            {visibleAttributes.map((attr) => {
+              const value = attributes[attr.key];
+              const requiredMarker = attr.required ? " *" : "";
+
+              if (attr.type === "select") {
+                return (
+                  <View key={attr.id} style={{ marginBottom: 14 }}>
+                    <Text style={styles.label}>
+                      {attr.label}
+                      {requiredMarker}
+                    </Text>
+                    <View style={styles.optionRow}>
+                      {attr.options.map((opt) => {
+                        const selected = value === opt;
+                        return (
+                          <Pressable
+                            key={`${attr.key}-${opt}`}
+                            style={[
+                              styles.optionChip,
+                              selected && styles.optionChipActive,
+                            ]}
+                            onPress={() => handleAttributeChange(attr.key, opt)}
+                          >
+                            <Text
+                              style={[
+                                styles.optionText,
+                                selected && styles.optionTextActive,
+                              ]}
+                            >
+                              {opt}
+                            </Text>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  </View>
+                );
+              }
+
+              if (attr.type === "multiselect") {
+                const selectedValues = Array.isArray(value)
+                  ? (value as string[])
+                  : [];
+                return (
+                  <View key={attr.id} style={{ marginBottom: 14 }}>
+                    <Text style={styles.label}>
+                      {attr.label}
+                      {requiredMarker}
+                    </Text>
+                    <View style={styles.optionRow}>
+                      {attr.options.map((opt) => {
+                        const selected = selectedValues.includes(opt);
+                        return (
+                          <Pressable
+                            key={`${attr.key}-${opt}`}
+                            style={[
+                              styles.optionChip,
+                              selected && styles.optionChipActive,
+                            ]}
+                            onPress={() => {
+                              const next = selected
+                                ? selectedValues.filter((v) => v !== opt)
+                                : [...selectedValues, opt];
+                              handleAttributeChange(attr.key, next);
+                            }}
+                          >
+                            <Text
+                              style={[
+                                styles.optionText,
+                                selected && styles.optionTextActive,
+                              ]}
+                            >
+                              {opt}
+                            </Text>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  </View>
+                );
+              }
+
+              if (attr.type === "file") {
+                const filePath = typeof value === "string" ? value : "";
+                const fileLabel = filePath
+                  ? getAttachmentName(filePath)
+                  : "No file selected";
+                const isUploading = uploadingAttributeKey === attr.key;
+
+                return (
+                  <View key={attr.id} style={{ marginBottom: 14 }}>
+                    <Text style={styles.label}>
+                      {attr.label}
+                      {requiredMarker}
+                    </Text>
+                    <View style={styles.attachmentCard}>
+                      <Text style={styles.attachmentHint}>{fileLabel}</Text>
+                      <Pressable
+                        style={[
+                          styles.attachmentBtn,
+                          isUploading && styles.submitBtnDisabled,
+                        ]}
+                        onPress={() =>
+                          handlePickAndUploadAttributeFile(attr.key)
+                        }
+                        disabled={isUploading}
+                      >
+                        <Text style={styles.attachmentBtnText}>
+                          {isUploading ? "Uploading…" : "+ Choose file"}
+                        </Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                );
+              }
+
+              return (
+                <View key={attr.id} style={{ marginBottom: 14 }}>
+                  <Text style={styles.label}>
+                    {attr.label}
+                    {requiredMarker}
+                  </Text>
+                  <TextInput
+                    value={
+                      typeof value === "string"
+                        ? value
+                        : value == null
+                          ? ""
+                          : String(value)
+                    }
+                    onChangeText={(text) => {
+                      if (attr.type === "number") {
+                        handleAttributeChange(attr.key, text);
+                        return;
+                      }
+                      handleAttributeChange(attr.key, text);
+                    }}
+                    placeholder={
+                      attr.type === "date" ? "YYYY-MM-DD" : "Enter a value"
+                    }
+                    placeholderTextColor={colors.muted}
+                    style={styles.input}
+                    keyboardType={
+                      attr.type === "number" ? "numeric" : "default"
+                    }
+                  />
+                </View>
+              );
+            })}
+          </View>
+        )}
+
         <Text style={styles.label}>Attachments</Text>
         {isEdit && ticket?.attachments?.length ? (
           <View style={styles.existingAttachments}>
@@ -371,6 +700,11 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginBottom: 20,
     textAlignVertical: "top",
+  },
+  hint: {
+    color: colors.muted,
+    fontSize: 13,
+    marginBottom: 14,
   },
   optionRow: {
     flexDirection: "row",

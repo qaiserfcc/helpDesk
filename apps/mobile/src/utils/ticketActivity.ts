@@ -40,6 +40,12 @@ export function describeTicketActivity(entry: TicketActivityEntry) {
         return `${entry.actor.name} updated ${ticketLabel} from ${formatTicketStatus(entry.fromStatus)}`;
       }
       return `${entry.actor.name} updated ${ticketLabel}`;
+    case "comment":
+      return `${entry.actor.name} commented on ${ticketLabel}`;
+    case "reply":
+      return `${entry.actor.name} replied on ${ticketLabel}`;
+    case "step_completed":
+      return `${entry.actor.name} completed a workflow step on ${ticketLabel}`;
     default:
       return `${entry.actor.name} updated ${ticketLabel}`;
   }
