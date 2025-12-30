@@ -94,6 +94,14 @@ function invalidateTicketLists(ticketId: string) {
   });
 }
 
+function invalidateWorkflowProgress(ticketId: string) {
+  void queryClient.invalidateQueries({ queryKey: ["workflow-progress", ticketId] });
+}
+
+function invalidateTicketComments(ticketId: string) {
+  void queryClient.invalidateQueries({ queryKey: ["ticket-comments", ticketId] });
+}
+
 function invalidateTicketActivity(ticketId: string) {
   void queryClient.invalidateQueries({
     queryKey: ["ticket-activity", ticketId],
@@ -116,15 +124,19 @@ function pushActivityNotification(activity: TicketActivityEntry) {
 function attachListeners(instance: Socket<ServerToClientEvents>) {
   instance.on("tickets:created", ({ ticket }) => {
     invalidateTicketLists(ticket.id);
+    invalidateWorkflowProgress(ticket.id);
   });
 
   instance.on("tickets:updated", ({ ticket }) => {
     invalidateTicketLists(ticket.id);
+    invalidateWorkflowProgress(ticket.id);
   });
 
   instance.on("tickets:activity", ({ ticketId, activity }) => {
     invalidateTicketActivity(ticketId);
     invalidateTicketLists(ticketId);
+    invalidateWorkflowProgress(ticketId);
+    invalidateTicketComments(ticketId);
     if (activity) {
       pushActivityNotification(activity);
     }

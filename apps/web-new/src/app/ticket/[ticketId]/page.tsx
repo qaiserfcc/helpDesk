@@ -435,6 +435,7 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
       workflowsService.completeStep(ticketId, stepId, comment),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["workflow-progress", ticketId] });
+      queryClient.invalidateQueries({ queryKey: ["ticket", ticketId] });
       queryClient.invalidateQueries({ queryKey: ["ticket-activity", ticketId] });
       queryClient.invalidateQueries({ queryKey: ["ticket-comments", ticketId] });
       setStepCompleteModalVisible(false);
@@ -463,6 +464,7 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
       workflowsService.moveCurrentStep(ticketId, direction),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["workflow-progress", ticketId] });
+      queryClient.invalidateQueries({ queryKey: ["ticket", ticketId] });
       queryClient.invalidateQueries({ queryKey: ["ticket-activity", ticketId] });
     },
     onError: (error: unknown) => {
@@ -480,6 +482,7 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
     mutationFn: (question: string) => workflowsService.requestMoreInfo(ticketId, question),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["workflow-progress", ticketId] });
+      queryClient.invalidateQueries({ queryKey: ["ticket", ticketId] });
       queryClient.invalidateQueries({ queryKey: ["ticket-activity", ticketId] });
       queryClient.invalidateQueries({ queryKey: ["ticket-comments", ticketId] });
       setMoreInfoModalVisible(false);
@@ -507,6 +510,7 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
       workflowsService.respondMoreInfo(ticketId, responseText),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["workflow-progress", ticketId] });
+      queryClient.invalidateQueries({ queryKey: ["ticket", ticketId] });
       queryClient.invalidateQueries({ queryKey: ["ticket-activity", ticketId] });
       queryClient.invalidateQueries({ queryKey: ["ticket-comments", ticketId] });
       setMoreInfoResponse("");

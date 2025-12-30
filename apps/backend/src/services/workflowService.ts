@@ -450,6 +450,7 @@ export async function moveCurrentWorkflowStep(
       id: true,
       createdBy: true,
       assignedTo: true,
+      status: true,
       workflowId: true,
       currentWorkflowStepId: true,
       moreInfoRequestedAt: true,
@@ -495,17 +496,74 @@ export async function moveCurrentWorkflowStep(
 
   const nextStep = steps[nextIndex];
 
+  // New behavior: when moving backwards, reopen the step by removing its completion
+  // so it can be completed again.
+  let reopenedStep = false;
+  if (direction === "prev") {
+    const deleted = await prisma.workflowStepCompletion.deleteMany({
+      where: { ticketId, stepId: nextStep.id },
+    });
+    reopenedStep = deleted.count > 0;
+  }
+
   await prisma.ticket.update({
     where: { id: ticketId },
     data: { currentWorkflowStepId: nextStep.id },
   });
+
+  // If we reopened a step, re-evaluate ticket status (e.g. resolved -> in_progress).
+  if (reopenedStep) {
+    const remaining = await prisma.workflowStepCompletion.findMany({
+      where: { ticketId },
+      select: { stepId: true },
+    });
+
+    const totalSteps = steps.length;
+    const completedStepsCount = remaining.length;
+
+    let newStatus = ticket.status;
+    if (completedStepsCount >= totalSteps && totalSteps > 0) {
+      newStatus = "resolved" as const;
+    } else if (completedStepsCount > 0) {
+      newStatus = "in_progress" as const;
+    } else {
+      newStatus = "open" as const;
+    }
+
+    if (newStatus !== ticket.status) {
+      await prisma.ticket.update({
+        where: { id: ticketId },
+        data: {
+          status: newStatus,
+          resolvedAt: newStatus === "resolved" ? new Date() : null,
+        },
+      });
+
+      const statusActivity = await prisma.ticketActivity.create({
+        data: {
+          ticketId,
+          actorId: user.id,
+          type: "status_change",
+          fromStatus: ticket.status,
+          toStatus: newStatus,
+          comment: `Status auto-updated to ${newStatus} upon workflow step reopen`,
+        },
+        include: ticketActivityInclude,
+      });
+
+      await publishActivity(ticketId, statusActivity);
+      await publishTicketUpdated(ticketId);
+    }
+  }
 
   const activity = await prisma.ticketActivity.create({
     data: {
       ticketId,
       actorId: user.id,
       type: TicketActivityType.ticket_update,
-      comment: `Workflow moved to step: ${nextStep.name}`,
+      comment: reopenedStep
+        ? `Workflow reopened and moved to step: ${nextStep.name}`
+        : `Workflow moved to step: ${nextStep.name}`,
     },
     include: ticketActivityInclude,
   });
