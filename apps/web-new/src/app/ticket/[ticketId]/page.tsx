@@ -555,7 +555,14 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
   );
   const isCreator = Boolean(ticket && authUser?.id === ticket.creator?.id);
   const isAssignee = Boolean(ticket && authUser?.id === ticket.assignee?.id);
-  const canManageWorkflow = Boolean(!isTicketResolved && (isAdmin || isAssignee));
+  const canManageWorkflow = Boolean(!isTicketResolved && isAssignee);
+
+  const currentStepIndex = workflowProgress
+    ? workflowProgress.progress.findIndex((p) => p.isCurrent)
+    : -1;
+  const canOpenPreviousStep = Boolean(
+    canManageWorkflow && currentStepIndex > 0 && !moreInfoPending,
+  );
 
   const canCompleteCurrentStep = Boolean(
     currentStep &&
@@ -728,26 +735,19 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
                   </div>
                 )}
 
-                {canManageWorkflow && (
+                {(canOpenPreviousStep || canRequestMoreInfo) && (
                   <div className="flex gap-2 mb-4">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => moveStepMutation.mutate("prev")}
-                      isLoading={moveStepMutation.isPending}
-                      disabled={moreInfoPending}
-                    >
-                      Previous Step
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => moveStepMutation.mutate("next")}
-                      isLoading={moveStepMutation.isPending}
-                      disabled={moreInfoPending}
-                    >
-                      Next Step
-                    </Button>
+                    {canOpenPreviousStep && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => moveStepMutation.mutate("prev")}
+                        isLoading={moveStepMutation.isPending}
+                        disabled={moreInfoPending}
+                      >
+                        Open Previous Step
+                      </Button>
+                    )}
                     {canRequestMoreInfo && (
                       <Button
                         variant="ghost"

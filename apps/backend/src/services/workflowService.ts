@@ -1,6 +1,7 @@
 import createError from "http-errors";
 import { Role, TicketActivityType } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
+import { publishTicketEvent } from "../realtime/ticketPublisher.js";
 
 type RequestUser = Express.AuthenticatedUser;
 
@@ -26,6 +27,37 @@ const workflowInclude = {
     orderBy: { order: "asc" as const },
   },
 } as const;
+
+const ticketActivityInclude = {
+  actor: { select: { id: true, name: true, email: true, role: true } },
+  fromAssignee: { select: { id: true, name: true, email: true } },
+  toAssignee: { select: { id: true, name: true, email: true } },
+} as const;
+
+async function getTicketAudience(ticketId: string) {
+  return prisma.ticket.findUnique({
+    where: { id: ticketId },
+    select: { id: true, createdBy: true, assignedTo: true },
+  });
+}
+
+async function publishTicketUpdated(ticketId: string) {
+  const audience = await getTicketAudience(ticketId);
+  if (!audience) {
+    return;
+  }
+  publishTicketEvent({ type: "tickets:updated", ticket: audience as any });
+}
+
+async function publishActivity(ticketId: string, activity: any) {
+  const audience = await getTicketAudience(ticketId);
+  publishTicketEvent({
+    type: "tickets:activity",
+    ticketId,
+    activity: activity as any,
+    audience: audience as any,
+  });
+}
 
 async function ensureTicketCurrentStep(ticketId: string) {
   const ticket = await prisma.ticket.findUnique({
@@ -468,14 +500,18 @@ export async function moveCurrentWorkflowStep(
     data: { currentWorkflowStepId: nextStep.id },
   });
 
-  await prisma.ticketActivity.create({
+  const activity = await prisma.ticketActivity.create({
     data: {
       ticketId,
       actorId: user.id,
       type: TicketActivityType.ticket_update,
       comment: `Workflow moved to step: ${nextStep.name}`,
     },
+    include: ticketActivityInclude,
   });
+
+  await publishActivity(ticketId, activity);
+  await publishTicketUpdated(ticketId);
 
   return { stepId: nextStep.id };
 }
@@ -536,7 +572,7 @@ export async function requestMoreInfo(
     },
   });
 
-  await prisma.ticketActivity.create({
+  const commentActivity = await prisma.ticketActivity.create({
     data: {
       ticketId,
       actorId: user.id,
@@ -544,7 +580,10 @@ export async function requestMoreInfo(
       commentId: comment.id,
       comment: question.trim(),
     },
+    include: ticketActivityInclude,
   });
+
+  await publishActivity(ticketId, commentActivity);
 
   await prisma.ticket.update({
     where: { id: ticketId },
@@ -560,14 +599,18 @@ export async function requestMoreInfo(
     },
   });
 
-  await prisma.ticketActivity.create({
+  const updateActivity = await prisma.ticketActivity.create({
     data: {
       ticketId,
       actorId: user.id,
       type: TicketActivityType.ticket_update,
       comment: "More information requested",
     },
+    include: ticketActivityInclude,
   });
+
+  await publishActivity(ticketId, updateActivity);
+  await publishTicketUpdated(ticketId);
 
   return { commentId: comment.id };
 }
@@ -586,6 +629,7 @@ export async function respondToMoreInfo(
     select: {
       id: true,
       createdBy: true,
+      assignedTo: true,
       moreInfoRequestedAt: true,
       moreInfoResolvedAt: true,
       moreInfoCommentId: true,
@@ -626,7 +670,7 @@ export async function respondToMoreInfo(
     },
   });
 
-  await prisma.ticketActivity.create({
+  const replyActivity = await prisma.ticketActivity.create({
     data: {
       ticketId,
       actorId: user.id,
@@ -634,7 +678,10 @@ export async function respondToMoreInfo(
       commentId: reply.id,
       comment: response.trim(),
     },
+    include: ticketActivityInclude,
   });
+
+  await publishActivity(ticketId, replyActivity);
 
   await prisma.ticket.update({
     where: { id: ticketId },
@@ -645,14 +692,18 @@ export async function respondToMoreInfo(
     },
   });
 
-  await prisma.ticketActivity.create({
+  const updateActivity = await prisma.ticketActivity.create({
     data: {
       ticketId,
       actorId: user.id,
       type: TicketActivityType.ticket_update,
       comment: "More information provided",
     },
+    include: ticketActivityInclude,
   });
+
+  await publishActivity(ticketId, updateActivity);
+  await publishTicketUpdated(ticketId);
 
   return { responseCommentId: reply.id };
 }
@@ -808,7 +859,7 @@ export async function completeWorkflowStep(
     });
 
     // Log the status change activity
-    await prisma.ticketActivity.create({
+    const statusActivity = await prisma.ticketActivity.create({
       data: {
         ticketId,
         actorId: userId,
@@ -817,11 +868,15 @@ export async function completeWorkflowStep(
         toStatus: newStatus,
         comment: `Status auto-updated to ${newStatus} upon workflow step completion`,
       },
+      include: ticketActivityInclude,
     });
+
+    await publishActivity(ticketId, statusActivity);
+    await publishTicketUpdated(ticketId);
   }
 
   // Log activity for step completion
-  await prisma.ticketActivity.create({
+  const stepActivity = await prisma.ticketActivity.create({
     data: {
       ticketId,
       actorId: userId,
@@ -829,7 +884,11 @@ export async function completeWorkflowStep(
       stepId,
       comment: `Completed step: ${step.name}${comment ? ` - ${comment}` : ""}`,
     },
+    include: ticketActivityInclude,
   });
+
+  await publishActivity(ticketId, stepActivity);
+  await publishTicketUpdated(ticketId);
 
   return completion;
 }

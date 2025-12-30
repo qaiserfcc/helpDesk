@@ -124,6 +124,7 @@ function attachListeners(instance: Socket<ServerToClientEvents>) {
 
   instance.on("tickets:activity", ({ ticketId, activity }) => {
     invalidateTicketActivity(ticketId);
+    invalidateTicketLists(ticketId);
     if (activity) {
       pushActivityNotification(activity);
     }
