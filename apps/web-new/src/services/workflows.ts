@@ -41,15 +41,29 @@ export interface WorkflowStepCompletion {
   completedAt: string;
 }
 
+export type MoreInfoState = {
+  requestedAt: string | null;
+  requestedBy: string | null;
+  question: string | null;
+  stepId: string | null;
+  commentId: string | null;
+  responseCommentId: string | null;
+  resolvedAt: string | null;
+  resolvedBy: string | null;
+};
+
 export interface WorkflowProgress {
   workflow: Workflow;
   progress: {
     step: WorkflowStep;
     completion: WorkflowStepCompletion | null;
     isCompleted: boolean;
+    isCurrent: boolean;
   }[];
   totalSteps: number;
   completedSteps: number;
+  currentStepId: string | null;
+  moreInfo: MoreInfoState;
 }
 
 export const workflowsService = {
@@ -133,6 +147,44 @@ export const workflowsService = {
       `/workflows/ticket/${ticketId}/step/${stepId}/complete`,
       { comment },
     );
+    return response.data;
+  },
+
+  setCurrentStep: async (ticketId: string, stepId: string): Promise<{ stepId: string }> => {
+    const response = await apiClient.post(`/workflows/ticket/${ticketId}/current-step`, {
+      stepId,
+    });
+    return response.data;
+  },
+
+  moveCurrentStep: async (
+    ticketId: string,
+    direction: "next" | "prev",
+  ): Promise<{ stepId: string }> => {
+    const response = await apiClient.post(
+      `/workflows/ticket/${ticketId}/current-step/move`,
+      { direction },
+    );
+    return response.data;
+  },
+
+  requestMoreInfo: async (
+    ticketId: string,
+    question: string,
+  ): Promise<{ commentId: string }> => {
+    const response = await apiClient.post(`/workflows/ticket/${ticketId}/more-info/request`, {
+      question,
+    });
+    return response.data;
+  },
+
+  respondMoreInfo: async (
+    ticketId: string,
+    responseText: string,
+  ): Promise<{ responseCommentId: string }> => {
+    const response = await apiClient.post(`/workflows/ticket/${ticketId}/more-info/respond`, {
+      response: responseText,
+    });
     return response.data;
   },
 };

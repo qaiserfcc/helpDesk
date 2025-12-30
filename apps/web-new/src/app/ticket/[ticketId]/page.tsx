@@ -31,6 +31,11 @@ import { Modal, ModalActions } from "@/components/Modal";
 import { FormTextArea, FormField } from "@/components/FormField";
 import { Button } from "@/components/Button";
 import SLATimer from "@/components/SLATimer";
+import {
+  TicketFields,
+  useTicketFieldsData,
+  type TicketFormValues,
+} from "@/components/tickets/TicketFields";
 
 const formatStatus = formatTicketStatus;
 
@@ -44,20 +49,58 @@ const buildAttachmentUrl = (path: string) => {
   return `${env.apiBaseUrl}/${sanitized}`;
 };
 
-const priorityOptions: TicketPriority[] = ["low", "medium", "high"];
-const issueOptions: IssueType[] = [
-  "hardware",
-  "software",
-  "network",
-  "access",
-  "other",
-];
+const formatAttributeValue = (type: string, value: unknown) => {
+  if (value === null || value === undefined) return "-";
 
-type EditTicketFormValues = {
-  description: string;
-  priority: TicketPriority;
-  issueType: IssueType;
+  if (type === "multiselect") {
+    if (Array.isArray(value)) {
+      const items = value
+        .map((v) => (typeof v === "string" ? v : String(v)))
+        .filter((v) => v.trim().length);
+      return items.length ? items.join(", ") : "-";
+    }
+    return typeof value === "string" ? value : String(value);
+  }
+
+  if (type === "file") {
+    if (typeof value !== "string" || !value.trim()) return "-";
+    const href = buildAttachmentUrl(value);
+    const name = value.split("/").filter(Boolean).pop() ?? value;
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noreferrer"
+        className="text-blue-300 hover:text-blue-200 underline"
+      >
+        {name}
+      </a>
+    );
+  }
+
+  if (type === "date") {
+    if (typeof value === "string") return value;
+    return String(value);
+  }
+
+  if (type === "number") {
+    if (typeof value === "number") return String(value);
+    if (typeof value === "string") return value;
+    return String(value);
+  }
+
+  if (typeof value === "string") return value;
+  return String(value);
 };
+
+const makeEmptyTicketFormValues = (): TicketFormValues => ({
+  description: "",
+  priority: "medium",
+  issueType: "other",
+  categoryId: "",
+  subcategoryId: "",
+  attributes: {},
+});
 
 interface TicketDetailPageProps {
   params: {
@@ -74,13 +117,12 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
   const [isAssigning, setIsAssigning] = useState(false);
   const [isRequesting, setIsRequesting] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
-  const [editFormValues, setEditFormValues] = useState<EditTicketFormValues>({
-    description: "",
-    priority: "medium",
-    issueType: "other",
-  });
+  const [editFormValues, setEditFormValues] = useState<TicketFormValues>(
+    makeEmptyTicketFormValues(),
+  );
   const [editFormError, setEditFormError] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
+  const [editPrefilledAttributes, setEditPrefilledAttributes] = useState(false);
   
   // Comment state
   const [commentText, setCommentText] = useState("");
@@ -91,6 +133,11 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
   const [stepCompleteModalVisible, setStepCompleteModalVisible] = useState(false);
   const [stepCompleteComment, setStepCompleteComment] = useState("");
   const [completingStepId, setCompletingStepId] = useState<string | null>(null);
+
+  // More-info flow state
+  const [moreInfoModalVisible, setMoreInfoModalVisible] = useState(false);
+  const [moreInfoQuestion, setMoreInfoQuestion] = useState("");
+  const [moreInfoResponse, setMoreInfoResponse] = useState("");
 
   const { data: ticket, isLoading } = useQuery({
     queryKey: ["ticket", ticketId],
@@ -143,6 +190,11 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
   const markTicketRead = useNotificationStore((state) => state.markTicketRead);
   const { data: aiSuggestions = [] } = useQuery({ queryKey: ["ai-suggestions", ticketId], queryFn: () => fetchSuggestions(ticketId), enabled: Boolean(ticket) });
   const toastAdd = useToastStore((s) => s.addNotification);
+
+  const editFieldsData = useTicketFieldsData({
+    enabled: Boolean(editModalVisible) && Boolean(canEdit),
+    categoryId: editFormValues.categoryId,
+  });
 
   useEffect(() => {
     markTicketRead(ticketId);
@@ -212,11 +264,37 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
         description: ticket.description,
         priority: ticket.priority,
         issueType: ticket.issueType,
+        categoryId: ticket.category?.id ?? "",
+        subcategoryId: ticket.subcategory?.id ?? "",
+        attributes: {},
       });
       setEditFormError("");
+      setEditPrefilledAttributes(false);
       setEditModalVisible(true);
     }
   };
+
+  useEffect(() => {
+    if (!editModalVisible) return;
+    if (!ticket) return;
+    if (editPrefilledAttributes) return;
+    if (editFieldsData.attributesLoading) return;
+
+    const allowedKeys = new Set((editFieldsData.attributes ?? []).map((a) => a.key));
+    const nextAttrs: Record<string, unknown> = {};
+    for (const av of ticket.attributeValues ?? []) {
+      const key = av.attribute?.key;
+      if (!key) continue;
+      if (!allowedKeys.has(key)) continue;
+      nextAttrs[key] = av.value;
+    }
+
+    setEditFormValues((prev) => ({
+      ...prev,
+      attributes: { ...nextAttrs, ...prev.attributes },
+    }));
+    setEditPrefilledAttributes(true);
+  }, [editModalVisible, ticket, editPrefilledAttributes, editFieldsData.attributesLoading, editFieldsData.attributes]);
 
   const closeEditModal = () => {
     setEditModalVisible(false);
@@ -229,13 +307,28 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
       return;
     }
 
+    if (editFieldsData.attributesError) {
+      setEditFormError("Unable to load attributes. Please retry.");
+      return;
+    }
+
     setIsUpdating(true);
     setEditFormError("");
+
+    const allowedKeys = new Set((editFieldsData.attributes ?? []).map((a) => a.key));
+    const filteredAttributes = Object.fromEntries(
+      Object.entries(editFormValues.attributes || {}).filter(([key]) =>
+        allowedKeys.has(key),
+      ),
+    );
 
     const payload: UpdateTicketPayload = {
       description: editFormValues.description.trim(),
       priority: editFormValues.priority,
       issueType: editFormValues.issueType,
+      categoryId: editFormValues.categoryId || undefined,
+      subcategoryId: editFormValues.subcategoryId || undefined,
+      attributes: Object.keys(filteredAttributes).length ? filteredAttributes : undefined,
     };
 
     try {
@@ -343,6 +436,7 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["workflow-progress", ticketId] });
       queryClient.invalidateQueries({ queryKey: ["ticket-activity", ticketId] });
+      queryClient.invalidateQueries({ queryKey: ["ticket-comments", ticketId] });
       setStepCompleteModalVisible(false);
       setStepCompleteComment("");
       setCompletingStepId(null);
@@ -358,6 +452,76 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
       toastAdd({
         type: "error",
         title: "Step completion failed",
+        message,
+        timestamp: new Date().toISOString(),
+      });
+    },
+  });
+
+  const moveStepMutation = useMutation({
+    mutationFn: (direction: "next" | "prev") =>
+      workflowsService.moveCurrentStep(ticketId, direction),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["workflow-progress", ticketId] });
+      queryClient.invalidateQueries({ queryKey: ["ticket-activity", ticketId] });
+    },
+    onError: (error: unknown) => {
+      const message = error instanceof Error ? error.message : "Failed to move step";
+      toastAdd({
+        type: "error",
+        title: "Move step failed",
+        message,
+        timestamp: new Date().toISOString(),
+      });
+    },
+  });
+
+  const requestMoreInfoMutation = useMutation({
+    mutationFn: (question: string) => workflowsService.requestMoreInfo(ticketId, question),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["workflow-progress", ticketId] });
+      queryClient.invalidateQueries({ queryKey: ["ticket-activity", ticketId] });
+      queryClient.invalidateQueries({ queryKey: ["ticket-comments", ticketId] });
+      setMoreInfoModalVisible(false);
+      setMoreInfoQuestion("");
+      toastAdd({
+        type: "success",
+        title: "Requested more info",
+        message: "Waiting for the ticket creator to respond",
+        timestamp: new Date().toISOString(),
+      });
+    },
+    onError: (error: unknown) => {
+      const message = error instanceof Error ? error.message : "Failed to request more info";
+      toastAdd({
+        type: "error",
+        title: "Request failed",
+        message,
+        timestamp: new Date().toISOString(),
+      });
+    },
+  });
+
+  const respondMoreInfoMutation = useMutation({
+    mutationFn: (responseText: string) =>
+      workflowsService.respondMoreInfo(ticketId, responseText),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["workflow-progress", ticketId] });
+      queryClient.invalidateQueries({ queryKey: ["ticket-activity", ticketId] });
+      queryClient.invalidateQueries({ queryKey: ["ticket-comments", ticketId] });
+      setMoreInfoResponse("");
+      toastAdd({
+        type: "success",
+        title: "Response sent",
+        message: "You can now proceed with the workflow",
+        timestamp: new Date().toISOString(),
+      });
+    },
+    onError: (error: unknown) => {
+      const message = error instanceof Error ? error.message : "Failed to send response";
+      toastAdd({
+        type: "error",
+        title: "Response failed",
         message,
         timestamp: new Date().toISOString(),
       });
@@ -384,17 +548,30 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
     });
   };
 
-  // Get current step for assigned user
-  const currentStep = workflowProgress?.progress.find((p) => !p.isCompleted);
-  const isAssignedToMe = ticket?.assignee?.id === authUser?.id;
-  const requiredRoleForCurrentStep = currentStep?.step.requiredRole ?? null;
-  const canCompleteStep = Boolean(
+  const currentProgressItem = workflowProgress?.progress.find((p) => p.isCurrent) ?? null;
+  const currentStep = currentProgressItem?.step ?? null;
+  const moreInfoPending = Boolean(
+    workflowProgress?.moreInfo?.requestedAt && !workflowProgress?.moreInfo?.resolvedAt,
+  );
+  const isCreator = Boolean(ticket && authUser?.id === ticket.creator?.id);
+  const isAssignee = Boolean(ticket && authUser?.id === ticket.assignee?.id);
+  const canManageWorkflow = Boolean(!isTicketResolved && (isAdmin || isAssignee));
+
+  const canCompleteCurrentStep = Boolean(
     currentStep &&
       !isTicketResolved &&
-      (requiredRoleForCurrentStep
-        ? authUser?.role === requiredRoleForCurrentStep
-        : isAssignedToMe),
+      !moreInfoPending &&
+      (currentStep.requiredRole === "admin"
+        ? authUser?.role === "admin"
+        : currentStep.requiredRole === "agent"
+          ? isAssignee
+          : currentStep.requiredRole === "user"
+            ? isCreator
+            : authUser?.role === "admin" || isAssignee),
   );
+
+  const canRequestMoreInfo = Boolean(canManageWorkflow && currentStep && !moreInfoPending);
+  const canRespondMoreInfo = Boolean(!isTicketResolved && isCreator && moreInfoPending);
 
   // selected agent derived from agents list if needed in UI (unused currently)
 
@@ -481,6 +658,33 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
                     <p className="text-lg text-white">{ticket.subcategory.name}</p>
                   </div>
                 )}
+
+                {ticket.attributeValues?.length ? (
+                  <div className="pt-4 mt-2 border-t border-white/10">
+                    <p className="text-sm font-medium text-white/90 mb-2">
+                      Custom Fields
+                    </p>
+                    <div className="space-y-2">
+                      {ticket.attributeValues
+                        .filter((av) => {
+                          if (!av.attribute) return false;
+                          if (!av.attribute.active) return false;
+                          if (!authUser?.role) return false;
+                          return av.attribute.visibleTo.includes(authUser.role);
+                        })
+                        .slice()
+                        .sort((a, b) => (a.attribute.order ?? 0) - (b.attribute.order ?? 0))
+                        .map((av) => (
+                          <div key={av.attributeId} className="bg-white/5 p-3 rounded-lg">
+                            <p className="text-xs text-white/70">{av.attribute.label}</p>
+                            <div className="text-white mt-1">
+                              {formatAttributeValue(av.attribute.type, av.value)}
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                ) : null}
               </div>
             </div>
 
@@ -510,14 +714,87 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
                     {workflowProgress.completedSteps} / {workflowProgress.totalSteps} steps
                   </span>
                 </div>
+
+                {moreInfoPending && (
+                  <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-md">
+                    <p className="text-yellow-200 text-sm font-medium">
+                      More information requested
+                    </p>
+                    {workflowProgress.moreInfo?.question && (
+                      <p className="text-yellow-100/80 text-sm mt-1">
+                        {workflowProgress.moreInfo.question}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {canManageWorkflow && (
+                  <div className="flex gap-2 mb-4">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => moveStepMutation.mutate("prev")}
+                      isLoading={moveStepMutation.isPending}
+                      disabled={moreInfoPending}
+                    >
+                      Previous Step
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => moveStepMutation.mutate("next")}
+                      isLoading={moveStepMutation.isPending}
+                      disabled={moreInfoPending}
+                    >
+                      Next Step
+                    </Button>
+                    {canRequestMoreInfo && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setMoreInfoQuestion("");
+                          setMoreInfoModalVisible(true);
+                        }}
+                        disabled={moreInfoPending}
+                      >
+                        Request More Info
+                      </Button>
+                    )}
+                  </div>
+                )}
+
+                {canRespondMoreInfo && (
+                  <div className="mb-4">
+                    <FormTextArea
+                      label="Provide the requested information"
+                      placeholder="Add details requested by the agent..."
+                      value={moreInfoResponse}
+                      onChange={(e) => setMoreInfoResponse(e.target.value)}
+                      rows={4}
+                    />
+                    <div className="mt-2">
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => respondMoreInfoMutation.mutate(moreInfoResponse)}
+                        isLoading={respondMoreInfoMutation.isPending}
+                        disabled={!moreInfoResponse.trim()}
+                      >
+                        Send Response
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
                 <div className="space-y-3">
-                  {workflowProgress.progress.map((item, idx) => (
+                  {workflowProgress.progress.map((item) => (
                     <div
                       key={item.step.id}
                       className={`p-4 rounded-lg border ${
                         item.isCompleted
                           ? "bg-green-500/10 border-green-500/30"
-                          : idx === workflowProgress.completedSteps
+                          : item.isCurrent
                           ? "bg-blue-500/10 border-blue-500/30"
                           : "bg-white/5 border-white/10"
                       }`}
@@ -529,7 +806,7 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
                             {item.isCompleted && (
                               <span className="text-green-400 text-sm">✓ Completed</span>
                             )}
-                            {!item.isCompleted && idx === workflowProgress.completedSteps && (
+                            {item.isCurrent && (
                               <span className="text-blue-400 text-sm">Current Step</span>
                             )}
                           </div>
@@ -550,7 +827,7 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
                             </p>
                           )}
                         </div>
-                        {canCompleteStep && item.step.id === currentStep?.step.id && (
+                        {canCompleteCurrentStep && item.isCurrent && (
                           <Button
                             variant="primary"
                             size="sm"
@@ -845,79 +1122,16 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
           Update your ticket details. Changes will be saved immediately.
         </p>
 
-        <FormTextArea
-          label="Description"
-          placeholder="Describe the issue in detail..."
-          value={editFormValues.description}
-          onChange={(e) =>
-            setEditFormValues((prev) => ({ ...prev, description: e.target.value }))
+        <TicketFields
+          values={editFormValues}
+          onChange={setEditFormValues}
+          data={editFieldsData}
+          descriptionError={
+            editFormError && !editFormValues.description.trim()
+              ? "Description is required"
+              : undefined
           }
-          error={editFormError && !editFormValues.description.trim() ? "Description is required" : undefined}
-          required
-          rows={6}
         />
-
-        {/* Priority Selection */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-white/90 mb-3">
-            Priority <span className="text-red-400 ml-1">*</span>
-          </label>
-          <div className="flex space-x-3">
-            {priorityOptions.map((option) => {
-              const selected = editFormValues.priority === option;
-              return (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() =>
-                    setEditFormValues((prev) => ({
-                      ...prev,
-                      priority: option,
-                    }))
-                  }
-                  className={`px-4 py-2 rounded-lg capitalize cursor-pointer transition-colors ${
-                    selected
-                      ? "bg-primary-blue text-white"
-                      : "bg-white/5 text-white/70 hover:bg-white/10"
-                  }`}
-                >
-                  {option}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Issue Type Selection */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-white/90 mb-3">
-            Issue Type <span className="text-red-400 ml-1">*</span>
-          </label>
-          <div className="flex flex-wrap gap-3">
-            {issueOptions.map((option) => {
-              const selected = editFormValues.issueType === option;
-              return (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() =>
-                    setEditFormValues((prev) => ({
-                      ...prev,
-                      issueType: option,
-                    }))
-                  }
-                  className={`px-4 py-2 rounded-lg capitalize cursor-pointer transition-colors ${
-                    selected
-                      ? "bg-primary-blue text-white"
-                      : "bg-white/5 text-white/70 hover:bg-white/10"
-                  }`}
-                >
-                  {option}
-                </button>
-              );
-            })}
-          </div>
-        </div>
 
         {editFormError && (
           <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-md">
@@ -968,6 +1182,49 @@ export default function TicketDetailPage({ params }: TicketDetailPageProps) {
             isLoading={completeStepMutation.isPending}
           >
             Complete Step
+          </Button>
+        </ModalActions>
+      </Modal>
+
+      {/* Request More Info Modal */}
+      <Modal
+        isOpen={moreInfoModalVisible}
+        onClose={() => {
+          setMoreInfoModalVisible(false);
+          setMoreInfoQuestion("");
+        }}
+        title="Request More Information"
+        size="md"
+      >
+        <p className="text-white/80 mb-6">
+          Ask the ticket creator for details. The workflow step will be blocked until they respond.
+        </p>
+
+        <FormTextArea
+          label="Question"
+          placeholder="What do you need from the ticket creator?"
+          value={moreInfoQuestion}
+          onChange={(e) => setMoreInfoQuestion(e.target.value)}
+          rows={4}
+        />
+
+        <ModalActions>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setMoreInfoModalVisible(false);
+              setMoreInfoQuestion("");
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() => requestMoreInfoMutation.mutate(moreInfoQuestion)}
+            isLoading={requestMoreInfoMutation.isPending}
+            disabled={!moreInfoQuestion.trim()}
+          >
+            Request
           </Button>
         </ModalActions>
       </Modal>

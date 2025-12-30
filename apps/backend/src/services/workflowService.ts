@@ -1,5 +1,5 @@
 import createError from "http-errors";
-import { Role } from "@prisma/client";
+import { Role, TicketActivityType } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 
 type RequestUser = Express.AuthenticatedUser;
@@ -26,6 +26,63 @@ const workflowInclude = {
     orderBy: { order: "asc" as const },
   },
 } as const;
+
+async function ensureTicketCurrentStep(ticketId: string) {
+  const ticket = await prisma.ticket.findUnique({
+    where: { id: ticketId },
+    select: {
+      id: true,
+      workflowId: true,
+      currentWorkflowStepId: true,
+    },
+  });
+
+  if (!ticket?.workflowId) {
+    return { ticket: null, steps: [], currentStepId: null };
+  }
+
+  const steps = await prisma.workflowStep.findMany({
+    where: { workflowId: ticket.workflowId },
+    orderBy: { order: "asc" },
+  });
+
+  if (steps.length === 0) {
+    return { ticket, steps, currentStepId: null };
+  }
+
+  const validStepIds = new Set(steps.map((s) => s.id));
+  if (ticket.currentWorkflowStepId && validStepIds.has(ticket.currentWorkflowStepId)) {
+    return { ticket, steps, currentStepId: ticket.currentWorkflowStepId };
+  }
+
+  const existingCompletions = await prisma.workflowStepCompletion.findMany({
+    where: { ticketId },
+    select: { stepId: true },
+  });
+  const completedIds = new Set(existingCompletions.map((c) => c.stepId));
+
+  const firstIncomplete = steps.find((s) => !completedIds.has(s.id)) ?? null;
+  const nextId = firstIncomplete?.id ?? null;
+
+  await prisma.ticket.update({
+    where: { id: ticketId },
+    data: { currentWorkflowStepId: nextId },
+  });
+
+  return { ticket, steps, currentStepId: nextId };
+}
+
+function assertCanManageTicketWorkflow(
+  ticket: { createdBy: string; assignedTo: string | null },
+  user: RequestUser,
+) {
+  if (user.role === "admin") return;
+  if (ticket.assignedTo === user.id) return;
+  throw createError(
+    403,
+    "You are not allowed to update workflow progress for this ticket",
+  );
+}
 
 export async function listWorkflows(user: RequestUser) {
   if (user.role !== "admin") {
@@ -288,31 +345,316 @@ export async function findWorkflowForTicket(
 
 // Get current step for a ticket
 export async function getCurrentWorkflowStep(ticketId: string) {
-  const ticket = await prisma.ticket.findUnique({
-    where: { id: ticketId },
-    select: { workflowId: true },
-  });
-
-  if (!ticket?.workflowId) {
+  const ensured = await ensureTicketCurrentStep(ticketId);
+  if (!ensured.ticket?.workflowId || !ensured.currentStepId) {
     return null;
   }
+  return ensured.steps.find((s) => s.id === ensured.currentStepId) ?? null;
+}
 
-  const completedSteps = await prisma.workflowStepCompletion.findMany({
-    where: { ticketId },
-    select: { stepId: true },
+export async function setCurrentWorkflowStep(
+  ticketId: string,
+  stepId: string,
+  user: RequestUser,
+) {
+  const ticket = await prisma.ticket.findUnique({
+    where: { id: ticketId },
+    select: {
+      id: true,
+      createdBy: true,
+      assignedTo: true,
+      workflowId: true,
+      moreInfoRequestedAt: true,
+      moreInfoResolvedAt: true,
+    },
   });
 
-  const completedStepIds = new Set(completedSteps.map((c) => c.stepId));
+  if (!ticket) {
+    throw createError(404, "Ticket not found");
+  }
+  if (!ticket.workflowId) {
+    throw createError(400, "Ticket has no workflow");
+  }
 
-  const nextStep = await prisma.workflowStep.findFirst({
-    where: {
-      workflowId: ticket.workflowId,
-      id: { notIn: Array.from(completedStepIds) },
+  assertCanManageTicketWorkflow(ticket, user);
+
+  if (ticket.moreInfoRequestedAt && !ticket.moreInfoResolvedAt) {
+    throw createError(400, "Cannot change steps while more information is pending");
+  }
+
+  const step = await prisma.workflowStep.findFirst({
+    where: { id: stepId, workflowId: ticket.workflowId },
+  });
+
+  if (!step) {
+    throw createError(404, "Step not found in ticket workflow");
+  }
+
+  await prisma.ticket.update({
+    where: { id: ticketId },
+    data: { currentWorkflowStepId: stepId },
+  });
+
+  await prisma.ticketActivity.create({
+    data: {
+      ticketId,
+      actorId: user.id,
+      type: TicketActivityType.ticket_update,
+      comment: `Workflow moved to step: ${step.name}`,
     },
+  });
+
+  return { stepId };
+}
+
+export async function moveCurrentWorkflowStep(
+  ticketId: string,
+  direction: "next" | "prev",
+  user: RequestUser,
+) {
+  const ticket = await prisma.ticket.findUnique({
+    where: { id: ticketId },
+    select: {
+      id: true,
+      createdBy: true,
+      assignedTo: true,
+      workflowId: true,
+      currentWorkflowStepId: true,
+      moreInfoRequestedAt: true,
+      moreInfoResolvedAt: true,
+    },
+  });
+
+  if (!ticket) {
+    throw createError(404, "Ticket not found");
+  }
+  if (!ticket.workflowId) {
+    throw createError(400, "Ticket has no workflow");
+  }
+
+  assertCanManageTicketWorkflow(ticket, user);
+
+  if (ticket.moreInfoRequestedAt && !ticket.moreInfoResolvedAt) {
+    throw createError(400, "Cannot change steps while more information is pending");
+  }
+
+  const steps = await prisma.workflowStep.findMany({
+    where: { workflowId: ticket.workflowId },
     orderBy: { order: "asc" },
   });
 
-  return nextStep;
+  if (steps.length === 0) {
+    throw createError(400, "Workflow has no steps");
+  }
+
+  const currentIndex = ticket.currentWorkflowStepId
+    ? steps.findIndex((s) => s.id === ticket.currentWorkflowStepId)
+    : -1;
+
+  const fallbackIndex = direction === "prev" ? steps.length : -1;
+  const baseIndex = currentIndex >= 0 ? currentIndex : fallbackIndex;
+
+  const nextIndex =
+    direction === "next" ? baseIndex + 1 : Math.max(0, baseIndex - 1);
+
+  if (direction === "next" && nextIndex >= steps.length) {
+    throw createError(400, "Already at the last step");
+  }
+
+  const nextStep = steps[nextIndex];
+
+  await prisma.ticket.update({
+    where: { id: ticketId },
+    data: { currentWorkflowStepId: nextStep.id },
+  });
+
+  await prisma.ticketActivity.create({
+    data: {
+      ticketId,
+      actorId: user.id,
+      type: TicketActivityType.ticket_update,
+      comment: `Workflow moved to step: ${nextStep.name}`,
+    },
+  });
+
+  return { stepId: nextStep.id };
+}
+
+export async function requestMoreInfo(
+  ticketId: string,
+  question: string,
+  user: RequestUser,
+) {
+  if (!question?.trim()) {
+    throw createError(400, "Question is required");
+  }
+
+  const ensured = await ensureTicketCurrentStep(ticketId);
+  if (!ensured.ticket?.workflowId || !ensured.currentStepId) {
+    throw createError(400, "Ticket has no active workflow step");
+  }
+
+  const ticketAccess = await prisma.ticket.findUnique({
+    where: { id: ticketId },
+    select: {
+      id: true,
+      createdBy: true,
+      assignedTo: true,
+      workflowId: true,
+      moreInfoRequestedAt: true,
+      moreInfoResolvedAt: true,
+    },
+  });
+
+  if (!ticketAccess) {
+    throw createError(404, "Ticket not found");
+  }
+
+  // Only assigned agent (or admin) can request more info
+  if (user.role !== "admin" && ticketAccess.assignedTo !== user.id) {
+    throw createError(403, "Only the assigned agent can request more information");
+  }
+
+  if (ticketAccess.moreInfoRequestedAt && !ticketAccess.moreInfoResolvedAt) {
+    throw createError(400, "More information is already pending");
+  }
+
+  const comment = await prisma.ticketComment.create({
+    data: {
+      ticketId,
+      authorId: user.id,
+      content: question.trim(),
+    },
+    include: {
+      author: { select: { id: true, name: true, email: true, role: true } },
+      replies: {
+        include: {
+          author: { select: { id: true, name: true, email: true, role: true } },
+        },
+        orderBy: { createdAt: "asc" as const },
+      },
+    },
+  });
+
+  await prisma.ticketActivity.create({
+    data: {
+      ticketId,
+      actorId: user.id,
+      type: TicketActivityType.comment,
+      commentId: comment.id,
+      comment: question.trim(),
+    },
+  });
+
+  await prisma.ticket.update({
+    where: { id: ticketId },
+    data: {
+      moreInfoRequestedAt: new Date(),
+      moreInfoRequestedBy: user.id,
+      moreInfoQuestion: question.trim(),
+      moreInfoStepId: ensured.currentStepId,
+      moreInfoCommentId: comment.id,
+      moreInfoResponseCommentId: null,
+      moreInfoResolvedAt: null,
+      moreInfoResolvedBy: null,
+    },
+  });
+
+  await prisma.ticketActivity.create({
+    data: {
+      ticketId,
+      actorId: user.id,
+      type: TicketActivityType.ticket_update,
+      comment: "More information requested",
+    },
+  });
+
+  return { commentId: comment.id };
+}
+
+export async function respondToMoreInfo(
+  ticketId: string,
+  response: string,
+  user: RequestUser,
+) {
+  if (!response?.trim()) {
+    throw createError(400, "Response is required");
+  }
+
+  const ticket = await prisma.ticket.findUnique({
+    where: { id: ticketId },
+    select: {
+      id: true,
+      createdBy: true,
+      moreInfoRequestedAt: true,
+      moreInfoResolvedAt: true,
+      moreInfoCommentId: true,
+    },
+  });
+
+  if (!ticket) {
+    throw createError(404, "Ticket not found");
+  }
+
+  if (ticket.createdBy !== user.id) {
+    throw createError(403, "Only the ticket creator can respond with more information");
+  }
+
+  if (!ticket.moreInfoRequestedAt || ticket.moreInfoResolvedAt) {
+    throw createError(400, "No pending more-information request");
+  }
+
+  if (!ticket.moreInfoCommentId) {
+    throw createError(400, "More-information request is missing a comment reference");
+  }
+
+  const reply = await prisma.ticketComment.create({
+    data: {
+      ticketId,
+      authorId: user.id,
+      content: response.trim(),
+      parentId: ticket.moreInfoCommentId,
+    },
+    include: {
+      author: { select: { id: true, name: true, email: true, role: true } },
+      replies: {
+        include: {
+          author: { select: { id: true, name: true, email: true, role: true } },
+        },
+        orderBy: { createdAt: "asc" as const },
+      },
+    },
+  });
+
+  await prisma.ticketActivity.create({
+    data: {
+      ticketId,
+      actorId: user.id,
+      type: TicketActivityType.reply,
+      commentId: reply.id,
+      comment: response.trim(),
+    },
+  });
+
+  await prisma.ticket.update({
+    where: { id: ticketId },
+    data: {
+      moreInfoResponseCommentId: reply.id,
+      moreInfoResolvedAt: new Date(),
+      moreInfoResolvedBy: user.id,
+    },
+  });
+
+  await prisma.ticketActivity.create({
+    data: {
+      ticketId,
+      actorId: user.id,
+      type: TicketActivityType.ticket_update,
+      comment: "More information provided",
+    },
+  });
+
+  return { responseCommentId: reply.id };
 }
 
 // Complete a workflow step
@@ -344,6 +686,17 @@ export async function completeWorkflowStep(
     throw createError(400, "Ticket has no workflow");
   }
 
+  const ensured = await ensureTicketCurrentStep(ticketId);
+  const currentCursorId = ensured.currentStepId;
+
+  if (currentCursorId && stepId !== currentCursorId) {
+    throw createError(400, "Only the current step can be completed");
+  }
+
+  if (ticket.moreInfoRequestedAt && !ticket.moreInfoResolvedAt) {
+    throw createError(400, "More information is pending; waiting for ticket creator response");
+  }
+
   const step = ticket.workflow.steps.find((s) => s.id === stepId);
   if (!step) {
     throw createError(404, "Step not found in ticket workflow");
@@ -368,33 +721,23 @@ export async function completeWorkflowStep(
     throw createError(404, "User not found");
   }
 
-  // Verify user has permission to complete this step based on requiredRole
-  // If step has admin role: any admin can complete
-  // If step has agent role: only assigned agent can complete
-  // If step has user role: only creator can complete
-  // If step has no required role: any user can complete
-  if (step.requiredRole) {
-    if (step.requiredRole === "admin") {
-      // Any admin can complete
-      if (currentUser.role !== "admin") {
-        throw createError(403, "Only admins can complete this step");
-      }
-    } else if (step.requiredRole === "agent") {
-      // Only assigned agent can complete
-      if (ticket.assignedTo !== userId) {
-        throw createError(
-          403,
-          "Only the assigned agent can complete this step",
-        );
-      }
-    } else if (step.requiredRole === "user") {
-      // Only creator can complete
-      if (ticket.createdBy !== userId) {
-        throw createError(
-          403,
-          "Only the ticket creator can complete this step",
-        );
-      }
+  // Verify user has permission to complete this step based on requiredRole.
+  // If requiredRole is not set, default to assigned agent (or admin).
+  if (step.requiredRole === "admin") {
+    if (currentUser.role !== "admin") {
+      throw createError(403, "Only admins can complete this step");
+    }
+  } else if (step.requiredRole === "agent") {
+    if (ticket.assignedTo !== userId) {
+      throw createError(403, "Only the assigned agent can complete this step");
+    }
+  } else if (step.requiredRole === "user") {
+    if (ticket.createdBy !== userId) {
+      throw createError(403, "Only the ticket creator can complete this step");
+    }
+  } else {
+    if (currentUser.role !== "admin" && ticket.assignedTo !== userId) {
+      throw createError(403, "Only the assigned agent can complete this step");
     }
   }
 
@@ -425,21 +768,33 @@ export async function completeWorkflowStep(
     },
   });
 
+  // Advance cursor to next incomplete step (keeps completion history)
+  const completedAfter = await prisma.workflowStepCompletion.findMany({
+    where: { ticketId },
+    select: { stepId: true },
+  });
+  const completedAfterIds = new Set(completedAfter.map((c) => c.stepId));
+  const orderedSteps = ticket.workflow.steps.slice().sort((a, b) => a.order - b.order);
+  const nextStep = orderedSteps.find((s) => !completedAfterIds.has(s.id)) ?? null;
+
+  await prisma.ticket.update({
+    where: { id: ticketId },
+    data: {
+      currentWorkflowStepId: nextStep?.id ?? null,
+    },
+  });
+
   // Auto-update ticket status based on workflow progress
   const totalSteps = ticket.workflow.steps.length;
-  const completedStepsCount = previousSteps.length + 1; // Including current step
+  const completedStepsCount = completedAfter.length;
 
   let newStatus = ticket.status;
-
-  if (completedStepsCount === totalSteps) {
-    // All steps completed - mark ticket as resolved
+  if (completedStepsCount >= totalSteps && totalSteps > 0) {
     newStatus = "resolved" as const;
-  } else if (completedStepsCount === 1) {
-    // First step completed - move from open to in_progress
+  } else if (completedStepsCount > 0) {
     newStatus = "in_progress" as const;
-  } else if (completedStepsCount > 1 && completedStepsCount < totalSteps) {
-    // Middle steps - ensure status is in_progress
-    newStatus = "in_progress" as const;
+  } else {
+    newStatus = "open" as const;
   }
 
   // Update ticket status if needed
@@ -509,10 +864,28 @@ export async function getWorkflowProgress(ticketId: string) {
 
   const completionMap = new Map(completions.map((c) => [c.stepId, c]));
 
+  const validStepIds = new Set(ticket.workflow.steps.map((s) => s.id));
+  let currentStepId = ticket.currentWorkflowStepId;
+  if (currentStepId && !validStepIds.has(currentStepId)) {
+    currentStepId = null;
+  }
+
+  if (!currentStepId) {
+    const firstIncomplete = ticket.workflow.steps.find(
+      (s) => !completionMap.has(s.id),
+    );
+    currentStepId = firstIncomplete?.id ?? null;
+    await prisma.ticket.update({
+      where: { id: ticketId },
+      data: { currentWorkflowStepId: currentStepId },
+    });
+  }
+
   const progress = ticket.workflow.steps.map((step) => ({
     step,
     completion: completionMap.get(step.id) ?? null,
     isCompleted: completionMap.has(step.id),
+    isCurrent: currentStepId ? step.id === currentStepId : false,
   }));
 
   return {
@@ -520,6 +893,17 @@ export async function getWorkflowProgress(ticketId: string) {
     progress,
     totalSteps: ticket.workflow.steps.length,
     completedSteps: completions.length,
+    currentStepId,
+    moreInfo: {
+      requestedAt: ticket.moreInfoRequestedAt,
+      requestedBy: ticket.moreInfoRequestedBy,
+      question: ticket.moreInfoQuestion,
+      stepId: ticket.moreInfoStepId,
+      commentId: ticket.moreInfoCommentId,
+      responseCommentId: ticket.moreInfoResponseCommentId,
+      resolvedAt: ticket.moreInfoResolvedAt,
+      resolvedBy: ticket.moreInfoResolvedBy,
+    },
   };
 }
 

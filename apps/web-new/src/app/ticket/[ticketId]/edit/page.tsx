@@ -1,21 +1,15 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useAuthStore } from "@/store/useAuthStore";
+import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchTicket, updateTicket, type UpdateTicketPayload, type IssueType, type TicketPriority } from "@/services/tickets";
-import { categoriesService } from "@/services/categories";
-import { subcategoriesService } from "@/services/subcategories";
-
-const priorityOptions: TicketPriority[] = ["low", "medium", "high"];
-const issueOptions: IssueType[] = [
-  "hardware",
-  "software",
-  "network",
-  "access",
-  "other",
-];
+import { useAuthStore } from "@/store/useAuthStore";
+import { fetchTicket, updateTicket, type UpdateTicketPayload } from "@/services/tickets";
+import {
+  TicketFields,
+  useTicketFieldsData,
+  type TicketFormValues,
+} from "@/components/tickets/TicketFields";
 
 interface EditTicketPageProps {
   params: {
@@ -27,58 +21,110 @@ export default function EditTicketPage({ params }: EditTicketPageProps) {
   const { ticketId } = React.use(params as unknown as Promise<EditTicketPageProps["params"]>);
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [description, setDescription] = useState("");
-  const [priority, setPriority] = useState<TicketPriority>("medium");
-  const [issueType, setIssueType] = useState<IssueType>("other");
-  const [categoryId, setCategoryId] = useState("");
-  const [subcategoryId, setSubcategoryId] = useState("");
+  const session = useAuthStore((s) => s.session);
+  const authUser = useAuthStore((s) => s.session?.user);
+
+  const makeEmpty = (): TicketFormValues => ({
+    description: "",
+    priority: "medium",
+    issueType: "other",
+    categoryId: "",
+    subcategoryId: "",
+    attributes: {},
+  });
+
+  const [values, setValues] = useState<TicketFormValues>(makeEmpty());
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [prefilledAttributes, setPrefilledAttributes] = useState(false);
 
   const { data: ticket, isLoading } = useQuery({
     queryKey: ["ticket", ticketId],
     queryFn: () => fetchTicket(ticketId),
   });
 
-  const authUser = useAuthStore((s) => s.session?.user);
+  const isResolved = ticket?.status === "resolved";
+  const canEdit = Boolean(
+    ticket &&
+      authUser &&
+      !isResolved &&
+      (authUser.role === "admin" || authUser.id === ticket.creator.id),
+  );
 
-  const { data: categories = [] } = useQuery({
-    queryKey: ["categories"],
-    queryFn: () => categoriesService.listAllCategories(),
+  const fieldsData = useTicketFieldsData({
+    enabled: Boolean(session?.accessToken) && Boolean(canEdit),
+    categoryId: values.categoryId,
   });
 
-  const { data: subcategories = [] } = useQuery({
-    queryKey: ["subcategories", categoryId],
-    queryFn: () => categoryId ? subcategoriesService.listByCategory(categoryId) : Promise.resolve([]),
-    enabled: !!categoryId,
-  });
+  const visibleAttributeKeys = useMemo(() => {
+    return new Set((fieldsData.attributes ?? []).map((a) => a.key));
+  }, [fieldsData.attributes]);
 
   useEffect(() => {
-    if (ticket) {
-      setDescription(ticket.description);
-      setPriority(ticket.priority);
-      setIssueType(ticket.issueType);
-      if (ticket.category?.id) setCategoryId(ticket.category.id);
-      if (ticket.subcategory?.id) setSubcategoryId(ticket.subcategory.id);
-    }
+    if (!ticket) return;
+    setValues({
+      description: ticket.description,
+      priority: ticket.priority,
+      issueType: ticket.issueType,
+      categoryId: ticket.category?.id ?? "",
+      subcategoryId: ticket.subcategory?.id ?? "",
+      attributes: {},
+    });
+    setPrefilledAttributes(false);
   }, [ticket]);
+
+  useEffect(() => {
+    if (!ticket) return;
+    if (prefilledAttributes) return;
+    if (fieldsData.attributesLoading) return;
+    if (!fieldsData.attributes.length) {
+      setPrefilledAttributes(true);
+      return;
+    }
+
+    const nextAttrs: Record<string, unknown> = {};
+    for (const av of ticket.attributeValues ?? []) {
+      const key = av.attribute?.key;
+      if (!key) continue;
+      if (!visibleAttributeKeys.has(key)) continue;
+      nextAttrs[key] = av.value;
+    }
+
+    setValues((prev) => ({
+      ...prev,
+      attributes: { ...nextAttrs, ...prev.attributes },
+    }));
+    setPrefilledAttributes(true);
+  }, [ticket, fieldsData.attributesLoading, fieldsData.attributes.length, prefilledAttributes, visibleAttributeKeys]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!description.trim()) {
+    if (!values.description.trim()) {
       setError("Description is required");
+      return;
+    }
+
+    if (fieldsData.attributesError) {
+      setError("Unable to load attributes. Please retry.");
       return;
     }
 
     setSubmitting(true);
     setError("");
 
+    const filteredAttributes = Object.fromEntries(
+      Object.entries(values.attributes || {}).filter(([key]) =>
+        visibleAttributeKeys.has(key),
+      ),
+    );
+
     const payload: UpdateTicketPayload = {
-      description: description.trim(),
-      priority,
-      issueType,
-      categoryId: categoryId || undefined,
-      subcategoryId: subcategoryId || undefined,
+      description: values.description.trim(),
+      priority: values.priority,
+      issueType: values.issueType,
+      categoryId: values.categoryId || undefined,
+      subcategoryId: values.subcategoryId || undefined,
+      attributes: Object.keys(filteredAttributes).length ? filteredAttributes : undefined,
     };
 
     try {
@@ -104,14 +150,6 @@ export default function EditTicketPage({ params }: EditTicketPageProps) {
       </div>
     );
   }
-
-  const isResolved = ticket.status === "resolved";
-
-  // Authorization: ticket owner, assigned agent, or admin can edit when not resolved
-  const isOwner = authUser && authUser.id === ticket.creator.id;
-  const isAssignedAgent = authUser && authUser.role === "agent" && ticket.assignee?.id === authUser.id;
-  const isAdmin = authUser && authUser.role === "admin";
-  const canEdit = isOwner || isAssignedAgent || isAdmin;
 
   if (ticket && authUser && !canEdit) {
     return (
@@ -166,106 +204,12 @@ export default function EditTicketPage({ params }: EditTicketPageProps) {
 
         <div className="card shadow rounded-lg p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="description" className="block text-sm font-medium text-white/80 mb-2">
-                Description *
-              </label>
-              <textarea
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={6}
-                className="w-full px-3 py-2 border border-white/10 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/5 text-white"
-                placeholder="Describe the issue in detail..."
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-white/80 mb-2">
-                Priority
-              </label>
-              <div className="flex space-x-3">
-                {priorityOptions.map((option) => (
-                  <label key={option} className="flex items-center">
-                    <input
-                      type="radio"
-                      name="priority"
-                      value={option}
-                      checked={priority === option}
-                      onChange={(e) => setPriority(e.target.value as TicketPriority)}
-                      className="mr-2"
-                    />
-                    <span className="capitalize">{option}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="category" className="block text-sm font-medium text-white/80 mb-2">
-                Category
-              </label>
-              <select
-                id="category"
-                value={categoryId}
-                onChange={(e) => {
-                  setCategoryId(e.target.value);
-                  setSubcategoryId("");
-                }}
-                className="w-full px-3 py-2 border border-white/10 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/5 text-white"
-              >
-                <option value="">Select a category</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label htmlFor="subcategory" className="block text-sm font-medium text-white/80 mb-2">
-                Subcategory
-              </label>
-              <select
-                id="subcategory"
-                value={subcategoryId}
-                onChange={(e) => setSubcategoryId(e.target.value)}
-                disabled={!categoryId}
-                className="w-full px-3 py-2 border border-white/10 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/5 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <option value="">
-                  {categoryId ? "Select a subcategory" : "Select category first"}
-                </option>
-                {subcategories.map((subcat) => (
-                  <option key={subcat.id} value={subcat.id}>
-                    {subcat.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-white/80 mb-2">
-                Issue Type
-              </label>
-              <div className="flex flex-wrap gap-3">
-                {issueOptions.map((option) => (
-                  <label key={option} className="flex items-center">
-                    <input
-                      type="radio"
-                      name="issueType"
-                      value={option}
-                      checked={issueType === option}
-                      onChange={(e) => setIssueType(e.target.value as IssueType)}
-                      className="mr-2"
-                    />
-                    <span className="capitalize">{option}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
+            <TicketFields
+              values={values}
+              onChange={setValues}
+              data={fieldsData}
+              descriptionError={error && !values.description.trim() ? "Description is required" : undefined}
+            />
 
             {error && (
               <div className="bg-red-700/10 border border-red-600 rounded-lg p-4">
@@ -277,14 +221,14 @@ export default function EditTicketPage({ params }: EditTicketPageProps) {
               <button
                 type="submit"
                 disabled={submitting}
-                className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 primary-btn py-2 px-4 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {submitting ? "Updating..." : "Update Ticket"}
               </button>
               <button
                 type="button"
                 onClick={() => router.back()}
-                className="px-6 py-2 border border-white/10 rounded-lg hover:bg-white/6"
+                className="px-6 py-2 border border-white/10 rounded-lg hover:bg-white/6 text-white"
               >
                 Cancel
               </button>

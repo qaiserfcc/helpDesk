@@ -133,4 +133,92 @@ router.get(
   },
 );
 
+// Set current step for a ticket
+router.post(
+  "/ticket/:ticketId/current-step",
+  requireAuth,
+  async (req, res, next) => {
+    try {
+      const { stepId } = req.body as { stepId?: string };
+      if (!stepId) {
+        res.status(400).json({ error: "stepId is required" });
+        return;
+      }
+
+      const result = await workflowService.setCurrentWorkflowStep(
+        req.params.ticketId,
+        stepId,
+        req.user!,
+      );
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+// Move current step forward/back for a ticket
+router.post(
+  "/ticket/:ticketId/current-step/move",
+  requireAuth,
+  async (req, res, next) => {
+    try {
+      const { direction } = req.body as { direction?: "next" | "prev" };
+      if (direction !== "next" && direction !== "prev") {
+        res
+          .status(400)
+          .json({ error: "direction must be 'next' or 'prev'" });
+        return;
+      }
+
+      const result = await workflowService.moveCurrentWorkflowStep(
+        req.params.ticketId,
+        direction,
+        req.user!,
+      );
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+// Request more info (keeps current step, blocks completion)
+router.post(
+  "/ticket/:ticketId/more-info/request",
+  requireAuth,
+  async (req, res, next) => {
+    try {
+      const { question } = req.body as { question?: string };
+      const result = await workflowService.requestMoreInfo(
+        req.params.ticketId,
+        question ?? "",
+        req.user!,
+      );
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+// Respond to more info request (creator only)
+router.post(
+  "/ticket/:ticketId/more-info/respond",
+  requireAuth,
+  async (req, res, next) => {
+    try {
+      const { response } = req.body as { response?: string };
+      const result = await workflowService.respondToMoreInfo(
+        req.params.ticketId,
+        response ?? "",
+        req.user!,
+      );
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
 export default router;

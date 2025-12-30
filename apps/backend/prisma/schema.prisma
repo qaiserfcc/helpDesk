@@ -68,6 +68,8 @@ model User {
   autoAssigns  AgentAutoAssign[]
   comments     TicketComment[]  @relation("TicketCommentAuthor")
   stepCompletions WorkflowStepCompletion[]
+  moreInfoRequestedTickets Ticket[] @relation("TicketMoreInfoRequestedBy")
+  moreInfoResolvedTickets  Ticket[] @relation("TicketMoreInfoResolvedBy")
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   aiSuggestions AiSuggestion[]
@@ -94,6 +96,24 @@ model Ticket {
   sla        Sla?        @relation(fields: [slaId], references: [id])
   workflowId String?
   workflow   Workflow?   @relation("TicketWorkflow", fields: [workflowId], references: [id])
+
+  // Workflow cursor (supports moving forward/back while keeping completion history)
+  currentWorkflowStepId String?
+  currentWorkflowStep   WorkflowStep? @relation("TicketCurrentWorkflowStep", fields: [currentWorkflowStepId], references: [id])
+
+  // More-info flow (keeps the current step active and blocks completion until creator responds)
+  moreInfoRequestedAt DateTime?
+  moreInfoRequestedBy String?
+  moreInfoRequestedByUser User? @relation("TicketMoreInfoRequestedBy", fields: [moreInfoRequestedBy], references: [id])
+  moreInfoQuestion String?
+  moreInfoStepId String?
+  moreInfoStep WorkflowStep? @relation("TicketMoreInfoStep", fields: [moreInfoStepId], references: [id])
+  moreInfoCommentId String?
+  moreInfoResponseCommentId String?
+  moreInfoResolvedAt DateTime?
+  moreInfoResolvedBy String?
+  moreInfoResolvedByUser User? @relation("TicketMoreInfoResolvedBy", fields: [moreInfoResolvedBy], references: [id])
+
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
   resolvedAt  DateTime?
@@ -285,6 +305,8 @@ model WorkflowStep {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   completions     WorkflowStepCompletion[]
+  currentForTickets Ticket[] @relation("TicketCurrentWorkflowStep")
+  moreInfoForTickets Ticket[] @relation("TicketMoreInfoStep")
   
   @@index([workflowId])
   @@index([order])

@@ -95,7 +95,10 @@ export type TicketActivityType =
   | "status_change"
   | "assignment_change"
   | "assignment_request"
-  | "ticket_update";
+  | "ticket_update"
+  | "comment"
+  | "reply"
+  | "step_completed";
 
 export type TicketActivityEntry = {
   id: string;
@@ -107,6 +110,9 @@ export type TicketActivityEntry = {
   toStatus: TicketStatus | null;
   fromAssignee: TicketUser | null;
   toAssignee: TicketUser | null;
+  comment?: string | null;
+  commentId?: string | null;
+  stepId?: string | null;
 };
 
 export type TicketSummaryReport = {

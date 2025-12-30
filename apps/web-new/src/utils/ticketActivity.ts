@@ -38,7 +38,24 @@ export function describeTicketActivity(activity: TicketActivityEntry): string {
       return `${actor} requested assignment`;
 
     case "ticket_update":
-      return `${actor} updated the ticket`;
+      return activity.comment?.trim()
+        ? `${actor}: ${activity.comment.trim()}`
+        : `${actor} updated the ticket`;
+
+    case "comment":
+      return activity.comment?.trim()
+        ? `${actor} commented: ${activity.comment.trim()}`
+        : `${actor} added a comment`;
+
+    case "reply":
+      return activity.comment?.trim()
+        ? `${actor} replied: ${activity.comment.trim()}`
+        : `${actor} replied`;
+
+    case "step_completed":
+      return activity.comment?.trim()
+        ? `${actor}: ${activity.comment.trim()}`
+        : `${actor} completed a workflow step`;
 
     default:
       return `${actor} performed an action`;
