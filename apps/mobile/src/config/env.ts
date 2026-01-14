@@ -1,7 +1,7 @@
 import Constants from "expo-constants";
 import { NativeModules, Platform } from "react-native";
 
-const DEFAULT_API_URL = "http://localhost:4000/api";
+const DEFAULT_API_URL = "http://localhost:9000/api";
 const FALLBACK_ENV = "development";
 
 const stripProtocol = (hostUri?: string | null) => {
@@ -21,6 +21,35 @@ const normalizeHost = (host?: string | null) => {
   return host;
 };
 
+const normalizeApiUrl = (rawUrl: string) => {
+  const trimmed = rawUrl.trim();
+  if (!trimmed) {
+    return rawUrl;
+  }
+
+  const withProtocol = /^https?:\/\//.test(trimmed)
+    ? trimmed
+    : `http://${trimmed}`;
+
+  try {
+    const url = new URL(withProtocol);
+    const normalizedHost = normalizeHost(url.hostname);
+    if (normalizedHost) {
+      url.hostname = normalizedHost;
+    }
+
+    // If the URL has no path, assume the backend is mounted at /api.
+    if (url.pathname === "/" || url.pathname === "") {
+      url.pathname = "/api";
+    }
+
+    return url.toString().replace(/\/$/, "");
+  } catch {
+    // If parsing fails, fall back to the raw value to avoid breaking prod.
+    return rawUrl;
+  }
+};
+
 const resolveDevHost = () => {
   const candidate =
     stripProtocol(Constants.expoConfig?.hostUri) ??
@@ -33,7 +62,7 @@ const resolveDevHost = () => {
 
   const [host] = candidate.split(":");
   const normalized = normalizeHost(host);
-  return normalized ? `http://${normalized}:4000/api` : null;
+  return normalized ? `http://${normalized}:9000/api` : null;
 };
 
 const resolveFromScriptUrl = () => {
@@ -46,17 +75,19 @@ const resolveFromScriptUrl = () => {
   try {
     const url = new URL(scriptURL);
     const normalized = normalizeHost(url.hostname);
-    return normalized ? `http://${normalized}:4000/api` : null;
+    return normalized ? `http://${normalized}:9000/api` : null;
   } catch {
     return null;
   }
 };
 
-const apiUrl =
+const apiUrlRaw =
   process.env.EXPO_PUBLIC_API_URL ??
   resolveDevHost() ??
   resolveFromScriptUrl() ??
   DEFAULT_API_URL;
+
+const apiUrl = normalizeApiUrl(apiUrlRaw);
 
 const apiBaseUrl = apiUrl.replace(/\/api\/?$/, "");
 export const env = {
